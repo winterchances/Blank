@@ -392,7 +392,7 @@ private fun NavGlyph(type: NavIconType, tint: Color) {
             }
             NavIconType.ALBUMS -> {
                 val path = Path().apply {
-                    addRoundRect(androidx.compose.ui.geometry.RoundRect(Offset(w * 0.12f, h * 0.12f), androidx.compose.ui.geometry.Size(w * 0.76f, h * 0.76f), androidx.compose.ui.geometry.CornerRadius(w * 0.08f)))
+                    addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(Offset(w * 0.12f, h * 0.12f), androidx.compose.ui.geometry.Size(w * 0.76f, h * 0.76f)), w * 0.08f, h * 0.08f))
                     moveTo(w * 0.5f, h * 0.12f); lineTo(w * 0.5f, h * 0.88f)
                     moveTo(w * 0.12f, h * 0.5f); lineTo(w * 0.88f, h * 0.5f)
                 }
