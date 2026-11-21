@@ -11,22 +11,22 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MediaAssetDao {
-    @Query("SELECT * FROM media_assets ORDER BY dateAddedSeconds DESC, id DESC")
+    @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
     fun observeAll(): Flow<List<MediaAsset>>
 
     @Query("SELECT * FROM media_assets ORDER BY dateAddedSeconds DESC, id DESC")
     fun pagingSource(): PagingSource<Int, MediaAsset>
 
-    @Query("SELECT COUNT(*) FROM media_assets WHERE mediaType = 1")
+    @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
     fun observePhotoCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM media_assets WHERE mediaType = 2")
+    @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 2")
     fun observeVideoCount(): Flow<Int>
 
-    @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM media_assets")
+    @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM media_assets WHERE isVisible = 1")
     fun observeTotalBytes(): Flow<Long>
 
-    @Query("SELECT * FROM media_assets WHERE mediaType = 1 AND selfOrganizeStatus = 0 AND isProtected = 0 ORDER BY dateAddedSeconds DESC, id DESC")
+    @Query("SELECT * FROM media_assets WHERE isVisible = 1 AND mediaType = 1 AND selfOrganizeStatus = 0 AND isProtected = 0 ORDER BY dateAddedSeconds DESC, id DESC")
     suspend fun getNextSelfOrganizePhoto(): MediaAsset?
 
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
