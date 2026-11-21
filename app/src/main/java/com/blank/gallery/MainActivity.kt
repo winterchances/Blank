@@ -88,7 +88,10 @@ private fun BlankApp() {
             scanMessage = null
             scope.launch {
                 try {
-                    val total = repository.scanVisibleMedia { count ->
+                    val total = repository.scanVisibleMedia(
+                        includeImages = MediaPermission.canReadImages(context),
+                        includeVideos = MediaPermission.canReadVideos(context)
+                    ) { count ->
                         scannedItems = count
                     }
                     scanMessage = "扫描完成 · 共检查 $total 项"
