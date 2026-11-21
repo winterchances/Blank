@@ -94,12 +94,9 @@ private val BlankAlbumsIcon: ImageVector = ImageVector.Builder("BlankAlbums", 24
 
 private val BlankOrganizeIcon: ImageVector = ImageVector.Builder("BlankOrganize", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(4f, 6f); lineTo(20f, 6f)
-        moveTo(4f, 12f); lineTo(20f, 12f)
-        moveTo(4f, 18f); lineTo(20f, 18f)
-        moveTo(8f, 4f); lineTo(8f, 8f)
-        moveTo(16f, 10f); lineTo(16f, 14f)
-        moveTo(11f, 16f); lineTo(11f, 20f)
+        moveTo(3.5f, 6f); lineTo(5.5f, 8f); lineTo(9f, 4f); moveTo(12f, 6f); lineTo(20f, 6f)
+        moveTo(3.5f, 12f); lineTo(5.5f, 14f); lineTo(9f, 10f); moveTo(12f, 12f); lineTo(20f, 12f)
+        moveTo(3.5f, 18f); lineTo(5.5f, 20f); lineTo(9f, 16f); moveTo(12f, 18f); lineTo(20f, 18f)
     }
 }.build()
 
