@@ -85,9 +85,9 @@ internal fun AlbumDeleteConfirmationSheet(
                 )
                 Text(
                     if (isAndroid11OrNewer) {
-                        "将选中的 $deletableCount 项移入系统回收站，之后可在系统相册的回收站中恢复。"
+                        "将未受保护的 $deletableCount 项移入系统回收站，之后可在系统相册的回收站中恢复。"
                     } else {
-                        "Android 10 不提供统一的系统回收站。继续后将逐项处理；需要授权的项目会显示系统确认，删除后可能无法恢复。"
+                        "Android 10 不提供统一的系统回收站。继续后将逐项处理这 $deletableCount 项；需要授权的项目会显示系统确认，删除后可能无法恢复。"
                     },
                     color = MainText.copy(alpha = 0.72f),
                     fontSize = 14.sp,
