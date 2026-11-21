@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
 
@@ -150,8 +151,13 @@ internal fun AlbumsContent(
     }
 
     if (media.itemCount == 0) {
+        val message = when (media.loadState.refresh) {
+            is LoadState.Loading -> "正在加载相册内容"
+            is LoadState.Error -> "相册暂时无法加载，请稍后重试"
+            else -> "还没有相册内容，先到首页开始扫描"
+        }
         EmptyState(
-            message = "还没有相册内容，先到首页开始扫描",
+            message = message,
             modifier = Modifier.fillMaxSize()
         )
         return
