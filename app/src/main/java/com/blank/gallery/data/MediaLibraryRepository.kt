@@ -3,6 +3,13 @@ package com.blank.gallery.data
 import android.content.Context
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.map
+import androidx.paging.insertSeparators
+import com.blank.gallery.ui.screens.AlbumGridItem
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
@@ -20,13 +27,29 @@ class MediaLibraryRepository(context: Context) {
     )
 
     val lastScanAt = _lastScanAt.asStateFlow()
-    fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, sortBySize: Boolean) = Pager(
+    fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, monthKey: String?, sortBySize: Boolean) = Pager(
         config = PagingConfig(pageSize = 60, prefetchDistance = 20, enablePlaceholders = false),
         pagingSourceFactory = {
-            dao.pagingSource(mediaType, query.trim(), folderPath, if (sortBySize) 1 else 0)
+            dao.pagingSource(mediaType, query.trim(), folderPath, monthKey, if (sortBySize) 1 else 0)
         }
-    ).flow
+    ).flow.map { pagingData ->
+        val mediaItems = pagingData.map<MediaAsset, AlbumGridItem> { AlbumGridItem.Media(it) }
+        if (sortBySize) {
+            mediaItems
+        } else {
+            mediaItems.insertSeparators { before, after ->
+                val current = after as? AlbumGridItem.Media ?: return@insertSeparators null
+                val previous = before as? AlbumGridItem.Media
+                val currentDate = current.asset.albumLocalDate()
+                val previousDate = previous?.asset?.albumLocalDate()
+                if (currentDate != previousDate) {
+                    AlbumGridItem.DateHeader(currentDate, currentDate.toAlbumDateLabel())
+                } else null
+            }
+        }
+    }
     val folders = dao.observeFolders()
+    val months = dao.observeMonths()
     val photoCount = dao.observePhotoCount()
     val videoCount = dao.observeVideoCount()
     val totalBytes = dao.observeTotalBytes()
@@ -35,6 +58,20 @@ class MediaLibraryRepository(context: Context) {
      * Hide cached media immediately when the app no longer has permission.
      * Rows and user state remain in Room; a later authorized scan can restore them.
      */
+    private fun MediaAsset.albumLocalDate(): LocalDate {
+        val seconds = dateTakenSeconds.takeIf { it > 0L } ?: dateAddedSeconds
+        return Instant.ofEpochSecond(seconds).atZone(ZoneId.systemDefault()).toLocalDate()
+    }
+
+    private fun LocalDate.toAlbumDateLabel(): String {
+        val today = LocalDate.now()
+        return when (this) {
+            today -> "今天"
+            today.minusDays(1) -> "昨天"
+            else -> format(DateTimeFormatter.ofPattern("yyyy年M月d日", java.util.Locale.getDefault()))
+        }
+    }
+
     suspend fun hideAllFromCurrentLibrary() {
         dao.hideAllBeforePermissionScopedScan()
         preferences.edit().putString(KEY_LAST_SCAN_SCOPE, NO_ACCESS_SCOPE).apply()
