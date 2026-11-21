@@ -111,6 +111,7 @@ private fun BlankApp() {
     var albumSortBySize by remember { mutableStateOf(false) }
     var selectedMedia by remember { mutableStateOf<Map<Long, MediaAsset>>(emptyMap()) }
     var deleteConfirmationVisible by remember { mutableStateOf(false) }
+    var isDeletionInProgress by remember { mutableStateOf(false) }
     var pendingTrashIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var legacyDeleteQueue by remember { mutableStateOf<List<MediaAsset>>(emptyList()) }
     var legacyDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -156,6 +157,7 @@ private fun BlankApp() {
     ) { result ->
         val ids = pendingTrashIds
         pendingTrashIds = emptySet()
+        isDeletionInProgress = false
         if (result.resultCode == Activity.RESULT_OK && ids.isNotEmpty()) {
             scope.launch {
                 repository.hideFromLibraryForIds(ids.toList())
@@ -197,6 +199,7 @@ private fun BlankApp() {
             legacyDeletedIds = emptySet()
             finishLegacyDelete = null
             continueLegacyDelete = null
+            isDeletionInProgress = false
         }
     }
 
@@ -246,7 +249,8 @@ private fun BlankApp() {
     fun confirmBatchDelete() {
         deleteConfirmationVisible = false
         val eligible = selectedMedia.values.filterNot { it.isProtected }
-        if (eligible.isEmpty()) return
+        if (eligible.isEmpty() || isDeletionInProgress) return
+        isDeletionInProgress = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 val request = deletionManager.createTrashRequest(eligible.map { it.contentUri })
@@ -255,6 +259,7 @@ private fun BlankApp() {
                     IntentSenderRequest.Builder(request.intentSender).build()
                 )
             } catch (_: Exception) {
+                isDeletionInProgress = false
                 scanMessage = "无法发起系统回收站请求，请稍后重试"
             }
         } else {
@@ -309,6 +314,10 @@ private fun BlankApp() {
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    BackHandler(enabled = deleteConfirmationVisible) {
+        deleteConfirmationVisible = false
     }
 
     BackHandler(enabled = selectedMedia.isNotEmpty()) {
@@ -444,7 +453,7 @@ private fun BlankApp() {
                                 }
                             },
                             onDelete = { deleteConfirmationVisible = true },
-                            deleteEnabled = selectedMedia.values.any { !it.isProtected },
+                            deleteEnabled = selectedMedia.values.any { !it.isProtected } && !isDeletionInProgress,
                             onCancel = { selectedMedia = emptyMap() }
                         )
                     } else if (organizeSubPage == null) {
