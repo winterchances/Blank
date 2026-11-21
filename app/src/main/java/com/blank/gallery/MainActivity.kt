@@ -87,12 +87,14 @@ private fun BlankApp() {
     val videoCount by repository.videoCount.collectAsState(initial = 0)
     val totalBytes by repository.totalBytes.collectAsState(initial = 0L)
     val lastScanAt by repository.lastScanAt.collectAsState()
+    val albumFolders by repository.folders.collectAsState(initial = emptyList())
+    var selectedFolderPath by remember { mutableStateOf<String?>(null) }
     var albumMediaType by remember { mutableStateOf<Int?>(null) }
     var albumSearchQuery by remember { mutableStateOf("") }
     var albumGridColumns by remember { mutableStateOf(4) }
     var albumSortBySize by remember { mutableStateOf(false) }
-    val mediaFlow = remember(repository, albumMediaType, albumSearchQuery, albumSortBySize) {
-        repository.pagedMedia(albumMediaType, albumSearchQuery, albumSortBySize)
+    val mediaFlow = remember(repository, albumMediaType, albumSearchQuery, selectedFolderPath, albumSortBySize) {
+        repository.pagedMedia(albumMediaType, albumSearchQuery, selectedFolderPath, albumSortBySize)
     }
     val pagedMedia = mediaFlow.collectAsLazyPagingItems()
     val scope = rememberCoroutineScope()
@@ -239,7 +241,10 @@ private fun BlankApp() {
                                 gridColumns = albumGridColumns,
                                 onGridColumnsChange = { albumGridColumns = it },
                                 sortBySize = albumSortBySize,
-                                onSortBySizeChange = { albumSortBySize = it }
+                                onSortBySizeChange = { albumSortBySize = it },
+                                folders = albumFolders,
+                                selectedFolderPath = selectedFolderPath,
+                                onFolderSelect = { selectedFolderPath = it }
                             )
                             MainPage.ORGANIZE -> OrganizeContent(
                                 onOpenCategory = { organizeSubPage = it },
