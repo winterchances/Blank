@@ -1,0 +1,151 @@
+package com.blank.gallery
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+internal enum class MainPage(val title: String, val icon: NavIconType) {
+    HOME("首页", NavIconType.HOME),
+    ALBUMS("相册", NavIconType.ALBUMS),
+    ORGANIZE("整理", NavIconType.ORGANIZE),
+    FAVORITES("收藏", NavIconType.FAVORITES)
+}
+
+private enum class NavIconType { HOME, ALBUMS, ORGANIZE, FAVORITES }
+
+private val BlankHomeIcon: ImageVector = ImageVector.Builder("BlankHome", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f); lineTo(21f, 20f)
+        quadTo(21f, 22f, 19f, 22f); lineTo(5f, 22f); quadTo(3f, 22f, 3f, 20f)
+        close()
+        moveTo(9f, 22f); lineTo(9f, 12f); lineTo(15f, 12f); lineTo(15f, 22f)
+    }
+}.build()
+
+private val BlankAlbumsIcon: ImageVector = ImageVector.Builder("BlankAlbums", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(4.5f, 2f); lineTo(19.5f, 2f); quadTo(22f, 2f, 22f, 4.5f)
+        lineTo(22f, 19.5f); quadTo(22f, 22f, 19.5f, 22f); lineTo(4.5f, 22f)
+        quadTo(2f, 22f, 2f, 19.5f); lineTo(2f, 4.5f); quadTo(2f, 2f, 4.5f, 2f); close()
+        moveTo(7f, 2f); lineTo(7f, 22f); moveTo(17f, 2f); lineTo(17f, 22f)
+        moveTo(2f, 12f); lineTo(22f, 12f)
+        moveTo(2f, 7f); lineTo(7f, 7f); moveTo(2f, 17f); lineTo(7f, 17f)
+        moveTo(17f, 7f); lineTo(22f, 7f); moveTo(17f, 17f); lineTo(22f, 17f)
+    }
+}.build()
+
+private val BlankOrganizeIcon: ImageVector = ImageVector.Builder("BlankOrganize", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(3.5f, 6f); lineTo(5.5f, 8f); lineTo(9f, 4f); moveTo(12f, 6f); lineTo(20f, 6f)
+        moveTo(3.5f, 12f); lineTo(5.5f, 14f); lineTo(9f, 10f); moveTo(12f, 12f); lineTo(20f, 12f)
+        moveTo(3.5f, 18f); lineTo(5.5f, 20f); lineTo(9f, 16f); moveTo(12f, 18f); lineTo(20f, 18f)
+    }
+}.build()
+
+private val BlankFavoritesIcon: ImageVector = ImageVector.Builder("BlankFavorites", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(12f, 21f)
+        curveTo(10.8f, 19.9f, 4f, 14.1f, 4f, 9.2f)
+        curveTo(4f, 6.4f, 5.9f, 4.5f, 8.3f, 4.5f)
+        curveTo(10f, 4.5f, 11.2f, 5.5f, 12f, 6.7f)
+        curveTo(12.8f, 5.5f, 14f, 4.5f, 15.7f, 4.5f)
+        curveTo(18.1f, 4.5f, 20f, 6.4f, 20f, 9.2f)
+        curveTo(20f, 14.1f, 13.2f, 19.9f, 12f, 21f)
+        close()
+    }
+}.build()
+
+@Composable
+internal fun BottomNavigation(
+    currentPage: MainPage,
+    onSelect: (MainPage) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(28.dp),
+                ambientColor = Color.Black.copy(alpha = 0.06f),
+                spotColor = Color.Black.copy(alpha = 0.06f)
+            )
+            .clip(RoundedCornerShape(28.dp))
+            .background(GlassWhite)
+            .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(28.dp))
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        MainPage.values().forEach { page ->
+            val selected = page == currentPage
+            val indicatorColor by animateColorAsState(
+                targetValue = if (selected) Color.Black.copy(alpha = 0.06f) else Color.Transparent,
+                animationSpec = tween(250),
+                label = "nav-indicator-color"
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(CircleShape)
+                    .background(indicatorColor)
+                    .clickable { onSelect(page) },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                NavGlyph(page.icon, tint = MainText)
+                Spacer(Modifier.height(0.dp))
+                Text(
+                    text = page.title,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MainText
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NavGlyph(type: NavIconType, tint: Color) {
+    val icon = when (type) {
+        NavIconType.HOME -> BlankHomeIcon
+        NavIconType.ALBUMS -> BlankAlbumsIcon
+        NavIconType.ORGANIZE -> BlankOrganizeIcon
+        NavIconType.FAVORITES -> BlankFavoritesIcon
+    }
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = Modifier.size(20.dp),
+        tint = tint
+    )
+}
