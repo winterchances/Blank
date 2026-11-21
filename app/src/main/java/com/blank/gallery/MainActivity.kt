@@ -161,6 +161,7 @@ private fun BlankApp() {
                 if (accessNow != hasMediaAccess) {
                     hasMediaAccess = accessNow
                     if (accessNow) {
+                        permissionDenied = false
                         runScan()
                     } else {
                         scope.launch { repository.hideAllFromCurrentLibrary() }
