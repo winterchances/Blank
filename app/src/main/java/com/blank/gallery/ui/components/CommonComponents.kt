@@ -1,9 +1,9 @@
 package com.blank.gallery.ui.components
 
-import com.blank.gallery.MainText
-import com.blank.gallery.MutedText
-import com.blank.gallery.ThemeMint
-import com.blank.gallery.GlassWhite
+import com.blank.gallery.ui.theme.MainText
+import com.blank.gallery.ui.theme.MutedText
+import com.blank.gallery.ui.theme.ThemeMint
+import com.blank.gallery.ui.theme.GlassWhite
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
