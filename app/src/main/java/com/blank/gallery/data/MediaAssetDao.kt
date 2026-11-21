@@ -152,6 +152,12 @@ interface MediaAssetDao {
     @Query("UPDATE media_assets SET isProtected = :protected WHERE id = :id")
     suspend fun setProtected(id: Long, protected: Boolean)
 
+    @Query("UPDATE media_assets SET isFavorite = :favorite WHERE id IN (:ids)")
+    suspend fun setFavoriteForIds(ids: List<Long>, favorite: Boolean)
+
+    @Query("UPDATE media_assets SET isProtected = :protected WHERE id IN (:ids)")
+    suspend fun setProtectedForIds(ids: List<Long>, protected: Boolean)
+
     @Query("UPDATE media_assets SET selfOrganizeStatus = :status WHERE id = :id")
     suspend fun setSelfOrganizeStatus(id: Long, status: Int)
 }
