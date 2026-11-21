@@ -24,6 +24,7 @@ data class MediaAsset(
     val mediaStoreId: Long,
     val contentUri: String,
     val displayName: String,
+    @ColumnInfo(defaultValue = "''") val relativePath: String = "",
     val mimeType: String?,
     /** 1 = image, 2 = video (MediaStore.Files file type convention). */
     val mediaType: Int,
