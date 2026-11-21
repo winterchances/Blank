@@ -485,7 +485,8 @@ private fun BlankApp() {
                                             selfOrganizeMessage = "撤回失败，请稍后重试"
                                         }
                                     }
-                                }
+                                },
+                                onConfirmDelete = { selfOrganizeDeleteConfirmationVisible = true }
                             )
                         } else if (activeSelfOrganizeMode != null) {
                             SelfOrganizeScreen(
