@@ -159,6 +159,11 @@ class MediaLibraryRepository(context: Context) {
         if (ids.isNotEmpty()) dao.setProtectedForIds(ids, protected)
     }
 
+    /** Retain local records while removing trashed items from the active grid. */
+    suspend fun hideFromLibraryForIds(ids: List<Long>) {
+        if (ids.isNotEmpty()) dao.hideFromLibraryForIds(ids)
+    }
+
     suspend fun setSelfOrganizeStatus(id: Long, status: Int) {
         dao.setSelfOrganizeStatus(id, status)
     }
