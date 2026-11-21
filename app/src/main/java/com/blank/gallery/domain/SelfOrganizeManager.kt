@@ -36,5 +36,5 @@ class SelfOrganizeManager(
         repository.applySelfOrganizeDecision(assetId, status)
     }
 
-    suspend fun undo(): Boolean = repository.undoLastSelfOrganizeDecision()
+    suspend fun undo(): MediaAsset? = repository.undoLastSelfOrganizeDecision()
 }
