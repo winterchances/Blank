@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.blank.gallery.data.MediaAsset
 import com.blank.gallery.ui.components.EmptyState
+import com.blank.gallery.ui.theme.GlassWhite
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.MutedText
 import com.blank.gallery.ui.theme.ThemeMint
@@ -35,7 +38,8 @@ import com.blank.gallery.ui.theme.ThemeMint
 internal fun SelfOrganizePendingDeleteScreen(
     assets: List<MediaAsset>,
     isLoading: Boolean,
-    onCancel: (MediaAsset) -> Unit
+    onCancel: (MediaAsset) -> Unit,
+    onConfirmDelete: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -58,7 +62,7 @@ internal fun SelfOrganizePendingDeleteScreen(
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -99,6 +103,29 @@ internal fun SelfOrganizePendingDeleteScreen(
                         )
                     }
                 }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, bottom = 4.dp)
+                    .shadow(
+                        4.dp,
+                        RoundedCornerShape(18.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.02f),
+                        spotColor = Color.Black.copy(alpha = 0.02f)
+                    )
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(GlassWhite)
+                    .clickable(enabled = !isLoading, onClick = onConfirmDelete)
+                    .padding(vertical = 15.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "确认移至回收站（${assets.size}）",
+                    color = if (isLoading) MutedText else MainText,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
