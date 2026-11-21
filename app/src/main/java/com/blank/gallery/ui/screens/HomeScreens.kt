@@ -2,6 +2,7 @@ package com.blank.gallery.ui.screens
 
 import com.blank.gallery.data.MediaAsset
 import com.blank.gallery.data.MediaFolder
+import com.blank.gallery.data.MediaMonth
 import com.blank.gallery.ui.components.EmptyState
 import com.blank.gallery.ui.components.FeatureTile
 import com.blank.gallery.ui.theme.MainText
@@ -28,6 +29,7 @@ import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
@@ -157,7 +159,7 @@ private fun formatStorage(bytes: Long): String = when {
 
 @Composable
 internal fun AlbumsContent(
-    media: LazyPagingItems<MediaAsset>,
+    media: LazyPagingItems<AlbumGridItem>,
     hasMediaAccess: Boolean,
     mediaType: Int?,
     onMediaTypeChange: (Int?) -> Unit,
@@ -169,7 +171,10 @@ internal fun AlbumsContent(
     onSortBySizeChange: (Boolean) -> Unit,
     folders: List<MediaFolder>,
     selectedFolderPath: String?,
-    onFolderSelect: (String?) -> Unit
+    onFolderSelect: (String?) -> Unit,
+    months: List<MediaMonth>,
+    selectedMonthKey: String?,
+    onMonthSelect: (String?) -> Unit
 ) {
     if (!hasMediaAccess) {
         EmptyState(
@@ -259,6 +264,24 @@ internal fun AlbumsContent(
             }
         }
 
+        if (months.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+            ) {
+                item(key = "all-months") {
+                    AlbumFilterChip("全部月份", selectedMonthKey == null) { onMonthSelect(null) }
+                }
+                lazyItems(items = months, key = { it.monthKey }) { month ->
+                    AlbumFilterChip(
+                        label = month.monthKey.replace("-", "年") + "月",
+                        selected = selectedMonthKey == month.monthKey
+                    ) { onMonthSelect(month.monthKey) }
+                }
+            }
+        }
+
         if (media.itemCount == 0) {
             val message = when {
                 media.loadState.refresh is LoadState.Loading -> "正在加载相册内容"
@@ -284,35 +307,59 @@ internal fun AlbumsContent(
             verticalArrangement = Arrangement.spacedBy(3.dp),
             horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            items(count = media.itemCount) { index ->
-                val asset = media[index]
-                if (asset != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(GlassWhite)
-                    ) {
-                        AsyncImage(
-                            model = asset.contentUri,
-                            contentDescription = asset.displayName,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+            items(
+                count = media.itemCount,
+                key = { index ->
+                    when (val entry = media.peek(index)) {
+                        is AlbumGridItem.Media -> "media-${entry.asset.id}"
+                        is AlbumGridItem.DateHeader -> "date-${entry.date}"
+                        null -> "placeholder-$index"
+                    }
+                },
+                span = { index ->
+                    if (media.peek(index) is AlbumGridItem.DateHeader) {
+                        GridItemSpan(maxLineSpan)
+                    } else {
+                        GridItemSpan(1)
+                    }
+                }
+            ) { index ->
+                when (val entry = media[index]) {
+                    is AlbumGridItem.DateHeader -> {
+                        Text(
+                            text = entry.label,
+                            modifier = Modifier.fillMaxWidth().padding(start = 2.dp, top = 10.dp, bottom = 5.dp),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MainText
                         )
-                        if (asset.mediaType == 2) {
-                            Text(
-                                text = "▶",
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(4.dp),
-                                color = Color.White,
-                                fontSize = 10.sp
+                    }
+                    is AlbumGridItem.Media -> {
+                        val asset = entry.asset
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(GlassWhite)
+                        ) {
+                            AsyncImage(
+                                model = asset.contentUri,
+                                contentDescription = asset.displayName,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
+                            if (asset.mediaType == 2) {
+                                Text(
+                                    text = "▶",
+                                    modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
+                                    color = Color.White,
+                                    fontSize = 10.sp
+                                )
+                            }
                         }
                     }
-                } else {
-                    Spacer(Modifier.aspectRatio(1f))
+                    null -> Spacer(Modifier.aspectRatio(1f))
                 }
             }
         }
