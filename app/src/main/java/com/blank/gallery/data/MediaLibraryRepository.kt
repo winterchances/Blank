@@ -1,35 +1,47 @@
 package com.blank.gallery.data
 
 import android.content.Context
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 
 class MediaLibraryRepository(context: Context) {
     private val database = BlankDatabase.getInstance(context)
     private val scanner = MediaStoreScanner(context)
 
-    val media = database.mediaAssetDao().observeAll()
-    val photoCount = database.mediaAssetDao().observePhotoCount()
-    val videoCount = database.mediaAssetDao().observeVideoCount()
-    val totalBytes = database.mediaAssetDao().observeTotalBytes()
+    private val dao = database.mediaAssetDao()
+
+    val media = dao.observeAll()
+    val pagedMedia = Pager(
+        config = PagingConfig(pageSize = 60, prefetchDistance = 20, enablePlaceholders = false),
+        pagingSourceFactory = { dao.pagingSource() }
+    ).flow
+    val photoCount = dao.observePhotoCount()
+    val videoCount = dao.observeVideoCount()
+    val totalBytes = dao.observeTotalBytes()
 
     /**
      * Indexes only the media items Android currently exposes under granted permissions.
      * Existing favorite, protection, and review states are preserved on subsequent scans.
      */
-    suspend fun scanVisibleMedia(): Int {
-        val scanned = scanner.scanVisibleMedia()
-        database.mediaAssetDao().syncScanned(scanned)
-        return scanned.size
+    suspend fun scanVisibleMedia(onProgress: suspend (Int) -> Unit = {}): Int {
+        var scannedCount = 0
+        scanner.scanVisibleMedia { batch ->
+            dao.syncScanned(batch)
+            scannedCount += batch.size
+            onProgress(scannedCount)
+        }
+        return scannedCount
     }
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {
-        database.mediaAssetDao().setFavorite(id, favorite)
+        dao.setFavorite(id, favorite)
     }
 
     suspend fun setProtected(id: Long, protected: Boolean) {
-        database.mediaAssetDao().setProtected(id, protected)
+        dao.setProtected(id, protected)
     }
 
     suspend fun setSelfOrganizeStatus(id: Long, status: Int) {
-        database.mediaAssetDao().setSelfOrganizeStatus(id, status)
+        dao.setSelfOrganizeStatus(id, status)
     }
 }
