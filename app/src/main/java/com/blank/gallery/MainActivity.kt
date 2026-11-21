@@ -3,6 +3,7 @@ package com.blank.gallery
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -71,6 +72,16 @@ private enum class MainPage(val title: String, val icon: NavIconType) {
 
 private enum class NavIconType { HOME, ALBUMS, ORGANIZE, FAVORITES }
 
+private enum class OrganizeSubPage(val title: String) {
+    SMART("智能整理"),
+    SELF("自己整理"),
+    DUPLICATES("重复照片"),
+    SIMILAR("相似照片"),
+    BURSTS("连拍"),
+    SCREENSHOTS("截图"),
+    LARGE_FILES("大文件")
+}
+
 private val BlankHomeIcon: ImageVector = ImageVector.Builder("BlankHome", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
         moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f); lineTo(21f, 20f)
@@ -124,6 +135,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun BlankApp() {
     var currentPage by remember { mutableStateOf(MainPage.HOME) }
+    var organizeSubPage by remember { mutableStateOf<OrganizeSubPage?>(null) }
+
+    BackHandler(enabled = organizeSubPage != null) {
+        organizeSubPage = null
+    }
 
     MaterialTheme(
         colorScheme = lightColorScheme(
@@ -144,47 +160,85 @@ private fun BlankApp() {
                             bottom = 104.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         )
                 ) {
-                    PageHeader(currentPage.title)
-                    when (currentPage) {
-                        MainPage.HOME -> HomeContent()
-                        MainPage.ALBUMS -> AlbumsContent()
-                        MainPage.ORGANIZE -> OrganizeContent()
-                        MainPage.FAVORITES -> FavoritesContent()
+                    PageHeader(
+                        title = organizeSubPage?.title ?: currentPage.title,
+                        onBack = if (organizeSubPage != null) {
+                            { organizeSubPage = null }
+                        } else null
+                    )
+                    if (organizeSubPage != null) {
+                        OrganizeSubPageContent(
+                            page = organizeSubPage!!,
+                            onOpen = { organizeSubPage = it }
+                        )
+                    } else {
+                        when (currentPage) {
+                            MainPage.HOME -> HomeContent(
+                                onOpenSmart = { organizeSubPage = OrganizeSubPage.SMART },
+                                onOpenSelf = { organizeSubPage = OrganizeSubPage.SELF }
+                            )
+                            MainPage.ALBUMS -> AlbumsContent()
+                            MainPage.ORGANIZE -> OrganizeContent(
+                                onOpenSmart = { organizeSubPage = OrganizeSubPage.SMART },
+                                onOpenSelf = { organizeSubPage = OrganizeSubPage.SELF }
+                            )
+                            MainPage.FAVORITES -> FavoritesContent()
+                        }
                     }
                 }
 
-                BottomNavigation(
-                    currentPage = currentPage,
-                    onSelect = { currentPage = it },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                        )
-                )
+                if (organizeSubPage == null) {
+                    BottomNavigation(
+                        currentPage = currentPage,
+                        onSelect = { currentPage = it },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                            )
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PageHeader(title: String) {
-    Text(
-        text = title,
+private fun PageHeader(title: String, onBack: (() -> Unit)? = null) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 20.dp),
-        fontSize = 30.sp,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 0.5.sp,
-        color = MainText
-    )
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (onBack != null) {
+            Text(
+                text = "‹",
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .clickable(onClick = onBack),
+                fontSize = 34.sp,
+                lineHeight = 34.sp,
+                color = MainText
+            )
+        }
+        Text(
+            text = title,
+            fontSize = 30.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.5.sp,
+            color = MainText
+        )
+    }
 }
 
 @Composable
-private fun HomeContent() {
+private fun HomeContent(
+    onOpenSmart: () -> Unit,
+    onOpenSelf: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -197,19 +251,19 @@ private fun HomeContent() {
                 compact = true
             )
         }
-        SectionCard(title = "整理") {
+        SectionCard(title = "快捷整理") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                FeatureTile(
+                QuickAction(
                     title = "智能整理",
-                    description = "查找重复、相似和其他待整理照片",
+                    onClick = onOpenSmart,
                     modifier = Modifier.weight(1f)
                 )
-                FeatureTile(
+                QuickAction(
                     title = "自己整理",
-                    description = "一张一张决定照片的去留",
+                    onClick = onOpenSelf,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -232,7 +286,10 @@ private fun AlbumsContent() {
 }
 
 @Composable
-private fun OrganizeContent() {
+private fun OrganizeContent(
+    onOpenSmart: () -> Unit,
+    onOpenSelf: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -241,15 +298,17 @@ private fun OrganizeContent() {
     ) {
         FeatureTile(
             title = "智能整理",
-            description = "查找重复、相似、连拍、截图和占用空间较大的照片",
+            description = "重复照片、相似照片、连拍、截图和大文件",
             modifier = Modifier.fillMaxWidth(),
-            tall = true
+            tall = true,
+            onClick = onOpenSmart
         )
         FeatureTile(
             title = "自己整理",
             description = "一次查看一张照片，由你决定保留、待删除或跳过",
             modifier = Modifier.fillMaxWidth(),
-            tall = true
+            tall = true,
+            onClick = onOpenSelf
         )
     }
 }
@@ -303,14 +362,130 @@ private fun SectionCard(
 }
 
 @Composable
+private fun QuickAction(
+    title: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(ThemeMint.copy(alpha = 0.10f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = MainText
+        )
+        Spacer(Modifier.width(5.dp))
+        Text("›", fontSize = 19.sp, color = ThemeMint)
+    }
+}
+
+@Composable
+private fun OrganizeSubPageContent(
+    page: OrganizeSubPage,
+    onOpen: (OrganizeSubPage) -> Unit
+) {
+    when (page) {
+        OrganizeSubPage.SMART -> Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "选择想要整理的内容",
+                fontSize = 14.sp,
+                color = MutedText,
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
+            listOf(
+                OrganizeSubPage.DUPLICATES,
+                OrganizeSubPage.SIMILAR,
+                OrganizeSubPage.BURSTS,
+                OrganizeSubPage.SCREENSHOTS,
+                OrganizeSubPage.LARGE_FILES
+            ).forEach { item ->
+                OrganizeCategoryTile(
+                    title = item.title,
+                    onClick = { onOpen(item) }
+                )
+            }
+        }
+        OrganizeSubPage.SELF -> Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+        ) {
+            EmptyState(
+                message = "准备好后，这里会逐张展示你的照片",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        else -> Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+        ) {
+            EmptyState(
+                message = "尚未扫描，扫描完成后会显示待整理内容",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+@Composable
+private fun OrganizeCategoryTile(
+    title: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(18.dp),
+                ambientColor = Color.Black.copy(alpha = 0.02f),
+                spotColor = Color.Black.copy(alpha = 0.02f)
+            )
+            .clip(RoundedCornerShape(18.dp))
+            .background(GlassWhite)
+            .border(1.dp, Color.Black.copy(alpha = 0.045f), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 17.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MainText
+        )
+        Text("尚未扫描", fontSize = 12.sp, color = MutedText)
+        Spacer(Modifier.width(8.dp))
+        Text("›", fontSize = 20.sp, color = MutedText)
+    }
+}
+
+@Composable
 private fun FeatureTile(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
-    tall: Boolean = false
+    tall: Boolean = false,
+    onClick: (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .shadow(
                 elevation = 5.dp,
                 shape = RoundedCornerShape(18.dp),
