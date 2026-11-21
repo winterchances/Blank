@@ -41,6 +41,16 @@ object MediaPermission {
         else -> has(context, Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
+    fun canReadImages(context: Context): Boolean =
+        hasFullImageAccess(context) || hasSelectedMediaAccess(context)
+
+    fun canReadVideos(context: Context): Boolean =
+        hasFullVideoAccess(context) || hasSelectedMediaAccess(context)
+
+    private fun hasSelectedMediaAccess(context: Context): Boolean =
+        Build.VERSION.SDK_INT >= 34 &&
+            has(context, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+
     private fun has(context: Context, permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 }
