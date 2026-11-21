@@ -1,6 +1,7 @@
 package com.blank.gallery
 
 import com.blank.gallery.data.MediaAsset
+import com.blank.gallery.data.MediaDeletionManager
 import com.blank.gallery.data.MediaLibraryRepository
 import com.blank.gallery.data.MediaPermission
 import com.blank.gallery.ui.navigation.BottomNavigation
@@ -16,8 +17,10 @@ import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.ThemeMint
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -25,6 +28,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -79,6 +83,7 @@ class MainActivity : ComponentActivity() {
 private fun BlankApp() {
     val context = LocalContext.current
     val repository = remember(context) { MediaLibraryRepository(context.applicationContext) }
+    val deletionManager = remember(context) { MediaDeletionManager(context.applicationContext) }
 
     var currentPage by remember { mutableStateOf(MainPage.HOME) }
     var organizeSubPage by remember { mutableStateOf<OrganizeSubPage?>(null) }
@@ -103,6 +108,12 @@ private fun BlankApp() {
     var albumGridColumns by remember { mutableStateOf(4) }
     var albumSortBySize by remember { mutableStateOf(false) }
     var selectedMedia by remember { mutableStateOf<Map<Long, MediaAsset>>(emptyMap()) }
+    var deleteConfirmationVisible by remember { mutableStateOf(false) }
+    var pendingTrashIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var legacyDeleteQueue by remember { mutableStateOf<List<MediaAsset>>(emptyList()) }
+    var legacyDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var continueLegacyDelete by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var finishLegacyDelete by remember { mutableStateOf<(() -> Unit)?>(null) }
     val mediaFlow = remember(repository, albumMediaType, albumSearchQuery, selectedFolderPath, selectedMonthKey, albumSortBySize) {
         repository.pagedMedia(albumMediaType, albumSearchQuery, selectedFolderPath, selectedMonthKey, albumSortBySize)
     }
@@ -138,6 +149,29 @@ private fun BlankApp() {
         }
     }
 
+    val trashRequestLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        val ids = pendingTrashIds
+        pendingTrashIds = emptySet()
+        if (result.resultCode == Activity.RESULT_OK && ids.isNotEmpty()) {
+            scope.launch {
+                repository.hideFromLibraryForIds(ids.toList())
+                selectedMedia = selectedMedia - ids
+                pagedMedia.refresh()
+            }
+        }
+    }
+
+    val legacyDeleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        val continuation = continueLegacyDelete
+        continueLegacyDelete = null
+        if (result.resultCode == Activity.RESULT_OK) continuation?.invoke()
+        else finishLegacyDelete?.invoke()
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
@@ -148,6 +182,86 @@ private fun BlankApp() {
         } else {
             permissionDenied = true
             scanMessage = "尚未获得照片访问权限"
+        }
+    }
+
+    fun finishLegacyDeleteFlow() {
+        val deletedIds = legacyDeletedIds
+        scope.launch {
+            repository.hideFromLibraryForIds(deletedIds.toList())
+            selectedMedia = selectedMedia - deletedIds
+            pagedMedia.refresh()
+            legacyDeleteQueue = emptyList()
+            legacyDeletedIds = emptySet()
+            finishLegacyDelete = null
+            continueLegacyDelete = null
+        }
+    }
+
+    fun processNextLegacyDelete() {
+        val asset = legacyDeleteQueue.firstOrNull()
+        if (asset == null) {
+            finishLegacyDeleteFlow()
+            return
+        }
+        scope.launch {
+            when (val attempt = deletionManager.deleteLegacyItem(asset.contentUri)) {
+                is MediaDeletionManager.LegacyDeleteResult.Deleted -> {
+                    legacyDeletedIds = legacyDeletedIds + asset.id
+                    legacyDeleteQueue = legacyDeleteQueue.drop(1)
+                    processNextLegacyDelete()
+                }
+                is MediaDeletionManager.LegacyDeleteResult.Missing -> {
+                    legacyDeleteQueue = legacyDeleteQueue.drop(1)
+                    processNextLegacyDelete()
+                }
+                is MediaDeletionManager.LegacyDeleteResult.RequiresConsent -> {
+                    continueLegacyDelete = {
+                        scope.launch {
+                            when (deletionManager.deleteLegacyItem(asset.contentUri)) {
+                                is MediaDeletionManager.LegacyDeleteResult.Deleted -> {
+                                    legacyDeletedIds = legacyDeletedIds + asset.id
+                                    legacyDeleteQueue = legacyDeleteQueue.drop(1)
+                                    processNextLegacyDelete()
+                                }
+                                is MediaDeletionManager.LegacyDeleteResult.Missing -> {
+                                    legacyDeleteQueue = legacyDeleteQueue.drop(1)
+                                    processNextLegacyDelete()
+                                }
+                                else -> finishLegacyDeleteFlow()
+                            }
+                        }
+                    }
+                    legacyDeleteLauncher.launch(
+                        IntentSenderRequest.Builder(attempt.intentSender).build()
+                    )
+                }
+                is MediaDeletionManager.LegacyDeleteResult.Failed -> finishLegacyDeleteFlow()
+            }
+        }
+    }
+
+    fun confirmBatchDelete() {
+        deleteConfirmationVisible = false
+        val eligible = selectedMedia.values.filterNot { it.isProtected }
+        if (eligible.isEmpty()) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val request = deletionManager.createTrashRequest(eligible.map { it.contentUri })
+                pendingTrashIds = eligible.map { it.id }.toSet()
+                trashRequestLauncher.launch(
+                    IntentSenderRequest.Builder(request.intentSender).build()
+                )
+            } catch (_: Exception) {
+                scanMessage = "无法发起系统回收站请求，请稍后重试"
+            }
+        } else {
+            // Android 10 has no shared MediaStore trash API; each non-owned item
+            // may require its own RecoverableSecurityException consent prompt.
+            legacyDeleteQueue = eligible
+            legacyDeletedIds = emptySet()
+            finishLegacyDelete = { finishLegacyDeleteFlow() }
+            processNextLegacyDelete()
         }
     }
 
@@ -325,6 +439,8 @@ private fun BlankApp() {
                                     pagedMedia.refresh()
                                 }
                             },
+                            onDelete = { deleteConfirmationVisible = true },
+                            deleteEnabled = selectedMedia.values.any { !it.isProtected },
                             onCancel = { selectedMedia = emptyMap() }
                         )
                     } else if (organizeSubPage == null) {
@@ -335,6 +451,15 @@ private fun BlankApp() {
                         )
                     }
                 }
+
+                AlbumDeleteConfirmationSheet(
+                    visible = deleteConfirmationVisible,
+                    deletableCount = selectedMedia.values.count { !it.isProtected },
+                    protectedCount = selectedMedia.values.count { it.isProtected },
+                    isAndroid11OrNewer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R,
+                    onDismiss = { deleteConfirmationVisible = false },
+                    onConfirm = { confirmBatchDelete() }
+                )
             }
         }
     }
