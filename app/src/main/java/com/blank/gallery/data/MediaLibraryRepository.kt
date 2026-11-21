@@ -23,11 +23,16 @@ class MediaLibraryRepository(context: Context) {
      * Indexes only the media items Android currently exposes under granted permissions.
      * Existing favorite, protection, and review states are preserved on subsequent scans.
      */
+    suspend fun hideAllFromCurrentLibrary() {
+        dao.hideAllBeforePermissionScopedScan()
+    }
+
     suspend fun scanVisibleMedia(
         includeImages: Boolean,
         includeVideos: Boolean,
         onProgress: suspend (Int) -> Unit = {}
     ): Int {
+        dao.hideAllBeforePermissionScopedScan()
         var scannedCount = 0
         scanner.scanVisibleMedia(includeImages, includeVideos) { batch ->
             dao.syncScanned(batch)
