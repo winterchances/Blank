@@ -14,7 +14,10 @@ import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.ThemeMint
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -75,6 +78,7 @@ private fun BlankApp() {
     var hasMediaAccess by remember {
         mutableStateOf(MediaPermission.hasAnyMediaAccess(context))
     }
+    var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     var scannedItems by remember { mutableStateOf(0) }
     var scanMessage by remember { mutableStateOf<String?>(null) }
@@ -120,8 +124,10 @@ private fun BlankApp() {
     ) {
         hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
         if (hasMediaAccess) {
+            permissionDenied = false
             runScan()
         } else {
+            permissionDenied = true
             scanMessage = "尚未获得照片访问权限"
         }
     }
@@ -129,6 +135,11 @@ private fun BlankApp() {
     val requestAccessOrScan: () -> Unit = {
         if (hasMediaAccess) {
             runScan()
+        } else if (permissionDenied) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+            context.startActivity(intent)
         } else {
             permissionLauncher.launch(MediaPermission.requiredPermissions())
         }
@@ -203,6 +214,7 @@ private fun BlankApp() {
                                 totalBytes = totalBytes,
                                 lastScanAt = lastScanAt,
                                 hasMediaAccess = hasMediaAccess,
+                                permissionDenied = permissionDenied,
                                 isScanning = isScanning,
                                 scannedItems = scannedItems,
                                 scanMessage = scanMessage,
