@@ -14,7 +14,8 @@ import androidx.room.PrimaryKey
         Index(value = ["mediaStoreId"], unique = true),
         Index(value = ["dateAddedSeconds"]),
         Index(value = ["mediaType"]),
-        Index(value = ["isProtected"])
+        Index(value = ["isProtected"]),
+        Index(value = ["isVisible"])
     ]
 )
 data class MediaAsset(
@@ -34,5 +35,7 @@ data class MediaAsset(
     val isFavorite: Boolean = false,
     val isProtected: Boolean = false,
     /** 0 = not reviewed, 1 = kept, 2 = pending deletion, 3 = skipped. */
-    val selfOrganizeStatus: Int = 0
+    val selfOrganizeStatus: Int = 0,
+    /** Hidden when the current MediaStore permission scope no longer exposes this item. */
+    val isVisible: Boolean = true
 )
