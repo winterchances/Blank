@@ -1,4 +1,7 @@
-package com.blank.gallery
+package com.blank.gallery.ui.navigation
+
+import com.blank.gallery.MainText
+import com.blank.gallery.GlassWhite
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
