@@ -1,9 +1,11 @@
 package com.blank.gallery
 
+import com.blank.gallery.data.MediaAsset
 import com.blank.gallery.data.MediaLibraryRepository
 import com.blank.gallery.data.MediaPermission
 import com.blank.gallery.ui.navigation.BottomNavigation
 import com.blank.gallery.ui.navigation.MainPage
+import com.blank.gallery.ui.screens.AlbumBatchActionBar
 import com.blank.gallery.ui.screens.AlbumsContent
 import com.blank.gallery.ui.screens.FavoritesContent
 import com.blank.gallery.ui.screens.HomeContent
@@ -95,6 +97,7 @@ private fun BlankApp() {
     var albumSearchQuery by remember { mutableStateOf("") }
     var albumGridColumns by remember { mutableStateOf(4) }
     var albumSortBySize by remember { mutableStateOf(false) }
+    var selectedMedia by remember { mutableStateOf<Map<Long, MediaAsset>>(emptyMap()) }
     val mediaFlow = remember(repository, albumMediaType, albumSearchQuery, selectedFolderPath, selectedMonthKey, albumSortBySize) {
         repository.pagedMedia(albumMediaType, albumSearchQuery, selectedFolderPath, selectedMonthKey, albumSortBySize)
     }
@@ -185,6 +188,10 @@ private fun BlankApp() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    BackHandler(enabled = selectedMedia.isNotEmpty()) {
+        selectedMedia = emptyMap()
+    }
+
     BackHandler(enabled = organizeSubPage != null) {
         organizeSubPage = null
     }
@@ -209,11 +216,15 @@ private fun BlankApp() {
                                 WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         )
                 ) {
+                    val selectionMode = currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty()
                     PageHeader(
-                        title = organizeSubPage?.title ?: currentPage.title,
-                        onBack = if (organizeSubPage != null) {
-                            { organizeSubPage = null }
-                        } else null
+                        title = if (selectionMode) "已选 ${selectedMedia.size} 项" else organizeSubPage?.title ?: currentPage.title,
+                        onBack = when {
+                            selectionMode -> { { selectedMedia = emptyMap() } }
+                            organizeSubPage != null -> { { organizeSubPage = null } }
+                            else -> null
+                        },
+                        backLabel = if (selectionMode) "×" else "‹"
                     )
                     if (organizeSubPage != null) {
                         OrganizeSubPageContent(page = organizeSubPage!!)
@@ -237,19 +248,27 @@ private fun BlankApp() {
                                 media = pagedMedia,
                                 hasMediaAccess = hasMediaAccess,
                                 mediaType = albumMediaType,
-                                onMediaTypeChange = { albumMediaType = it },
+                                onMediaTypeChange = { selectedMedia = emptyMap(); albumMediaType = it },
                                 searchQuery = albumSearchQuery,
-                                onSearchQueryChange = { albumSearchQuery = it },
+                                onSearchQueryChange = { selectedMedia = emptyMap(); albumSearchQuery = it },
                                 gridColumns = albumGridColumns,
                                 onGridColumnsChange = { albumGridColumns = it },
                                 sortBySize = albumSortBySize,
                                 onSortBySizeChange = { albumSortBySize = it },
                                 folders = albumFolders,
                                 selectedFolderPath = selectedFolderPath,
-                                onFolderSelect = { selectedFolderPath = it },
+                                onFolderSelect = { selectedMedia = emptyMap(); selectedFolderPath = it },
                                 months = albumMonths,
                                 selectedMonthKey = selectedMonthKey,
-                                onMonthSelect = { selectedMonthKey = it }
+                                onMonthSelect = { selectedMedia = emptyMap(); selectedMonthKey = it },
+                                selectedIds = selectedMedia.keys,
+                                onToggleSelection = { asset ->
+                                    selectedMedia = if (asset.id in selectedMedia) {
+                                        selectedMedia - asset.id
+                                    } else {
+                                        selectedMedia + (asset.id to asset)
+                                    }
+                                }
                             )
                             MainPage.ORGANIZE -> OrganizeContent(
                                 onOpenCategory = { organizeSubPage = it },
@@ -260,10 +279,43 @@ private fun BlankApp() {
                     }
                 }
 
-                if (organizeSubPage == null) {
+                if (organizeSubPage == null && currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty()) {
+                    val allFavorite = selectedMedia.values.all { it.isFavorite }
+                    val allProtected = selectedMedia.values.all { it.isProtected }
+                    AlbumBatchActionBar(
+                        favoriteLabel = if (allFavorite) "取消收藏" else "收藏",
+                        protectLabel = if (allProtected) "取消保护" else "保护",
+                        onFavorite = {
+                            val nextValue = !allFavorite
+                            val ids = selectedMedia.keys.toList()
+                            scope.launch {
+                                repository.setFavoriteForIds(ids, nextValue)
+                                selectedMedia = selectedMedia.mapValues { (_, asset) -> asset.copy(isFavorite = nextValue) }
+                                pagedMedia.refresh()
+                            }
+                        },
+                        onProtect = {
+                            val nextValue = !allProtected
+                            val ids = selectedMedia.keys.toList()
+                            scope.launch {
+                                repository.setProtectedForIds(ids, nextValue)
+                                selectedMedia = selectedMedia.mapValues { (_, asset) -> asset.copy(isProtected = nextValue) }
+                                pagedMedia.refresh()
+                            }
+                        },
+                        onCancel = { selectedMedia = emptyMap() },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                            )
+                    )
+                } else if (organizeSubPage == null) {
                     BottomNavigation(
                         currentPage = currentPage,
-                        onSelect = { currentPage = it },
+                        onSelect = { selectedMedia = emptyMap(); currentPage = it },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(
@@ -279,7 +331,7 @@ private fun BlankApp() {
 }
 
 @Composable
-private fun PageHeader(title: String, onBack: (() -> Unit)? = null) {
+private fun PageHeader(title: String, onBack: (() -> Unit)? = null, backLabel: String = "‹") {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -288,7 +340,7 @@ private fun PageHeader(title: String, onBack: (() -> Unit)? = null) {
     ) {
         if (onBack != null) {
             Text(
-                text = "‹",
+                text = backLabel,
                 modifier = Modifier
                     .padding(end = 10.dp)
                     .clickable(onClick = onBack),
