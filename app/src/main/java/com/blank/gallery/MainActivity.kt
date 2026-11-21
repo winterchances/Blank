@@ -349,9 +349,14 @@ private fun BlankApp() {
         if (isSelfOrganizeLoading) return
         isSelfOrganizeLoading = true
         scope.launch {
-            selfOrganizeManager.applyDecision(current.id, decision)
-            selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
-            isSelfOrganizeLoading = false
+            try {
+                selfOrganizeManager.applyDecision(current.id, decision)
+                selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
+            } catch (_: Exception) {
+                scanMessage = "整理状态保存失败，请重试"
+            } finally {
+                isSelfOrganizeLoading = false
+            }
         }
     }
 
@@ -360,8 +365,13 @@ private fun BlankApp() {
         if (!canUndoSelfOrganize || isSelfOrganizeLoading) return
         isSelfOrganizeLoading = true
         scope.launch {
-            selfOrganizePhoto = selfOrganizeManager.undo() ?: selfOrganizeManager.nextPhoto(mode)
-            isSelfOrganizeLoading = false
+            try {
+                selfOrganizePhoto = selfOrganizeManager.undo() ?: selfOrganizeManager.nextPhoto(mode)
+            } catch (_: Exception) {
+                scanMessage = "撤销失败，请稍后重试"
+            } finally {
+                isSelfOrganizeLoading = false
+            }
         }
     }
 
