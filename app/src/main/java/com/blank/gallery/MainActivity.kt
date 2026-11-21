@@ -308,7 +308,7 @@ private fun BlankApp() {
     }
 
     val requestAccessOrScan: () -> Unit = {
-        if (hasMediaAccess) {
+        if (MediaPermission.canReadImages(context)) {
             runScan()
         } else if (permissionDenied) {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
