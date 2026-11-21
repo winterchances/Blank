@@ -1,4 +1,4 @@
-package com.blank.gallery
+package com.blank.gallery.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
