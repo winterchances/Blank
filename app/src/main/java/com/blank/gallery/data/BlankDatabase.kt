@@ -8,8 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [MediaAsset::class],
-    version = 5,
+    entities = [MediaAsset::class, SelfOrganizeActionRecord::class],
+    version = 6,
     exportSchema = false
 )
 abstract class BlankDatabase : RoomDatabase() {
@@ -54,6 +54,28 @@ abstract class BlankDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE media_assets ADD COLUMN selfOrganizeSkipOrder INTEGER NOT NULL DEFAULT 0"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS self_organize_actions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        mediaAssetId INTEGER NOT NULL,
+                        previousStatus INTEGER NOT NULL,
+                        previousSkipOrder INTEGER NOT NULL,
+                        createdAtMillis INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_self_organize_actions_createdAtMillis ON self_organize_actions (createdAtMillis)"
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: BlankDatabase? = null
 
@@ -64,7 +86,7 @@ abstract class BlankDatabase : RoomDatabase() {
                     BlankDatabase::class.java,
                     "blank-local.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                     .also { INSTANCE = it }
             }
