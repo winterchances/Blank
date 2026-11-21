@@ -14,6 +14,11 @@ data class MediaFolder(
     val itemCount: Int
 )
 
+data class MediaMonth(
+    val monthKey: String,
+    val itemCount: Int
+)
+
 @Dao
 interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
@@ -25,11 +30,15 @@ interface MediaAssetDao {
           AND (:mediaType IS NULL OR mediaType = :mediaType)
           AND (:query = '' OR displayName LIKE '%' || :query || '%')
           AND (:folderPath IS NULL OR relativePath = :folderPath)
+          AND (:monthKey IS NULL OR strftime('%Y-%m', datetime(
+              CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END,
+              'unixepoch', 'localtime'
+          )) = :monthKey)
         ORDER BY CASE WHEN :sortBySize = 1 THEN sizeBytes END DESC,
                  CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC,
                  id DESC
     """)
-    fun pagingSource(mediaType: Int?, query: String, folderPath: String?, sortBySize: Int): PagingSource<Int, MediaAsset>
+    fun pagingSource(mediaType: Int?, query: String, folderPath: String?, monthKey: String?, sortBySize: Int): PagingSource<Int, MediaAsset>
 
     @Query("""
         SELECT relativePath, COUNT(*) AS itemCount
@@ -39,6 +48,18 @@ interface MediaAssetDao {
         ORDER BY relativePath COLLATE NOCASE ASC
     """)
     fun observeFolders(): Flow<List<MediaFolder>>
+
+    @Query("""
+        SELECT strftime('%Y-%m', datetime(
+            CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END,
+            'unixepoch', 'localtime'
+        )) AS monthKey, COUNT(*) AS itemCount
+        FROM media_assets
+        WHERE isVisible = 1
+        GROUP BY monthKey
+        ORDER BY monthKey DESC
+    """)
+    fun observeMonths(): Flow<List<MediaMonth>>
 
     @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
     fun observePhotoCount(): Flow<Int>
