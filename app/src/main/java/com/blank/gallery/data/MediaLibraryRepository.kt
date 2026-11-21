@@ -20,9 +20,9 @@ class MediaLibraryRepository(context: Context) {
     )
 
     val lastScanAt = _lastScanAt.asStateFlow()
-    val pagedMedia = Pager(
+    fun pagedMedia(mediaType: Int?, query: String) = Pager(
         config = PagingConfig(pageSize = 60, prefetchDistance = 20, enablePlaceholders = false),
-        pagingSourceFactory = { dao.pagingSource() }
+        pagingSourceFactory = { dao.pagingSource(mediaType, query.trim()) }
     ).flow
     val photoCount = dao.observePhotoCount()
     val videoCount = dao.observeVideoCount()
