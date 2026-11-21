@@ -1,5 +1,7 @@
 package com.blank.gallery
 
+import com.blank.gallery.data.MediaLibraryRepository
+import com.blank.gallery.data.MediaPermission
 import com.blank.gallery.ui.navigation.BottomNavigation
 import com.blank.gallery.ui.navigation.MainPage
 import com.blank.gallery.ui.screens.AlbumsContent
@@ -14,62 +16,41 @@ import com.blank.gallery.ui.theme.ThemeMint
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.paging.compose.collectAsLazyPagingItems
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,8 +62,67 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun BlankApp() {
+    val context = LocalContext.current
+    val repository = remember(context) { MediaLibraryRepository(context.applicationContext) }
+
     var currentPage by remember { mutableStateOf(MainPage.HOME) }
     var organizeSubPage by remember { mutableStateOf<OrganizeSubPage?>(null) }
+    var hasMediaAccess by remember {
+        mutableStateOf(MediaPermission.hasAnyMediaAccess(context))
+    }
+    var isScanning by remember { mutableStateOf(false) }
+    var scannedItems by remember { mutableStateOf(0) }
+    var scanMessage by remember { mutableStateOf<String?>(null) }
+
+    val photoCount by repository.photoCount.collectAsState(initial = 0)
+    val videoCount by repository.videoCount.collectAsState(initial = 0)
+    val totalBytes by repository.totalBytes.collectAsState(initial = 0L)
+    val mediaFlow = remember(repository) { repository.pagedMedia }
+    val pagedMedia = mediaFlow.collectAsLazyPagingItems()
+    val scope = rememberCoroutineScope()
+
+    val runScan: () -> Unit = {
+        if (!isScanning) {
+            isScanning = true
+            scannedItems = 0
+            scanMessage = null
+            scope.launch {
+                try {
+                    val total = repository.scanVisibleMedia { count ->
+                        scannedItems = count
+                    }
+                    scanMessage = "扫描完成 · 共检查 $total 项"
+                    pagedMedia.refresh()
+                } catch (error: SecurityException) {
+                    hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
+                    scanMessage = "照片访问权限已变化，请重新授权后扫描"
+                } catch (error: Exception) {
+                    scanMessage = "扫描未完成，请稍后重试"
+                } finally {
+                    isScanning = false
+                }
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
+        if (hasMediaAccess) {
+            runScan()
+        } else {
+            scanMessage = "尚未获得照片访问权限"
+        }
+    }
+
+    val requestAccessOrScan: () -> Unit = {
+        if (hasMediaAccess) {
+            runScan()
+        } else {
+            permissionLauncher.launch(MediaPermission.requiredPermissions())
+        }
+    }
 
     BackHandler(enabled = organizeSubPage != null) {
         organizeSubPage = null
@@ -119,10 +159,21 @@ private fun BlankApp() {
                     } else {
                         when (currentPage) {
                             MainPage.HOME -> HomeContent(
+                                photoCount = photoCount,
+                                videoCount = videoCount,
+                                totalBytes = totalBytes,
+                                hasMediaAccess = hasMediaAccess,
+                                isScanning = isScanning,
+                                scannedItems = scannedItems,
+                                scanMessage = scanMessage,
+                                onScanClick = requestAccessOrScan,
                                 onOpenSmart = { currentPage = MainPage.ORGANIZE },
                                 onOpenSelf = { currentPage = MainPage.ORGANIZE }
                             )
-                            MainPage.ALBUMS -> AlbumsContent()
+                            MainPage.ALBUMS -> AlbumsContent(
+                                media = pagedMedia,
+                                hasMediaAccess = hasMediaAccess
+                            )
                             MainPage.ORGANIZE -> OrganizeContent(
                                 onOpenCategory = { organizeSubPage = it },
                                 onOpenSelfMode = { organizeSubPage = it }
@@ -178,4 +229,3 @@ private fun PageHeader(title: String, onBack: (() -> Unit)? = null) {
         )
     }
 }
-
