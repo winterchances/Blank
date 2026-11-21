@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +44,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -65,6 +70,51 @@ private enum class MainPage(val title: String, val icon: NavIconType) {
 }
 
 private enum class NavIconType { HOME, ALBUMS, ORGANIZE, FAVORITES }
+
+private val BlankHomeIcon: ImageVector = ImageVector.Builder("BlankHome", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(3f, 9f); lineTo(12f, 2f); lineTo(21f, 9f); lineTo(21f, 20f)
+        quadTo(21f, 22f, 19f, 22f); lineTo(5f, 22f); quadTo(3f, 22f, 3f, 20f)
+        close()
+        moveTo(9f, 22f); lineTo(9f, 12f); lineTo(15f, 12f); lineTo(15f, 22f)
+    }
+}.build()
+
+private val BlankAlbumsIcon: ImageVector = ImageVector.Builder("BlankAlbums", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(4.5f, 2f); lineTo(19.5f, 2f); quadTo(22f, 2f, 22f, 4.5f)
+        lineTo(22f, 19.5f); quadTo(22f, 22f, 19.5f, 22f); lineTo(4.5f, 22f)
+        quadTo(2f, 22f, 2f, 19.5f); lineTo(2f, 4.5f); quadTo(2f, 2f, 4.5f, 2f); close()
+        moveTo(7f, 2f); lineTo(7f, 22f); moveTo(17f, 2f); lineTo(17f, 22f)
+        moveTo(2f, 12f); lineTo(22f, 12f)
+        moveTo(2f, 7f); lineTo(7f, 7f); moveTo(2f, 17f); lineTo(7f, 17f)
+        moveTo(17f, 7f); lineTo(22f, 7f); moveTo(17f, 17f); lineTo(22f, 17f)
+    }
+}.build()
+
+private val BlankOrganizeIcon: ImageVector = ImageVector.Builder("BlankOrganize", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(4f, 6f); lineTo(20f, 6f)
+        moveTo(4f, 12f); lineTo(20f, 12f)
+        moveTo(4f, 18f); lineTo(20f, 18f)
+        moveTo(8f, 4f); lineTo(8f, 8f)
+        moveTo(16f, 10f); lineTo(16f, 14f)
+        moveTo(11f, 16f); lineTo(11f, 20f)
+    }
+}.build()
+
+private val BlankFavoritesIcon: ImageVector = ImageVector.Builder("BlankFavorites", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(12f, 21f)
+        curveTo(10.8f, 19.9f, 4f, 14.1f, 4f, 9.2f)
+        curveTo(4f, 6.4f, 5.9f, 4.5f, 8.3f, 4.5f)
+        curveTo(10f, 4.5f, 11.2f, 5.5f, 12f, 6.7f)
+        curveTo(12.8f, 5.5f, 14f, 4.5f, 15.7f, 4.5f)
+        curveTo(18.1f, 4.5f, 20f, 6.4f, 20f, 9.2f)
+        curveTo(20f, 14.1f, 13.2f, 19.9f, 12f, 21f)
+        close()
+    }
+}.build()
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -354,7 +404,7 @@ private fun BottomNavigation(
                 verticalArrangement = Arrangement.Center
             ) {
                 NavGlyph(page.icon, tint = MainText)
-                Spacer(Modifier.height(1.dp))
+                Spacer(Modifier.height(0.dp))
                 Text(
                     text = page.title,
                     fontSize = 10.sp,
@@ -368,55 +418,16 @@ private fun BottomNavigation(
 
 @Composable
 private fun NavGlyph(type: NavIconType, tint: Color) {
-    Canvas(modifier = Modifier.size(20.dp)) {
-        val stroke = 1.8.dp.toPx()
-        val w = size.width
-        val h = size.height
-        val line = Stroke(width = stroke, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
-
-        when (type) {
-            NavIconType.HOME -> {
-                val path = Path().apply {
-                    moveTo(w * 0.12f, h * 0.45f)
-                    lineTo(w * 0.5f, h * 0.13f)
-                    lineTo(w * 0.88f, h * 0.45f)
-                    lineTo(w * 0.82f, h * 0.45f)
-                    lineTo(w * 0.82f, h * 0.88f)
-                    lineTo(w * 0.18f, h * 0.88f)
-                    lineTo(w * 0.18f, h * 0.45f)
-                    close()
-                }
-                drawPath(path, tint, style = line)
-                drawLine(tint, Offset(w * 0.42f, h * 0.88f), Offset(w * 0.42f, h * 0.61f), stroke)
-                drawLine(tint, Offset(w * 0.58f, h * 0.88f), Offset(w * 0.58f, h * 0.61f), stroke)
-            }
-            NavIconType.ALBUMS -> {
-                val path = Path().apply {
-                    addRoundRect(androidx.compose.ui.geometry.RoundRect(androidx.compose.ui.geometry.Rect(Offset(w * 0.12f, h * 0.12f), androidx.compose.ui.geometry.Size(w * 0.76f, h * 0.76f)), w * 0.08f, h * 0.08f))
-                    moveTo(w * 0.5f, h * 0.12f); lineTo(w * 0.5f, h * 0.88f)
-                    moveTo(w * 0.12f, h * 0.5f); lineTo(w * 0.88f, h * 0.5f)
-                }
-                drawPath(path, tint, style = line)
-            }
-            NavIconType.ORGANIZE -> {
-                drawLine(tint, Offset(w * 0.18f, h * 0.28f), Offset(w * 0.82f, h * 0.28f), stroke)
-                drawLine(tint, Offset(w * 0.18f, h * 0.5f), Offset(w * 0.82f, h * 0.5f), stroke)
-                drawLine(tint, Offset(w * 0.18f, h * 0.72f), Offset(w * 0.82f, h * 0.72f), stroke)
-                drawCircle(tint, radius = stroke * 1.4f, center = Offset(w * 0.38f, h * 0.28f))
-                drawCircle(tint, radius = stroke * 1.4f, center = Offset(w * 0.65f, h * 0.5f))
-                drawCircle(tint, radius = stroke * 1.4f, center = Offset(w * 0.45f, h * 0.72f))
-            }
-            NavIconType.FAVORITES -> {
-                val path = Path().apply {
-                    moveTo(w * 0.5f, h * 0.86f)
-                    cubicTo(w * 0.4f, h * 0.76f, w * 0.13f, h * 0.56f, w * 0.13f, h * 0.34f)
-                    cubicTo(w * 0.13f, h * 0.12f, w * 0.42f, h * 0.08f, w * 0.5f, h * 0.3f)
-                    cubicTo(w * 0.58f, h * 0.08f, w * 0.87f, h * 0.12f, w * 0.87f, h * 0.34f)
-                    cubicTo(w * 0.87f, h * 0.56f, w * 0.6f, h * 0.76f, w * 0.5f, h * 0.86f)
-                    close()
-                }
-                drawPath(path, tint, style = line)
-            }
-        }
+    val icon = when (type) {
+        NavIconType.HOME -> BlankHomeIcon
+        NavIconType.ALBUMS -> BlankAlbumsIcon
+        NavIconType.ORGANIZE -> BlankOrganizeIcon
+        NavIconType.FAVORITES -> BlankFavoritesIcon
     }
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = Modifier.size(20.dp),
+        tint = tint
+    )
 }
