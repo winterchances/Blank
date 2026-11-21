@@ -157,7 +157,8 @@ private fun BlankApp() {
                         .fillMaxSize()
                         .padding(
                             top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                            bottom = 104.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                            bottom = (if (organizeSubPage == null) 104.dp else 24.dp) +
+                                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         )
                 ) {
                     PageHeader(
