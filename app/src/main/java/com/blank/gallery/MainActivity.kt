@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -73,13 +75,13 @@ private enum class MainPage(val title: String, val icon: NavIconType) {
 private enum class NavIconType { HOME, ALBUMS, ORGANIZE, FAVORITES }
 
 private enum class OrganizeSubPage(val title: String) {
-    SMART("智能整理"),
-    SELF("自己整理"),
     DUPLICATES("重复照片"),
     SIMILAR("相似照片"),
     BURSTS("连拍"),
     SCREENSHOTS("截图"),
-    LARGE_FILES("大文件")
+    LARGE_FILES("大文件"),
+    SELF_ORDERED("按顺序整理"),
+    SELF_RANDOM("随机整理")
 }
 
 private val BlankHomeIcon: ImageVector = ImageVector.Builder("BlankHome", 24.dp, 24.dp, 24f, 24f).apply {
@@ -175,13 +177,13 @@ private fun BlankApp() {
                     } else {
                         when (currentPage) {
                             MainPage.HOME -> HomeContent(
-                                onOpenSmart = { organizeSubPage = OrganizeSubPage.SMART },
-                                onOpenSelf = { organizeSubPage = OrganizeSubPage.SELF }
+                                onOpenSmart = { currentPage = MainPage.ORGANIZE },
+                                onOpenSelf = { currentPage = MainPage.ORGANIZE }
                             )
                             MainPage.ALBUMS -> AlbumsContent()
                             MainPage.ORGANIZE -> OrganizeContent(
-                                onOpenSmart = { organizeSubPage = OrganizeSubPage.SMART },
-                                onOpenSelf = { organizeSubPage = OrganizeSubPage.SELF }
+                                onOpenCategory = { organizeSubPage = it },
+                                onOpenSelfMode = { organizeSubPage = it }
                             )
                             MainPage.FAVORITES -> FavoritesContent()
                         }
@@ -288,29 +290,76 @@ private fun AlbumsContent() {
 
 @Composable
 private fun OrganizeContent(
-    onOpenSmart: () -> Unit,
-    onOpenSelf: () -> Unit
+    onOpenCategory: (OrganizeSubPage) -> Unit,
+    onOpenSelfMode: (OrganizeSubPage) -> Unit
 ) {
+    val smartItems = listOf(
+        Triple(OrganizeSubPage.DUPLICATES, "重复照片", "查找内容完全相同的照片"),
+        Triple(OrganizeSubPage.SIMILAR, "相似照片", "找出画面相近的照片"),
+        Triple(OrganizeSubPage.BURSTS, "连拍照片", "集中整理连续拍摄的照片"),
+        Triple(OrganizeSubPage.SCREENSHOTS, "截图", "集中查看保存的截图"),
+        Triple(OrganizeSubPage.LARGE_FILES, "大文件", "找出占用空间较大的照片")
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        FeatureTile(
-            title = "智能整理",
-            description = "重复照片、相似照片、连拍、截图和大文件",
-            modifier = Modifier.fillMaxWidth(),
-            tall = true,
-            onClick = onOpenSmart
-        )
-        FeatureTile(
-            title = "自己整理",
-            description = "一次查看一张照片，由你决定保留、待删除或跳过",
-            modifier = Modifier.fillMaxWidth(),
-            tall = true,
-            onClick = onOpenSelf
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "智能整理",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MainText
+            )
+            smartItems.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowItems.forEach { (page, title, description) ->
+                        OrganizeCategoryTile(
+                            title = title,
+                            description = description,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOpenCategory(page) }
+                        )
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "自己整理",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MainText
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OrganizeCategoryTile(
+                    title = "按顺序整理",
+                    description = "按照照片时间顺序，逐张浏览",
+                    modifier = Modifier.weight(1f),
+                    onClick = { onOpenSelfMode(OrganizeSubPage.SELF_ORDERED) }
+                )
+                OrganizeCategoryTile(
+                    title = "随机整理",
+                    description = "随机选择一张照片作为起点",
+                    modifier = Modifier.weight(1f),
+                    onClick = { onOpenSelfMode(OrganizeSubPage.SELF_RANDOM) }
+                )
+            }
+        }
     }
 }
 
@@ -393,63 +442,35 @@ private fun OrganizeSubPageContent(
     page: OrganizeSubPage,
     onOpen: (OrganizeSubPage) -> Unit
 ) {
-    when (page) {
-        OrganizeSubPage.SMART -> Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "选择想要整理的内容",
-                fontSize = 14.sp,
-                color = MutedText,
-                modifier = Modifier.padding(bottom = 2.dp)
-            )
-            listOf(
-                OrganizeSubPage.DUPLICATES,
-                OrganizeSubPage.SIMILAR,
-                OrganizeSubPage.BURSTS,
-                OrganizeSubPage.SCREENSHOTS,
-                OrganizeSubPage.LARGE_FILES
-            ).forEach { item ->
-                OrganizeCategoryTile(
-                    title = item.title,
-                    onClick = { onOpen(item) }
-                )
-            }
-        }
-        OrganizeSubPage.SELF -> Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp)
-        ) {
-            EmptyState(
-                message = "准备好后，这里会逐张展示你的照片",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        else -> Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp)
-        ) {
-            EmptyState(
-                message = "尚未扫描，扫描完成后会显示待整理内容",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+    val message = when (page) {
+        OrganizeSubPage.SELF_ORDERED ->
+            "扫描完成后，将按照照片时间顺序，从尚未整理的照片开始"
+        OrganizeSubPage.SELF_RANDOM ->
+            "扫描完成后，将随机选择一张尚未整理的照片作为起点"
+        else ->
+            "尚未扫描，扫描完成后会显示待整理内容"
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+    ) {
+        EmptyState(
+            message = message,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
 @Composable
 private fun OrganizeCategoryTile(
     title: String,
+    description: String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
+    Column(
+        modifier = modifier
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(18.dp),
@@ -460,19 +481,25 @@ private fun OrganizeCategoryTile(
             .background(GlassWhite)
             .border(1.dp, Color.Black.copy(alpha = 0.045f), RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 17.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 14.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MainText
+            )
+            Text("›", fontSize = 20.sp, color = MutedText)
+        }
         Text(
-            text = title,
-            modifier = Modifier.weight(1f),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MainText
+            text = description,
+            fontSize = 12.sp,
+            lineHeight = 17.sp,
+            color = MutedText
         )
-        Text("尚未扫描", fontSize = 12.sp, color = MutedText)
-        Spacer(Modifier.width(8.dp))
-        Text("›", fontSize = 20.sp, color = MutedText)
     }
 }
 
