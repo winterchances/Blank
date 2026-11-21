@@ -78,6 +78,7 @@ private fun BlankApp() {
     val photoCount by repository.photoCount.collectAsState(initial = 0)
     val videoCount by repository.videoCount.collectAsState(initial = 0)
     val totalBytes by repository.totalBytes.collectAsState(initial = 0L)
+    val lastScanAt by repository.lastScanAt.collectAsState()
     val mediaFlow = remember(repository) { repository.pagedMedia }
     val pagedMedia = mediaFlow.collectAsLazyPagingItems()
     val scope = rememberCoroutineScope()
@@ -174,6 +175,7 @@ private fun BlankApp() {
                                 photoCount = photoCount,
                                 videoCount = videoCount,
                                 totalBytes = totalBytes,
+                                lastScanAt = lastScanAt,
                                 hasMediaAccess = hasMediaAccess,
                                 isScanning = isScanning,
                                 scannedItems = scannedItems,
