@@ -1,4 +1,11 @@
-package com.blank.gallery
+package com.blank.gallery.ui.screens
+
+import com.blank.gallery.EmptyState
+import com.blank.gallery.FeatureTile
+import com.blank.gallery.MainText
+import com.blank.gallery.MutedText
+import com.blank.gallery.ThemeMint
+import com.blank.gallery.GlassWhite
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
