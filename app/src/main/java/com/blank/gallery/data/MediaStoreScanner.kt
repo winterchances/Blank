@@ -53,6 +53,7 @@ class MediaStoreScanner(context: Context) {
         val projection = buildList {
             add(MediaStore.MediaColumns._ID)
             add(MediaStore.MediaColumns.DISPLAY_NAME)
+            add(MediaStore.MediaColumns.RELATIVE_PATH)
             add(MediaStore.MediaColumns.MIME_TYPE)
             add(MediaStore.MediaColumns.SIZE)
             add(MediaStore.MediaColumns.DATE_ADDED)
@@ -97,6 +98,7 @@ class MediaStoreScanner(context: Context) {
             cursor.use { c ->
                 val idIndex = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
                 val nameIndex = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
+                val pathIndex = c.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
                 val mimeIndex = c.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
                 val sizeIndex = c.getColumnIndex(MediaStore.MediaColumns.SIZE)
                 val addedIndex = c.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)
@@ -116,6 +118,7 @@ class MediaStoreScanner(context: Context) {
                         mediaStoreId = id,
                         contentUri = ContentUris.withAppendedId(collection, id).toString(),
                         displayName = c.getString(nameIndex) ?: "未命名",
+                        relativePath = pathIndex.takeIf { it >= 0 }?.let { c.getString(it) }.orEmpty(),
                         mimeType = mimeIndex.takeIf { it >= 0 }?.let { c.getString(it) },
                         mediaType = mediaType,
                         sizeBytes = sizeIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
