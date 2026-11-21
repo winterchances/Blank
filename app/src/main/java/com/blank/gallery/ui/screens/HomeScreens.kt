@@ -1,11 +1,11 @@
 package com.blank.gallery.ui.screens
 
-import com.blank.gallery.EmptyState
-import com.blank.gallery.FeatureTile
-import com.blank.gallery.MainText
-import com.blank.gallery.MutedText
-import com.blank.gallery.ThemeMint
-import com.blank.gallery.GlassWhite
+import com.blank.gallery.ui.components.EmptyState
+import com.blank.gallery.ui.components.FeatureTile
+import com.blank.gallery.ui.theme.MainText
+import com.blank.gallery.ui.theme.MutedText
+import com.blank.gallery.ui.theme.ThemeMint
+import com.blank.gallery.ui.theme.GlassWhite
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
