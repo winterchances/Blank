@@ -2,6 +2,7 @@ package com.blank.gallery.data
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.paging.PagingSource
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
@@ -12,6 +13,9 @@ import kotlinx.coroutines.flow.Flow
 interface MediaAssetDao {
     @Query("SELECT * FROM media_assets ORDER BY dateAddedSeconds DESC, id DESC")
     fun observeAll(): Flow<List<MediaAsset>>
+
+    @Query("SELECT * FROM media_assets ORDER BY dateAddedSeconds DESC, id DESC")
+    fun pagingSource(): PagingSource<Int, MediaAsset>
 
     @Query("SELECT COUNT(*) FROM media_assets WHERE mediaType = 1")
     fun observePhotoCount(): Flow<Int>
