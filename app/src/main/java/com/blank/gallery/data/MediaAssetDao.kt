@@ -19,6 +19,14 @@ data class MediaMonth(
     val itemCount: Int
 )
 
+data class SelfOrganizeSummary(
+    val totalCount: Int = 0,
+    val remainingCount: Int = 0,
+    val keptCount: Int = 0,
+    val pendingDeleteCount: Int = 0,
+    val skippedCount: Int = 0
+)
+
 @Dao
 interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
@@ -70,8 +78,93 @@ interface MediaAssetDao {
     @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM media_assets WHERE isVisible = 1")
     fun observeTotalBytes(): Flow<Long>
 
-    @Query("SELECT * FROM media_assets WHERE isVisible = 1 AND mediaType = 1 AND selfOrganizeStatus = 0 AND isProtected = 0 ORDER BY CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC, id DESC")
-    suspend fun getNextSelfOrganizePhoto(): MediaAsset?
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+          AND selfOrganizeStatus IN (0, 3)
+        ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
+                 selfOrganizeSkipOrder ASC,
+                 CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC,
+                 id DESC
+        LIMIT 1
+    """)
+    suspend fun getNextOrderedSelfOrganizePhoto(): MediaAsset?
+
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+          AND selfOrganizeStatus IN (0, 3)
+        ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
+                 RANDOM()
+        LIMIT 1
+    """)
+    suspend fun getNextRandomSelfOrganizePhoto(): MediaAsset?
+
+    @Query("""
+        SELECT COUNT(*) AS totalCount,
+               COUNT(CASE WHEN selfOrganizeStatus IN (0, 3) THEN 1 END) AS remainingCount,
+               COUNT(CASE WHEN selfOrganizeStatus = 1 THEN 1 END) AS keptCount,
+               COUNT(CASE WHEN selfOrganizeStatus = 2 THEN 1 END) AS pendingDeleteCount,
+               COUNT(CASE WHEN selfOrganizeStatus = 3 THEN 1 END) AS skippedCount
+        FROM media_assets
+        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+    """)
+    fun observeSelfOrganizeSummary(): Flow<SelfOrganizeSummary>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM self_organize_actions)")
+    fun observeCanUndoSelfOrganize(): Flow<Boolean>
+
+    @Query("SELECT * FROM media_assets WHERE id = :id LIMIT 1")
+    suspend fun findById(id: Long): MediaAsset?
+
+    @Query("SELECT COALESCE(MAX(selfOrganizeSkipOrder), 0) + 1 FROM media_assets")
+    suspend fun nextSelfOrganizeSkipOrder(): Long
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertSelfOrganizeAction(action: SelfOrganizeActionRecord)
+
+    @Query("SELECT * FROM self_organize_actions ORDER BY id DESC LIMIT 1")
+    suspend fun getLastSelfOrganizeAction(): SelfOrganizeActionRecord?
+
+    @Query("DELETE FROM self_organize_actions WHERE id = :id")
+    suspend fun deleteSelfOrganizeAction(id: Long)
+
+    @Query("UPDATE media_assets SET selfOrganizeStatus = :status, selfOrganizeSkipOrder = :skipOrder WHERE id = :id")
+    suspend fun restoreSelfOrganizeState(id: Long, status: Int, skipOrder: Long)
+
+    @Query("UPDATE media_assets SET selfOrganizeStatus = :status, selfOrganizeSkipOrder = :skipOrder WHERE id = :id")
+    suspend fun updateSelfOrganizeState(id: Long, status: Int, skipOrder: Long)
+
+    @Transaction
+    suspend fun applySelfOrganizeDecision(id: Long, status: Int) {
+        val current = findById(id) ?: return
+        if (!current.isVisible || current.mediaType != 1 || current.isProtected) return
+        insertSelfOrganizeAction(
+            SelfOrganizeActionRecord(
+                mediaAssetId = id,
+                previousStatus = current.selfOrganizeStatus,
+                previousSkipOrder = current.selfOrganizeSkipOrder,
+                createdAtMillis = System.currentTimeMillis()
+            )
+        )
+        val skipOrder = if (status == 3) nextSelfOrganizeSkipOrder() else 0L
+        updateSelfOrganizeState(id, status, skipOrder)
+    }
+
+    @Transaction
+    suspend fun undoLastSelfOrganizeDecision(): Boolean {
+        val action = getLastSelfOrganizeAction() ?: return false
+        val current = findById(action.mediaAssetId)
+        if (current != null) {
+            restoreSelfOrganizeState(
+                id = action.mediaAssetId,
+                status = action.previousStatus,
+                skipOrder = action.previousSkipOrder
+            )
+        }
+        deleteSelfOrganizeAction(action.id)
+        return current != null
+    }
 
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
     suspend fun findByMediaStoreId(mediaStoreId: Long): MediaAsset?
@@ -162,6 +255,6 @@ interface MediaAssetDao {
     @Query("UPDATE media_assets SET isVisible = 0 WHERE id IN (:ids)")
     suspend fun hideFromLibraryForIds(ids: List<Long>)
 
-    @Query("UPDATE media_assets SET selfOrganizeStatus = :status WHERE id = :id")
+    @Query("UPDATE media_assets SET selfOrganizeStatus = :status, selfOrganizeSkipOrder = 0 WHERE id = :id")
     suspend fun setSelfOrganizeStatus(id: Long, status: Int)
 }
