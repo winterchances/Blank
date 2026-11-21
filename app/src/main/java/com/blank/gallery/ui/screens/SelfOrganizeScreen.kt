@@ -54,7 +54,8 @@ internal fun SelfOrganizeScreen(
     onKeep: () -> Unit,
     onPendingDelete: () -> Unit,
     onSkip: () -> Unit,
-    onUndo: () -> Unit
+    onUndo: () -> Unit,
+    onOpenPendingDelete: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -73,11 +74,28 @@ internal fun SelfOrganizeScreen(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    "保留 ${summary.keptCount} · 待删除 ${summary.pendingDeleteCount} · 跳过 ${summary.skippedCount}",
-                    color = MutedText,
-                    fontSize = 12.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "保留 ${summary.keptCount} ·",
+                        color = MutedText,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        " 待删除 ${summary.pendingDeleteCount}",
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable(onClick = onOpenPendingDelete)
+                            .padding(vertical = 2.dp),
+                        color = ThemeMint,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        " · 跳过 ${summary.skippedCount}",
+                        color = MutedText,
+                        fontSize = 12.sp
+                    )
+                }
             }
             Text(
                 "撤销",
