@@ -55,6 +55,7 @@ class MediaLibraryRepository(context: Context) {
     val totalBytes = dao.observeTotalBytes()
     val selfOrganizeSummary = dao.observeSelfOrganizeSummary()
     val canUndoSelfOrganize = dao.observeCanUndoSelfOrganize()
+    val selfOrganizePendingDelete = dao.observeSelfOrganizePendingDelete()
 
     /**
      * Hide cached media immediately when the app no longer has permission.
