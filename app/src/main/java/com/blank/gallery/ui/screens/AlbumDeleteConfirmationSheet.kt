@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.blank.gallery.ui.theme.MainText
@@ -39,6 +40,7 @@ internal fun AlbumDeleteConfirmationSheet(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(tween(300)),
@@ -56,7 +58,7 @@ internal fun AlbumDeleteConfirmationSheet(
             Column(
                 Modifier.align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .heightIn(max = 680.dp)
+                    .heightIn(max = screenHeight * 0.85f)
                     .shadow(
                         10.dp,
                         RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
@@ -85,7 +87,7 @@ internal fun AlbumDeleteConfirmationSheet(
                     if (isAndroid11OrNewer) {
                         "将选中的 $deletableCount 项移入系统回收站，之后可在系统相册的回收站中恢复。"
                     } else {
-                        "Android 10 不提供统一的系统回收站。继续后将逐项请求系统授权删除，删除后可能无法恢复。"
+                        "Android 10 不提供统一的系统回收站。继续后将逐项处理；需要授权的项目会显示系统确认，删除后可能无法恢复。"
                     },
                     color = MainText.copy(alpha = 0.72f),
                     fontSize = 14.sp,
