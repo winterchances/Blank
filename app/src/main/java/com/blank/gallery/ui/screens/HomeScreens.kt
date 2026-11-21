@@ -180,19 +180,18 @@ internal fun AlbumsContent(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
+        LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
         ) {
-            AlbumFilterChip("全部", mediaType == null) { onMediaTypeChange(null) }
-            AlbumFilterChip("照片", mediaType == 1) { onMediaTypeChange(1) }
-            AlbumFilterChip("视频", mediaType == 2) { onMediaTypeChange(2) }
-            Spacer(Modifier.weight(1f))
-            AlbumFilterChip("四宫格", gridColumns == 4) { onGridColumnsChange(4) }
-            AlbumFilterChip("三宫格", gridColumns == 3) { onGridColumnsChange(3) }
+            item { AlbumFilterChip("全部", mediaType == null) { onMediaTypeChange(null) } }
+            item { AlbumFilterChip("照片", mediaType == 1) { onMediaTypeChange(1) } }
+            item { AlbumFilterChip("视频", mediaType == 2) { onMediaTypeChange(2) } }
+            item { AlbumFilterChip("四宫格", gridColumns == 4) { onGridColumnsChange(4) } }
+            item { AlbumFilterChip("三宫格", gridColumns == 3) { onGridColumnsChange(3) } }
         }
 
         Row(
