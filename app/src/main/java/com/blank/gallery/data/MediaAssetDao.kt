@@ -115,6 +115,26 @@ interface MediaAssetDao {
     @Query("SELECT EXISTS(SELECT 1 FROM self_organize_actions)")
     fun observeCanUndoSelfOrganize(): Flow<Boolean>
 
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+          AND selfOrganizeStatus = 2
+        ORDER BY CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC,
+                 id DESC
+    """)
+    fun observeSelfOrganizePendingDelete(): Flow<List<MediaAsset>>
+
+    @Transaction
+    suspend fun cancelSelfOrganizePendingDelete(id: Long) {
+        val asset = findById(id) ?: return
+        if (!asset.isVisible || asset.mediaType != 1 || asset.isProtected || asset.selfOrganizeStatus != 2) return
+        updateSelfOrganizeState(id, 0, 0L)
+        deleteSelfOrganizeActionsForAsset(id)
+    }
+
+    @Query("DELETE FROM self_organize_actions WHERE mediaAssetId = :id")
+    suspend fun deleteSelfOrganizeActionsForAsset(id: Long)
+
     @Query("SELECT * FROM media_assets WHERE id = :id LIMIT 1")
     suspend fun findById(id: Long): MediaAsset?
 
