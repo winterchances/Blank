@@ -157,13 +157,15 @@ private fun BlankApp() {
     ) { result ->
         val ids = pendingTrashIds
         pendingTrashIds = emptySet()
-        isDeletionInProgress = false
         if (result.resultCode == Activity.RESULT_OK && ids.isNotEmpty()) {
             scope.launch {
                 repository.hideFromLibraryForIds(ids.toList())
                 selectedMedia = selectedMedia - ids
                 pagedMedia.refresh()
+                isDeletionInProgress = false
             }
+        } else {
+            isDeletionInProgress = false
         }
     }
 
