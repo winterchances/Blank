@@ -279,6 +279,16 @@ interface MediaAssetDao {
     @Query("UPDATE media_assets SET isVisible = 0 WHERE id IN (:ids)")
     suspend fun hideFromLibraryForIds(ids: List<Long>)
 
+    @Query("DELETE FROM self_organize_actions WHERE mediaAssetId IN (:ids)")
+    suspend fun deleteSelfOrganizeActionsForIds(ids: List<Long>)
+
+    @Transaction
+    suspend fun finalizeTrashedMedia(ids: List<Long>) {
+        if (ids.isEmpty()) return
+        hideFromLibraryForIds(ids)
+        deleteSelfOrganizeActionsForIds(ids)
+    }
+
     @Query("UPDATE media_assets SET selfOrganizeStatus = :status, selfOrganizeSkipOrder = 0 WHERE id = :id")
     suspend fun setSelfOrganizeStatus(id: Long, status: Int)
 }
