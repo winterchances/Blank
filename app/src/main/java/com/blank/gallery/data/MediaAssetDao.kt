@@ -14,7 +14,7 @@ interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
     fun observeAll(): Flow<List<MediaAsset>>
 
-    @Query("SELECT * FROM media_assets ORDER BY dateAddedSeconds DESC, id DESC")
+    @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
     fun pagingSource(): PagingSource<Int, MediaAsset>
 
     @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
@@ -32,7 +32,7 @@ interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
     suspend fun findByMediaStoreId(mediaStoreId: Long): MediaAsset?
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Query("UPDATE media_assets SET isVisible = 0")\n    suspend fun hideAllBeforePermissionScopedScan()\n\n    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfNew(item: MediaAsset)
 
     @Query("""
