@@ -41,7 +41,7 @@ internal enum class MainPage(val title: String, val icon: NavIconType) {
     FAVORITES("收藏", NavIconType.FAVORITES)
 }
 
-private enum class NavIconType { HOME, ALBUMS, ORGANIZE, FAVORITES }
+internal enum class NavIconType { HOME, ALBUMS, ORGANIZE, FAVORITES }
 
 private val BlankHomeIcon: ImageVector = ImageVector.Builder("BlankHome", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
