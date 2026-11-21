@@ -87,7 +87,12 @@ private fun BlankApp() {
     val videoCount by repository.videoCount.collectAsState(initial = 0)
     val totalBytes by repository.totalBytes.collectAsState(initial = 0L)
     val lastScanAt by repository.lastScanAt.collectAsState()
-    val mediaFlow = remember(repository) { repository.pagedMedia }
+    var albumMediaType by remember { mutableStateOf<Int?>(null) }
+    var albumSearchQuery by remember { mutableStateOf("") }
+    var albumGridColumns by remember { mutableStateOf(4) }
+    val mediaFlow = remember(repository, albumMediaType, albumSearchQuery) {
+        repository.pagedMedia(albumMediaType, albumSearchQuery)
+    }
     val pagedMedia = mediaFlow.collectAsLazyPagingItems()
     val scope = rememberCoroutineScope()
 
@@ -225,7 +230,13 @@ private fun BlankApp() {
                             )
                             MainPage.ALBUMS -> AlbumsContent(
                                 media = pagedMedia,
-                                hasMediaAccess = hasMediaAccess
+                                hasMediaAccess = hasMediaAccess,
+                                mediaType = albumMediaType,
+                                onMediaTypeChange = { albumMediaType = it },
+                                searchQuery = albumSearchQuery,
+                                onSearchQueryChange = { albumSearchQuery = it },
+                                gridColumns = albumGridColumns,
+                                onGridColumnsChange = { albumGridColumns = it }
                             )
                             MainPage.ORGANIZE -> OrganizeContent(
                                 onOpenCategory = { organizeSubPage = it },
