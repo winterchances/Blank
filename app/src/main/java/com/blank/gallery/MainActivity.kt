@@ -211,12 +211,12 @@ private fun BlankApp() {
         }
         scope.launch {
             when (val attempt = deletionManager.deleteLegacyItem(asset.contentUri)) {
-                is MediaDeletionManager.LegacyDeleteResult.Deleted -> {
+                MediaDeletionManager.LegacyDeleteResult.Deleted -> {
                     legacyDeletedIds = legacyDeletedIds + asset.id
                     legacyDeleteQueue = legacyDeleteQueue.drop(1)
                     processNextLegacyDelete()
                 }
-                is MediaDeletionManager.LegacyDeleteResult.Missing -> {
+                MediaDeletionManager.LegacyDeleteResult.Missing -> {
                     legacyDeleteQueue = legacyDeleteQueue.drop(1)
                     processNextLegacyDelete()
                 }
@@ -224,12 +224,12 @@ private fun BlankApp() {
                     continueLegacyDelete = {
                         scope.launch {
                             when (deletionManager.deleteLegacyItem(asset.contentUri)) {
-                                is MediaDeletionManager.LegacyDeleteResult.Deleted -> {
+                                MediaDeletionManager.LegacyDeleteResult.Deleted -> {
                                     legacyDeletedIds = legacyDeletedIds + asset.id
                                     legacyDeleteQueue = legacyDeleteQueue.drop(1)
                                     processNextLegacyDelete()
                                 }
-                                is MediaDeletionManager.LegacyDeleteResult.Missing -> {
+                                MediaDeletionManager.LegacyDeleteResult.Missing -> {
                                     legacyDeleteQueue = legacyDeleteQueue.drop(1)
                                     processNextLegacyDelete()
                                 }
@@ -241,7 +241,7 @@ private fun BlankApp() {
                         IntentSenderRequest.Builder(attempt.intentSender).build()
                     )
                 }
-                is MediaDeletionManager.LegacyDeleteResult.Failed -> finishLegacyDeleteFlow()
+                MediaDeletionManager.LegacyDeleteResult.Failed -> finishLegacyDeleteFlow()
             }
         }
     }
@@ -316,16 +316,16 @@ private fun BlankApp() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    BackHandler(enabled = deleteConfirmationVisible) {
-        deleteConfirmationVisible = false
-    }
-
     BackHandler(enabled = selectedMedia.isNotEmpty()) {
         selectedMedia = emptyMap()
     }
 
     BackHandler(enabled = organizeSubPage != null) {
         organizeSubPage = null
+    }
+
+    BackHandler(enabled = deleteConfirmationVisible) {
+        deleteConfirmationVisible = false
     }
 
     MaterialTheme(
