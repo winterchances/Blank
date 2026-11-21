@@ -106,6 +106,7 @@ private fun BlankApp() {
     var scanMessage by remember { mutableStateOf<String?>(null) }
     var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
     var isSelfOrganizeLoading by remember { mutableStateOf(false) }
+    var selfOrganizeMessage by remember { mutableStateOf<String?>(null) }
 
     val photoCount by repository.photoCount.collectAsState(initial = 0)
     val videoCount by repository.videoCount.collectAsState(initial = 0)
@@ -330,6 +331,7 @@ private fun BlankApp() {
 
     LaunchedEffect(organizeSubPage, hasPhotoAccess, isScanning) {
         if (activeSelfOrganizeMode != null) {
+            selfOrganizeMessage = null
             if (!hasPhotoAccess || isScanning) {
                 selfOrganizePhoto = null
                 isSelfOrganizeLoading = false
@@ -347,13 +349,14 @@ private fun BlankApp() {
         val current = selfOrganizePhoto ?: return
         val mode = activeSelfOrganizeMode ?: return
         if (isSelfOrganizeLoading) return
+        selfOrganizeMessage = null
         isSelfOrganizeLoading = true
         scope.launch {
             try {
                 selfOrganizeManager.applyDecision(current.id, decision)
                 selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
             } catch (_: Exception) {
-                scanMessage = "整理状态保存失败，请重试"
+                selfOrganizeMessage = "整理状态保存失败，请重试"
             } finally {
                 isSelfOrganizeLoading = false
             }
@@ -363,12 +366,13 @@ private fun BlankApp() {
     fun undoSelfOrganize() {
         val mode = activeSelfOrganizeMode ?: return
         if (!canUndoSelfOrganize || isSelfOrganizeLoading) return
+        selfOrganizeMessage = null
         isSelfOrganizeLoading = true
         scope.launch {
             try {
                 selfOrganizePhoto = selfOrganizeManager.undo() ?: selfOrganizeManager.nextPhoto(mode)
             } catch (_: Exception) {
-                scanMessage = "撤销失败，请稍后重试"
+                selfOrganizeMessage = "撤销失败，请稍后重试"
             } finally {
                 isSelfOrganizeLoading = false
             }
@@ -450,6 +454,7 @@ private fun BlankApp() {
                                 isLoading = isSelfOrganizeLoading,
                                 hasPhotoAccess = hasPhotoAccess,
                                 isScanning = isScanning,
+                                feedbackMessage = selfOrganizeMessage,
                                 onRequestAccess = requestAccessOrScan,
                                 onKeep = { decideSelfOrganize(SelfOrganizeDecision.KEEP) },
                                 onPendingDelete = { decideSelfOrganize(SelfOrganizeDecision.PENDING_DELETE) },
