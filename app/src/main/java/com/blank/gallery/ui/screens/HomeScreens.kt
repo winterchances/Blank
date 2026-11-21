@@ -161,7 +161,9 @@ internal fun AlbumsContent(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     gridColumns: Int,
-    onGridColumnsChange: (Int) -> Unit
+    onGridColumnsChange: (Int) -> Unit,
+    sortBySize: Boolean,
+    onSortBySizeChange: (Boolean) -> Unit
 ) {
     if (!hasMediaAccess) {
         EmptyState(
@@ -224,6 +226,8 @@ internal fun AlbumsContent(
                     fontSize = 12.sp
                 )
             }
+            AlbumFilterChip("时间", !sortBySize) { onSortBySizeChange(false) }
+            AlbumFilterChip("大小", sortBySize) { onSortBySizeChange(true) }
         }
 
         if (media.itemCount == 0) {
