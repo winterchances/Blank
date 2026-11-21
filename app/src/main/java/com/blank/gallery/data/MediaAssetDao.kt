@@ -95,7 +95,8 @@ interface MediaAssetDao {
         WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
           AND selfOrganizeStatus IN (0, 3)
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
-                 RANDOM()
+                 CASE WHEN selfOrganizeStatus = 3 THEN selfOrganizeSkipOrder END ASC,
+                 CASE WHEN selfOrganizeStatus = 0 THEN RANDOM() END
         LIMIT 1
     """)
     suspend fun getNextRandomSelfOrganizePhoto(): MediaAsset?
