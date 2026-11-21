@@ -97,7 +97,7 @@ private fun BlankApp() {
                     ) { count ->
                         scannedItems = count
                     }
-                    scanMessage = "扫描完成 · 共检查 $total 项"
+                    scanMessage = if (total == 0) "相册已是最新" else "扫描完成 · 更新 $total 项"
                     pagedMedia.refresh()
                 } catch (error: SecurityException) {
                     hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
