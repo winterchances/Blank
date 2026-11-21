@@ -334,7 +334,8 @@ private fun BlankApp() {
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-                }            }
+                }
+            }
         }
     }
 }
