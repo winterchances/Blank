@@ -158,6 +158,10 @@ interface MediaAssetDao {
     @Query("UPDATE media_assets SET isProtected = :protected WHERE id IN (:ids)")
     suspend fun setProtectedForIds(ids: List<Long>, protected: Boolean)
 
+    /** Hide trashed items without deleting their local metadata or user state. */
+    @Query("UPDATE media_assets SET isVisible = 0 WHERE id IN (:ids)")
+    suspend fun hideFromLibraryForIds(ids: List<Long>)
+
     @Query("UPDATE media_assets SET selfOrganizeStatus = :status WHERE id = :id")
     suspend fun setSelfOrganizeStatus(id: Long, status: Int)
 }
