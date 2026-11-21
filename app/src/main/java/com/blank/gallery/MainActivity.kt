@@ -477,12 +477,18 @@ private fun BlankApp() {
                             SelfOrganizePendingDeleteScreen(
                                 assets = selfOrganizePendingDelete,
                                 isLoading = isSelfOrganizeLoading || isDeletionInProgress,
+                                feedbackMessage = selfOrganizeMessage,
                                 onCancel = { asset ->
-                                    scope.launch {
-                                        try {
-                                            selfOrganizeManager.cancelPendingDelete(asset.id)
-                                        } catch (_: Exception) {
-                                            selfOrganizeMessage = "撤回失败，请稍后重试"
+                                    if (!isSelfOrganizeLoading && !isDeletionInProgress) {
+                                        isSelfOrganizeLoading = true
+                                        scope.launch {
+                                            try {
+                                                selfOrganizeManager.cancelPendingDelete(asset.id)
+                                            } catch (_: Exception) {
+                                                selfOrganizeMessage = "撤回失败，请稍后重试"
+                                            } finally {
+                                                isSelfOrganizeLoading = false
+                                            }
                                         }
                                     }
                                 },
