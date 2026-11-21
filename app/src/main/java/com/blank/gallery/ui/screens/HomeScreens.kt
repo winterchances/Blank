@@ -68,6 +68,13 @@ internal fun HomeContent(
                 OverviewMetric("视频", videoCount.toString())
                 OverviewMetric("占用空间", formatStorage(totalBytes))
             }
+            if (!hasMediaAccess) {
+                Text(
+                    text = "照片和视频仅在本机读取，不会上传",
+                    fontSize = 12.sp,
+                    color = MutedText
+                )
+            }
             if (isScanning) {
                 Text(
                     text = "正在扫描 · 已读取 $scannedItems 项",
