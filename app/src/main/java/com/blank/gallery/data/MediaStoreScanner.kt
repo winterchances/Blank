@@ -18,6 +18,7 @@ class MediaStoreScanner(context: Context) {
     suspend fun scanVisibleMedia(
         includeImages: Boolean,
         includeVideos: Boolean,
+        modifiedSinceSeconds: Long?,
         onBatch: suspend (List<MediaAsset>) -> Unit
     ): Int = withContext(Dispatchers.IO) {
         var total = 0
@@ -26,6 +27,7 @@ class MediaStoreScanner(context: Context) {
                 collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 mediaType = 1,
                 durationColumn = null,
+                modifiedSinceSeconds = modifiedSinceSeconds,
                 onBatch = onBatch
             )
         }
@@ -34,6 +36,7 @@ class MediaStoreScanner(context: Context) {
                 collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                 mediaType = 2,
                 durationColumn = MediaStore.Video.Media.DURATION,
+                modifiedSinceSeconds = modifiedSinceSeconds,
                 onBatch = onBatch
             )
         }
@@ -44,6 +47,7 @@ class MediaStoreScanner(context: Context) {
         collection: android.net.Uri,
         mediaType: Int,
         durationColumn: String?,
+        modifiedSinceSeconds: Long?,
         onBatch: suspend (List<MediaAsset>) -> Unit
     ): Int {
         val projection = buildList {
@@ -64,6 +68,18 @@ class MediaStoreScanner(context: Context) {
             val queryArgs = Bundle().apply {
                 putInt(ContentResolver.QUERY_ARG_LIMIT, BATCH_SIZE)
                 putInt(ContentResolver.QUERY_ARG_OFFSET, offset)
+                if (modifiedSinceSeconds != null) {
+                    val modified = MediaStore.MediaColumns.DATE_MODIFIED
+                    val added = MediaStore.MediaColumns.DATE_ADDED
+                    putString(
+                        ContentResolver.QUERY_ARG_SQL_SELECTION,
+                        "$modified >= ? OR $added >= ?"
+                    )
+                    putStringArray(
+                        ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
+                        arrayOf(modifiedSinceSeconds.toString(), modifiedSinceSeconds.toString())
+                    )
+                }
                 putStringArray(
                     ContentResolver.QUERY_ARG_SORT_COLUMNS,
                     arrayOf(MediaStore.MediaColumns.DATE_ADDED, MediaStore.MediaColumns._ID)
