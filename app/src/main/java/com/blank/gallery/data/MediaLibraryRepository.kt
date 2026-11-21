@@ -151,6 +151,14 @@ class MediaLibraryRepository(context: Context) {
         dao.setProtected(id, protected)
     }
 
+    suspend fun setFavoriteForIds(ids: List<Long>, favorite: Boolean) {
+        if (ids.isNotEmpty()) dao.setFavoriteForIds(ids, favorite)
+    }
+
+    suspend fun setProtectedForIds(ids: List<Long>, protected: Boolean) {
+        if (ids.isNotEmpty()) dao.setProtectedForIds(ids, protected)
+    }
+
     suspend fun setSelfOrganizeStatus(id: Long, status: Int) {
         dao.setSelfOrganizeStatus(id, status)
     }
