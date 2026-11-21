@@ -90,8 +90,9 @@ private fun BlankApp() {
     var albumMediaType by remember { mutableStateOf<Int?>(null) }
     var albumSearchQuery by remember { mutableStateOf("") }
     var albumGridColumns by remember { mutableStateOf(4) }
-    val mediaFlow = remember(repository, albumMediaType, albumSearchQuery) {
-        repository.pagedMedia(albumMediaType, albumSearchQuery)
+    var albumSortBySize by remember { mutableStateOf(false) }
+    val mediaFlow = remember(repository, albumMediaType, albumSearchQuery, albumSortBySize) {
+        repository.pagedMedia(albumMediaType, albumSearchQuery, albumSortBySize)
     }
     val pagedMedia = mediaFlow.collectAsLazyPagingItems()
     val scope = rememberCoroutineScope()
@@ -236,7 +237,9 @@ private fun BlankApp() {
                                 searchQuery = albumSearchQuery,
                                 onSearchQueryChange = { albumSearchQuery = it },
                                 gridColumns = albumGridColumns,
-                                onGridColumnsChange = { albumGridColumns = it }
+                                onGridColumnsChange = { albumGridColumns = it },
+                                sortBySize = albumSortBySize,
+                                onSortBySizeChange = { albumSortBySize = it }
                             )
                             MainPage.ORGANIZE -> OrganizeContent(
                                 onOpenCategory = { organizeSubPage = it },
