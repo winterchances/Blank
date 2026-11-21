@@ -293,9 +293,9 @@ private fun OrganizeContent(
     val smartItems = listOf(
         Triple(OrganizeSubPage.DUPLICATES, "重复照片", "查找内容完全相同的照片"),
         Triple(OrganizeSubPage.SIMILAR, "相似照片", "找出画面相近的照片"),
-        Triple(OrganizeSubPage.BURSTS, "连拍照片", "集中整理连续拍摄的照片"),
+        Triple(OrganizeSubPage.BURSTS, "连拍", "集中整理连续拍摄的照片"),
         Triple(OrganizeSubPage.SCREENSHOTS, "截图", "集中查看保存的截图"),
-        Triple(OrganizeSubPage.LARGE_FILES, "大文件", "找出占用空间较大的照片")
+        Triple(OrganizeSubPage.LARGE_FILES, "大文件", "查找占用空间较大的照片和视频")
     )
 
     Column(
