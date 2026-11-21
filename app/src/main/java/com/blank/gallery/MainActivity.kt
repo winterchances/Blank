@@ -4,6 +4,10 @@ import com.blank.gallery.data.MediaAsset
 import com.blank.gallery.data.MediaDeletionManager
 import com.blank.gallery.data.MediaLibraryRepository
 import com.blank.gallery.data.MediaPermission
+import com.blank.gallery.data.SelfOrganizeSummary
+import com.blank.gallery.domain.SelfOrganizeDecision
+import com.blank.gallery.domain.SelfOrganizeManager
+import com.blank.gallery.domain.SelfOrganizeMode
 import com.blank.gallery.ui.navigation.BottomNavigation
 import com.blank.gallery.ui.navigation.MainPage
 import com.blank.gallery.ui.screens.AlbumBatchActionBar
@@ -14,6 +18,7 @@ import com.blank.gallery.ui.screens.HomeContent
 import com.blank.gallery.ui.screens.OrganizeContent
 import com.blank.gallery.ui.screens.OrganizeSubPage
 import com.blank.gallery.ui.screens.OrganizeSubPageContent
+import com.blank.gallery.ui.screens.SelfOrganizeScreen
 import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.ThemeMint
@@ -86,6 +91,9 @@ private fun BlankApp() {
     val context = LocalContext.current
     val repository = remember(context) { MediaLibraryRepository(context.applicationContext) }
     val deletionManager = remember(context) { MediaDeletionManager(context.applicationContext) }
+    val selfOrganizeManager = remember(repository) { SelfOrganizeManager(repository) }
+    val selfOrganizeSummary by selfOrganizeManager.summary.collectAsState(initial = SelfOrganizeSummary())
+    val canUndoSelfOrganize by selfOrganizeManager.canUndo.collectAsState(initial = false)
 
     var currentPage by remember { mutableStateOf(MainPage.HOME) }
     var organizeSubPage by remember { mutableStateOf<OrganizeSubPage?>(null) }
@@ -96,6 +104,8 @@ private fun BlankApp() {
     var isScanning by remember { mutableStateOf(false) }
     var scannedItems by remember { mutableStateOf(0) }
     var scanMessage by remember { mutableStateOf<String?>(null) }
+    var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
+    var isSelfOrganizeLoading by remember { mutableStateOf(false) }
 
     val photoCount by repository.photoCount.collectAsState(initial = 0)
     val videoCount by repository.videoCount.collectAsState(initial = 0)
@@ -124,6 +134,13 @@ private fun BlankApp() {
     }
     val pagedMedia = mediaFlow.collectAsLazyPagingItems()
     val scope = rememberCoroutineScope()
+    val hasPhotoAccess = MediaPermission.canReadImages(context)
+    val activeSelfOrganizeMode = when (organizeSubPage) {
+        OrganizeSubPage.SELF_RANDOM -> SelfOrganizeMode.RANDOM
+        OrganizeSubPage.SELF_ORDERED -> SelfOrganizeMode.ORDERED
+        else -> null
+    }
+
 
     val runScan: () -> Unit = {
         if (!isScanning) {
@@ -311,6 +328,44 @@ private fun BlankApp() {
         }
     }
 
+    LaunchedEffect(organizeSubPage, hasPhotoAccess, isScanning) {
+        if (activeSelfOrganizeMode != null) {
+            if (!hasPhotoAccess || isScanning) {
+                selfOrganizePhoto = null
+                isSelfOrganizeLoading = false
+            } else {
+                isSelfOrganizeLoading = true
+                selfOrganizePhoto = selfOrganizeManager.nextPhoto(activeSelfOrganizeMode)
+                isSelfOrganizeLoading = false
+            }
+        } else {
+            selfOrganizePhoto = null
+        }
+    }
+
+    fun decideSelfOrganize(decision: SelfOrganizeDecision) {
+        val current = selfOrganizePhoto ?: return
+        val mode = activeSelfOrganizeMode ?: return
+        if (isSelfOrganizeLoading) return
+        isSelfOrganizeLoading = true
+        scope.launch {
+            selfOrganizeManager.applyDecision(current.id, decision)
+            selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
+            isSelfOrganizeLoading = false
+        }
+    }
+
+    fun undoSelfOrganize() {
+        val mode = activeSelfOrganizeMode ?: return
+        if (!canUndoSelfOrganize || isSelfOrganizeLoading) return
+        isSelfOrganizeLoading = true
+        scope.launch {
+            selfOrganizeManager.undo()
+            selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
+            isSelfOrganizeLoading = false
+        }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -378,7 +433,23 @@ private fun BlankApp() {
                         backLabel = if (selectionMode) "×" else "‹"
                     )
                     if (organizeSubPage != null) {
-                        OrganizeSubPageContent(page = organizeSubPage!!)
+                        if (activeSelfOrganizeMode != null) {
+                            SelfOrganizeScreen(
+                                asset = selfOrganizePhoto,
+                                summary = selfOrganizeSummary,
+                                canUndo = canUndoSelfOrganize,
+                                isLoading = isSelfOrganizeLoading,
+                                hasPhotoAccess = hasPhotoAccess,
+                                isScanning = isScanning,
+                                onRequestAccess = requestAccessOrScan,
+                                onKeep = { decideSelfOrganize(SelfOrganizeDecision.KEEP) },
+                                onPendingDelete = { decideSelfOrganize(SelfOrganizeDecision.PENDING_DELETE) },
+                                onSkip = { decideSelfOrganize(SelfOrganizeDecision.SKIP) },
+                                onUndo = { undoSelfOrganize() }
+                            )
+                        } else {
+                            OrganizeSubPageContent(page = organizeSubPage!!)
+                        }
                     } else {
                         when (currentPage) {
                             MainPage.HOME -> HomeContent(
