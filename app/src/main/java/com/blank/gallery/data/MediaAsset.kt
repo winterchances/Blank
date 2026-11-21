@@ -1,5 +1,6 @@
 package com.blank.gallery.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -37,5 +38,5 @@ data class MediaAsset(
     /** 0 = not reviewed, 1 = kept, 2 = pending deletion, 3 = skipped. */
     val selfOrganizeStatus: Int = 0,
     /** Hidden when the current MediaStore permission scope no longer exposes this item. */
-    val isVisible: Boolean = true
+    @ColumnInfo(defaultValue = "1") val isVisible: Boolean = true
 )
