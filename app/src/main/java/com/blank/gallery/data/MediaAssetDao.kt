@@ -20,7 +20,8 @@ interface MediaAssetDao {
           AND (:mediaType IS NULL OR mediaType = :mediaType)
           AND (:query = '' OR displayName LIKE '%' || :query || '%')
         ORDER BY CASE WHEN :sortBySize = 1 THEN sizeBytes END DESC,
-                 dateAddedSeconds DESC, id DESC
+                 CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC,
+                 id DESC
     """)
     fun pagingSource(mediaType: Int?, query: String, sortBySize: Int): PagingSource<Int, MediaAsset>
 
@@ -33,7 +34,7 @@ interface MediaAssetDao {
     @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM media_assets WHERE isVisible = 1")
     fun observeTotalBytes(): Flow<Long>
 
-    @Query("SELECT * FROM media_assets WHERE isVisible = 1 AND mediaType = 1 AND selfOrganizeStatus = 0 AND isProtected = 0 ORDER BY dateAddedSeconds DESC, id DESC")
+    @Query("SELECT * FROM media_assets WHERE isVisible = 1 AND mediaType = 1 AND selfOrganizeStatus = 0 AND isProtected = 0 ORDER BY CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC, id DESC")
     suspend fun getNextSelfOrganizePhoto(): MediaAsset?
 
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
@@ -56,6 +57,7 @@ interface MediaAssetDao {
             mediaType = :mediaType,
             sizeBytes = :sizeBytes,
             dateAddedSeconds = :dateAddedSeconds,
+            dateTakenSeconds = :dateTakenSeconds,
             dateModifiedSeconds = :dateModifiedSeconds,
             width = :width,
             height = :height,
@@ -72,6 +74,7 @@ interface MediaAssetDao {
         mediaType: Int,
         sizeBytes: Long,
         dateAddedSeconds: Long,
+        dateTakenSeconds: Long,
         dateModifiedSeconds: Long,
         width: Int,
         height: Int,
@@ -91,6 +94,7 @@ interface MediaAssetDao {
                 mediaType = item.mediaType,
                 sizeBytes = item.sizeBytes,
                 dateAddedSeconds = item.dateAddedSeconds,
+                dateTakenSeconds = item.dateTakenSeconds,
                 dateModifiedSeconds = item.dateModifiedSeconds,
                 width = item.width,
                 height = item.height,
