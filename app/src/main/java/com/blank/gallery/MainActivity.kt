@@ -19,6 +19,7 @@ import com.blank.gallery.ui.screens.OrganizeContent
 import com.blank.gallery.ui.screens.OrganizeSubPage
 import com.blank.gallery.ui.screens.OrganizeSubPageContent
 import com.blank.gallery.ui.screens.SelfOrganizeScreen
+import com.blank.gallery.ui.screens.SelfOrganizePendingDeleteScreen
 import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.ThemeMint
@@ -94,6 +95,7 @@ private fun BlankApp() {
     val selfOrganizeManager = remember(repository) { SelfOrganizeManager(repository) }
     val selfOrganizeSummary by selfOrganizeManager.summary.collectAsState(initial = SelfOrganizeSummary())
     val canUndoSelfOrganize by selfOrganizeManager.canUndo.collectAsState(initial = false)
+    val selfOrganizePendingDelete by selfOrganizeManager.pendingDelete.collectAsState(initial = emptyList())
 
     var currentPage by remember { mutableStateOf(MainPage.HOME) }
     var organizeSubPage by remember { mutableStateOf<OrganizeSubPage?>(null) }
@@ -107,6 +109,8 @@ private fun BlankApp() {
     var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
     var isSelfOrganizeLoading by remember { mutableStateOf(false) }
     var selfOrganizeMessage by remember { mutableStateOf<String?>(null) }
+    var isShowingSelfPendingDelete by remember { mutableStateOf(false) }
+    var selfOrganizeDeleteConfirmationVisible by remember { mutableStateOf(false) }
 
     val photoCount by repository.photoCount.collectAsState(initial = 0)
     val videoCount by repository.videoCount.collectAsState(initial = 0)
@@ -270,9 +274,8 @@ private fun BlankApp() {
         }
     }
 
-    fun confirmBatchDelete() {
-        deleteConfirmationVisible = false
-        val eligible = selectedMedia.values.filterNot { it.isProtected }
+    fun startDeleteItems(items: List<MediaAsset>) {
+        val eligible = items.filter { it.isVisible && it.mediaType == 1 && !it.isProtected }
         if (eligible.isEmpty() || isDeletionInProgress) return
         isDeletionInProgress = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -294,6 +297,7 @@ private fun BlankApp() {
                         pendingTrashIds = emptySet()
                         isDeletionInProgress = false
                         scanMessage = "无法发起系统回收站请求，请稍后重试"
+                        selfOrganizeMessage = "无法发起系统回收站请求，请稍后重试"
                     }
                 }
             }
@@ -306,6 +310,16 @@ private fun BlankApp() {
             finishLegacyDelete = { finishLegacyDeleteFlow() }
             processNextLegacyDelete()
         }
+    }
+
+    fun confirmBatchDelete() {
+        deleteConfirmationVisible = false
+        startDeleteItems(selectedMedia.values.toList())
+    }
+
+    fun confirmSelfOrganizePendingDelete() {
+        selfOrganizeDeleteConfirmationVisible = false
+        startDeleteItems(selfOrganizePendingDelete)
     }
 
     val requestAccessOrScan: () -> Unit = {
@@ -410,6 +424,14 @@ private fun BlankApp() {
         organizeSubPage = null
     }
 
+    BackHandler(enabled = isShowingSelfPendingDelete) {
+        isShowingSelfPendingDelete = false
+    }
+
+    BackHandler(enabled = selfOrganizeDeleteConfirmationVisible) {
+        selfOrganizeDeleteConfirmationVisible = false
+    }
+
     BackHandler(enabled = deleteConfirmationVisible) {
         deleteConfirmationVisible = false
     }
@@ -433,12 +455,17 @@ private fun BlankApp() {
                             bottom = (if (organizeSubPage == null) 104.dp else 24.dp) +
                                 WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         )
-                        .blur(if (deleteConfirmationVisible) 5.dp else 0.dp)
+                        .blur(if (deleteConfirmationVisible || selfOrganizeDeleteConfirmationVisible) 5.dp else 0.dp)
                 ) {
                     val selectionMode = currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty()
                     PageHeader(
-                        title = if (selectionMode) "已选 ${selectedMedia.size} 项" else organizeSubPage?.title ?: currentPage.title,
+                        title = when {
+                            isShowingSelfPendingDelete -> "待删除"
+                            selectionMode -> "已选 ${selectedMedia.size} 项"
+                            else -> organizeSubPage?.title ?: currentPage.title
+                        },
                         onBack = when {
+                            isShowingSelfPendingDelete -> { { isShowingSelfPendingDelete = false } }
                             selectionMode -> { { selectedMedia = emptyMap() } }
                             organizeSubPage != null -> { { organizeSubPage = null } }
                             else -> null
@@ -446,7 +473,21 @@ private fun BlankApp() {
                         backLabel = if (selectionMode) "×" else "‹"
                     )
                     if (organizeSubPage != null) {
-                        if (activeSelfOrganizeMode != null) {
+                        if (isShowingSelfPendingDelete) {
+                            SelfOrganizePendingDeleteScreen(
+                                assets = selfOrganizePendingDelete,
+                                isLoading = isSelfOrganizeLoading || isDeletionInProgress,
+                                onCancel = { asset ->
+                                    scope.launch {
+                                        try {
+                                            selfOrganizeManager.cancelPendingDelete(asset.id)
+                                        } catch (_: Exception) {
+                                            selfOrganizeMessage = "撤回失败，请稍后重试"
+                                        }
+                                    }
+                                }
+                            )
+                        } else if (activeSelfOrganizeMode != null) {
                             SelfOrganizeScreen(
                                 asset = selfOrganizePhoto,
                                 summary = selfOrganizeSummary,
@@ -459,7 +500,8 @@ private fun BlankApp() {
                                 onKeep = { decideSelfOrganize(SelfOrganizeDecision.KEEP) },
                                 onPendingDelete = { decideSelfOrganize(SelfOrganizeDecision.PENDING_DELETE) },
                                 onSkip = { decideSelfOrganize(SelfOrganizeDecision.SKIP) },
-                                onUndo = { undoSelfOrganize() }
+                                onUndo = { undoSelfOrganize() },
+                                onOpenPendingDelete = { isShowingSelfPendingDelete = true }
                             )
                         } else {
                             OrganizeSubPageContent(page = organizeSubPage!!)
@@ -519,7 +561,7 @@ private fun BlankApp() {
                     targetState = organizeSubPage == null && currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty(),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .blur(if (deleteConfirmationVisible) 5.dp else 0.dp)
+                        .blur(if (deleteConfirmationVisible || selfOrganizeDeleteConfirmationVisible) 5.dp else 0.dp)
                         .padding(
                             start = 16.dp,
                             end = 16.dp,
@@ -575,6 +617,15 @@ private fun BlankApp() {
                     isAndroid11OrNewer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R,
                     onDismiss = { deleteConfirmationVisible = false },
                     onConfirm = { confirmBatchDelete() }
+                )
+
+                AlbumDeleteConfirmationSheet(
+                    visible = selfOrganizeDeleteConfirmationVisible,
+                    deletableCount = selfOrganizePendingDelete.size,
+                    protectedCount = 0,
+                    isAndroid11OrNewer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R,
+                    onDismiss = { selfOrganizeDeleteConfirmationVisible = false },
+                    onConfirm = { confirmSelfOrganizePendingDelete() }
                 )
             }
         }
