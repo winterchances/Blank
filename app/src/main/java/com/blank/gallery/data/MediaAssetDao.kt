@@ -152,8 +152,8 @@ interface MediaAssetDao {
     }
 
     @Transaction
-    suspend fun undoLastSelfOrganizeDecision(): Boolean {
-        val action = getLastSelfOrganizeAction() ?: return false
+    suspend fun undoLastSelfOrganizeDecision(): MediaAsset? {
+        val action = getLastSelfOrganizeAction() ?: return null
         val current = findById(action.mediaAssetId)
         if (current != null) {
             restoreSelfOrganizeState(
@@ -163,7 +163,10 @@ interface MediaAssetDao {
             )
         }
         deleteSelfOrganizeAction(action.id)
-        return current != null
+        return current?.copy(
+            selfOrganizeStatus = action.previousStatus,
+            selfOrganizeSkipOrder = action.previousSkipOrder
+        )?.takeIf { it.isVisible && it.mediaType == 1 && !it.isProtected }
     }
 
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
