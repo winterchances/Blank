@@ -52,6 +52,19 @@ interface MediaAssetDao {
             durationMs = :durationMs,
             isVisible = 1
         WHERE mediaStoreId = :mediaStoreId
+          AND (
+              contentUri != :contentUri OR
+              displayName != :displayName OR
+              mimeType IS NOT :mimeType OR
+              mediaType != :mediaType OR
+              sizeBytes != :sizeBytes OR
+              dateAddedSeconds != :dateAddedSeconds OR
+              dateModifiedSeconds != :dateModifiedSeconds OR
+              width != :width OR
+              height != :height OR
+              durationMs != :durationMs OR
+              isVisible = 0
+          )
     """)
     suspend fun updateMediaMetadata(
         mediaStoreId: Long,
