@@ -14,6 +14,7 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["mediaStoreId"], unique = true),
         Index(value = ["dateAddedSeconds"]),
+        Index(value = ["relativePath"]),
         Index(value = ["mediaType"]),
         Index(value = ["isProtected"]),
         Index(value = ["isVisible"])
