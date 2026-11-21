@@ -181,6 +181,10 @@ class MediaLibraryRepository(context: Context) {
         dao.setSelfOrganizeStatus(id, status)
     }
 
+    suspend fun cancelSelfOrganizePendingDelete(id: Long) {
+        dao.cancelSelfOrganizePendingDelete(id)
+    }
+
     private companion object {
         const val KEY_LAST_SCAN_AT = "last_scan_at"
         const val KEY_LAST_FULL_SCAN_AT = "last_full_scan_at"
