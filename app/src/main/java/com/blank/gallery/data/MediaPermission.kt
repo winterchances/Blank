@@ -51,6 +51,21 @@ object MediaPermission {
         Build.VERSION.SDK_INT >= 34 &&
             has(context, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
 
+    fun accessScope(context: Context): String {
+        val selected = hasSelectedMediaAccess(context)
+        val images = when {
+            hasFullImageAccess(context) -> "images:full"
+            selected -> "images:selected"
+            else -> "images:none"
+        }
+        val videos = when {
+            hasFullVideoAccess(context) -> "videos:full"
+            selected -> "videos:selected"
+            else -> "videos:none"
+        }
+        return "$images|$videos"
+    }
+
     private fun has(context: Context, permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 }
