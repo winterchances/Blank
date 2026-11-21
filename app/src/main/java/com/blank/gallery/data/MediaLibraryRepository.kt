@@ -55,7 +55,7 @@ class MediaLibraryRepository(context: Context) {
         val now = System.currentTimeMillis()
         val previousScanAt = preferences.getLong(KEY_LAST_SCAN_AT, 0L)
         val previousFullScanAt = preferences.getLong(KEY_LAST_FULL_SCAN_AT, 0L)
-        val captureTimeIndexVersion = preferences.getInt(KEY_CAPTURE_TIME_INDEX_VERSION, 0)
+        val captureTimeIndexVersion = preferences.getInt(KEY_MEDIA_INDEX_VERSION, 0)
         val previousScope = preferences.getString(KEY_LAST_SCAN_SCOPE, null)
 
         val requiresFullScan =
@@ -63,7 +63,7 @@ class MediaLibraryRepository(context: Context) {
                 previousScanAt == 0L ||
                 previousScope != permissionScope ||
                 previousFullScanAt == 0L ||
-                captureTimeIndexVersion < CAPTURE_TIME_INDEX_VERSION ||
+                captureTimeIndexVersion < MEDIA_INDEX_VERSION ||
                 now - previousFullScanAt >= FULL_SCAN_INTERVAL_MS
 
         val permissionScopeChanged = previousScope != permissionScope
@@ -99,7 +99,7 @@ class MediaLibraryRepository(context: Context) {
             .putString(KEY_LAST_SCAN_SCOPE, permissionScope)
         if (requiresFullScan) {
             editor.putLong(KEY_LAST_FULL_SCAN_AT, completedAt)
-                .putInt(KEY_CAPTURE_TIME_INDEX_VERSION, CAPTURE_TIME_INDEX_VERSION)
+                .putInt(KEY_MEDIA_INDEX_VERSION, MEDIA_INDEX_VERSION)
         }
         editor.apply()
         _lastScanAt.value = completedAt
@@ -122,8 +122,8 @@ class MediaLibraryRepository(context: Context) {
         const val KEY_LAST_SCAN_AT = "last_scan_at"
         const val KEY_LAST_FULL_SCAN_AT = "last_full_scan_at"
         const val KEY_LAST_SCAN_SCOPE = "last_scan_scope"
-        const val KEY_CAPTURE_TIME_INDEX_VERSION = "capture_time_index_version"
-        const val CAPTURE_TIME_INDEX_VERSION = 1
+        const val KEY_MEDIA_INDEX_VERSION = "media_index_version"
+        const val MEDIA_INDEX_VERSION = 1
         const val NO_ACCESS_SCOPE = "no-access"
         const val SCAN_OVERLAP_SECONDS = 2L
         const val FULL_SCAN_INTERVAL_MS = 24L * 60L * 60L * 1000L
