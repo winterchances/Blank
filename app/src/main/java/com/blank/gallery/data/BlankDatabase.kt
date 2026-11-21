@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [MediaAsset::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class BlankDatabase : RoomDatabase() {
@@ -35,6 +35,14 @@ abstract class BlankDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE media_assets ADD COLUMN dateTakenSeconds INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: BlankDatabase? = null
 
@@ -45,7 +53,7 @@ abstract class BlankDatabase : RoomDatabase() {
                     BlankDatabase::class.java,
                     "blank-local.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                     .also { INSTANCE = it }
             }
