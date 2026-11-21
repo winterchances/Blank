@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,8 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -82,8 +85,6 @@ internal fun SelfOrganizeScreen(
                     .clip(RoundedCornerShape(14.dp))
                     .clickable(
                         enabled = canUndo && !isLoading,
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
                         onClick = onUndo
                     )
                     .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -122,6 +123,7 @@ internal fun SelfOrganizeScreen(
                     .background(Color.Black.copy(alpha = 0.035f))
                     .pointerInput(asset.id) {
                         var dragDistance = 0f
+                        val swipeThreshold = 80.dp.toPx()
                         detectVerticalDragGestures(
                             onVerticalDrag = { change, amount ->
                                 dragDistance += amount
@@ -129,8 +131,8 @@ internal fun SelfOrganizeScreen(
                             },
                             onDragEnd = {
                                 when {
-                                    dragDistance < -80f -> onKeep()
-                                    dragDistance > 80f -> onPendingDelete()
+                                    dragDistance < -swipeThreshold -> onKeep()
+                                    dragDistance > swipeThreshold -> onPendingDelete()
                                 }
                                 dragDistance = 0f
                             },
@@ -139,12 +141,20 @@ internal fun SelfOrganizeScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = asset.contentUri,
-                    contentDescription = asset.displayName,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize()
-                )
+                AnimatedContent(
+                    targetState = asset,
+                    transitionSpec = {
+                        fadeIn(tween(200)) togetherWith fadeOut(tween(200))
+                    },
+                    label = "self-organize-photo"
+                ) { currentAsset ->
+                    AsyncImage(
+                        model = currentAsset.contentUri,
+                        contentDescription = currentAsset.displayName,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             Text(
                 asset.displayName,
@@ -191,8 +201,6 @@ private fun ActionSurface(
             .border(1.dp, Color.Black.copy(alpha = 0.045f), RoundedCornerShape(18.dp))
             .clickable(
                 enabled = enabled,
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() },
                 onClick = onClick
             )
             .padding(horizontal = 14.dp, vertical = 15.dp),
