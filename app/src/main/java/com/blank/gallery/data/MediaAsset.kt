@@ -40,5 +40,5 @@ data class MediaAsset(
     /** Hidden when the current MediaStore permission scope no longer exposes this item. */
     @ColumnInfo(defaultValue = "1") val isVisible: Boolean = true,
     /** Scan token used to finalize visibility only after a complete scan. */
-    @ColumnInfo(defaultValue = "") val lastSeenScanToken: String = ""
+    @ColumnInfo(defaultValue = "''") val lastSeenScanToken: String = ""
 )
