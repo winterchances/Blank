@@ -93,31 +93,31 @@ class MediaStoreScanner(context: Context) {
             val batch = mutableListOf<MediaAsset>()
             val cursor = resolver.query(collection, projection, queryArgs, null)
                 ?: throw IllegalStateException("MediaStore returned no cursor")
-            cursor.use {
-                val idIndex = it.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-                val nameIndex = it.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
-                val mimeIndex = it.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
-                val sizeIndex = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE)
-                val addedIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)
-                val modifiedIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED)
-                val widthIndex = cursor.getColumnIndex(MediaStore.MediaColumns.WIDTH)
-                val heightIndex = cursor.getColumnIndex(MediaStore.MediaColumns.HEIGHT)
-                val durationIndex = durationColumn?.let(cursor::getColumnIndex) ?: -1
+            cursor.use { c ->
+                val idIndex = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+                val nameIndex = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
+                val mimeIndex = c.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
+                val sizeIndex = c.getColumnIndex(MediaStore.MediaColumns.SIZE)
+                val addedIndex = c.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)
+                val modifiedIndex = c.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED)
+                val widthIndex = c.getColumnIndex(MediaStore.MediaColumns.WIDTH)
+                val heightIndex = c.getColumnIndex(MediaStore.MediaColumns.HEIGHT)
+                val durationIndex = durationColumn?.let(c::getColumnIndex) ?: -1
 
-                while (it.moveToNext()) {
-                    val id = it.getLong(idIndex)
+                while (c.moveToNext()) {
+                    val id = c.getLong(idIndex)
                     batch += MediaAsset(
                         mediaStoreId = id,
                         contentUri = ContentUris.withAppendedId(collection, id).toString(),
-                        displayName = it.getString(nameIndex) ?: "未命名",
-                        mimeType = mimeIndex.takeIf { it >= 0 }?.let { cursor.getString(it) },
+                        displayName = c.getString(nameIndex) ?: "未命名",
+                        mimeType = mimeIndex.takeIf { it >= 0 }?.let { c.getString(it) },
                         mediaType = mediaType,
-                        sizeBytes = sizeIndex.takeIf { it >= 0 }?.let { cursor.getLong(it) } ?: 0L,
-                        dateAddedSeconds = addedIndex.takeIf { it >= 0 }?.let { cursor.getLong(it) } ?: 0L,
-                        dateModifiedSeconds = modifiedIndex.takeIf { it >= 0 }?.let { cursor.getLong(it) } ?: 0L,
-                        width = widthIndex.takeIf { it >= 0 }?.let { it.getInt(it) } ?: 0,
-                        height = heightIndex.takeIf { it >= 0 }?.let { cursor.getInt(it) } ?: 0,
-                        durationMs = durationIndex.takeIf { it >= 0 }?.let { cursor.getLong(it) } ?: 0L
+                        sizeBytes = sizeIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
+                        dateAddedSeconds = addedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
+                        dateModifiedSeconds = modifiedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
+                        width = widthIndex.takeIf { it >= 0 }?.let { c.getInt(it) } ?: 0,
+                        height = heightIndex.takeIf { it >= 0 }?.let { c.getInt(it) } ?: 0,
+                        durationMs = durationIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L
                     )
                 }
             }
