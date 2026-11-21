@@ -35,6 +35,9 @@ interface MediaAssetDao {
     @Query("UPDATE media_assets SET isVisible = 0")
     suspend fun hideAllBeforePermissionScopedScan()
 
+    @Query("UPDATE media_assets SET isVisible = CASE WHEN lastSeenScanToken = :scanToken THEN 1 ELSE 0 END")
+    suspend fun completePermissionScopedScan(scanToken: String)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfNew(item: MediaAsset)
 
@@ -50,21 +53,9 @@ interface MediaAssetDao {
             width = :width,
             height = :height,
             durationMs = :durationMs,
+            lastSeenScanToken = :scanToken,
             isVisible = 1
         WHERE mediaStoreId = :mediaStoreId
-          AND (
-              contentUri != :contentUri OR
-              displayName != :displayName OR
-              mimeType IS NOT :mimeType OR
-              mediaType != :mediaType OR
-              sizeBytes != :sizeBytes OR
-              dateAddedSeconds != :dateAddedSeconds OR
-              dateModifiedSeconds != :dateModifiedSeconds OR
-              width != :width OR
-              height != :height OR
-              durationMs != :durationMs OR
-              isVisible = 0
-          )
     """)
     suspend fun updateMediaMetadata(
         mediaStoreId: Long,
@@ -77,13 +68,14 @@ interface MediaAssetDao {
         dateModifiedSeconds: Long,
         width: Int,
         height: Int,
-        durationMs: Long
+        durationMs: Long,
+        scanToken: String
     )
 
     @Transaction
-    suspend fun syncScanned(items: List<MediaAsset>) {
+    suspend fun syncScanned(items: List<MediaAsset>, scanToken: String) {
         items.forEach { item ->
-            insertIfNew(item)
+            insertIfNew(item.copy(lastSeenScanToken = scanToken))
             updateMediaMetadata(
                 mediaStoreId = item.mediaStoreId,
                 contentUri = item.contentUri,
@@ -95,7 +87,8 @@ interface MediaAssetDao {
                 dateModifiedSeconds = item.dateModifiedSeconds,
                 width = item.width,
                 height = item.height,
-                durationMs = item.durationMs
+                durationMs = item.durationMs,
+                scanToken = scanToken
             )
         }
     }
