@@ -360,8 +360,7 @@ private fun BlankApp() {
         if (!canUndoSelfOrganize || isSelfOrganizeLoading) return
         isSelfOrganizeLoading = true
         scope.launch {
-            selfOrganizeManager.undo()
-            selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
+            selfOrganizePhoto = selfOrganizeManager.undo() ?: selfOrganizeManager.nextPhoto(mode)
             isSelfOrganizeLoading = false
         }
     }
