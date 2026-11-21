@@ -53,6 +53,8 @@ class MediaLibraryRepository(context: Context) {
     val photoCount = dao.observePhotoCount()
     val videoCount = dao.observeVideoCount()
     val totalBytes = dao.observeTotalBytes()
+    val selfOrganizeSummary = dao.observeSelfOrganizeSummary()
+    val canUndoSelfOrganize = dao.observeCanUndoSelfOrganize()
 
     /**
      * Hide cached media immediately when the app no longer has permission.
@@ -163,6 +165,16 @@ class MediaLibraryRepository(context: Context) {
     suspend fun hideFromLibraryForIds(ids: List<Long>) {
         if (ids.isNotEmpty()) dao.hideFromLibraryForIds(ids)
     }
+
+    suspend fun nextSelfOrganizePhoto(random: Boolean): MediaAsset? =
+        if (random) dao.getNextRandomSelfOrganizePhoto() else dao.getNextOrderedSelfOrganizePhoto()
+
+    suspend fun applySelfOrganizeDecision(id: Long, status: Int) {
+        dao.applySelfOrganizeDecision(id, status)
+    }
+
+    suspend fun undoLastSelfOrganizeDecision(): Boolean =
+        dao.undoLastSelfOrganizeDecision()
 
     suspend fun setSelfOrganizeStatus(id: Long, status: Int) {
         dao.setSelfOrganizeStatus(id, status)
