@@ -23,6 +23,11 @@ class SelfOrganizeManager(
 ) {
     val summary: Flow<SelfOrganizeSummary> = repository.selfOrganizeSummary
     val canUndo: Flow<Boolean> = repository.canUndoSelfOrganize
+    val pendingDelete: Flow<List<MediaAsset>> = repository.selfOrganizePendingDelete
+
+    suspend fun cancelPendingDelete(assetId: Long) {
+        repository.cancelSelfOrganizePendingDelete(assetId)
+    }
 
     suspend fun nextPhoto(mode: SelfOrganizeMode): MediaAsset? =
         repository.nextSelfOrganizePhoto(mode == SelfOrganizeMode.RANDOM)
