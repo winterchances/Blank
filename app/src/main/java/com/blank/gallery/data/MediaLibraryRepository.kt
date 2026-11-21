@@ -48,7 +48,8 @@ class MediaLibraryRepository(context: Context) {
         val previousFullScanAt = preferences.getLong(KEY_LAST_FULL_SCAN_AT, 0L)
         val previousScope = preferences.getString(KEY_LAST_SCAN_SCOPE, null)
         val requiresFullScan =
-            previousScanAt == 0L ||
+            permissionScope.contains(":selected") ||
+                previousScanAt == 0L ||
                 previousScope != permissionScope ||
                 previousFullScanAt == 0L ||
                 now - previousFullScanAt >= FULL_SCAN_INTERVAL_MS
