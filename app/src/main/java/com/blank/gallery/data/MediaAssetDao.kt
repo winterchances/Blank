@@ -9,6 +9,11 @@ import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+data class MediaFolder(
+    val relativePath: String,
+    val itemCount: Int
+)
+
 @Dao
 interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
@@ -19,11 +24,21 @@ interface MediaAssetDao {
         WHERE isVisible = 1
           AND (:mediaType IS NULL OR mediaType = :mediaType)
           AND (:query = '' OR displayName LIKE '%' || :query || '%')
+          AND (:folderPath IS NULL OR relativePath = :folderPath)
         ORDER BY CASE WHEN :sortBySize = 1 THEN sizeBytes END DESC,
                  CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC,
                  id DESC
     """)
-    fun pagingSource(mediaType: Int?, query: String, sortBySize: Int): PagingSource<Int, MediaAsset>
+    fun pagingSource(mediaType: Int?, query: String, folderPath: String?, sortBySize: Int): PagingSource<Int, MediaAsset>
+
+    @Query("""
+        SELECT relativePath, COUNT(*) AS itemCount
+        FROM media_assets
+        WHERE isVisible = 1 AND relativePath != ''
+        GROUP BY relativePath
+        ORDER BY relativePath COLLATE NOCASE ASC
+    """)
+    fun observeFolders(): Flow<List<MediaFolder>>
 
     @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
     fun observePhotoCount(): Flow<Int>
@@ -53,6 +68,7 @@ interface MediaAssetDao {
         UPDATE media_assets SET
             contentUri = :contentUri,
             displayName = :displayName,
+            relativePath = :relativePath,
             mimeType = :mimeType,
             mediaType = :mediaType,
             sizeBytes = :sizeBytes,
@@ -70,6 +86,7 @@ interface MediaAssetDao {
         mediaStoreId: Long,
         contentUri: String,
         displayName: String,
+        relativePath: String,
         mimeType: String?,
         mediaType: Int,
         sizeBytes: Long,
@@ -90,6 +107,7 @@ interface MediaAssetDao {
                 mediaStoreId = item.mediaStoreId,
                 contentUri = item.contentUri,
                 displayName = item.displayName,
+                relativePath = item.relativePath,
                 mimeType = item.mimeType,
                 mediaType = item.mediaType,
                 sizeBytes = item.sizeBytes,
