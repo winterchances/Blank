@@ -56,6 +56,7 @@ class MediaStoreScanner(context: Context) {
             add(MediaStore.MediaColumns.MIME_TYPE)
             add(MediaStore.MediaColumns.SIZE)
             add(MediaStore.MediaColumns.DATE_ADDED)
+            add(MediaStore.MediaColumns.DATE_TAKEN)
             add(MediaStore.MediaColumns.DATE_MODIFIED)
             add(MediaStore.MediaColumns.WIDTH)
             add(MediaStore.MediaColumns.HEIGHT)
@@ -99,6 +100,7 @@ class MediaStoreScanner(context: Context) {
                 val mimeIndex = c.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
                 val sizeIndex = c.getColumnIndex(MediaStore.MediaColumns.SIZE)
                 val addedIndex = c.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)
+                val takenIndex = c.getColumnIndex(MediaStore.MediaColumns.DATE_TAKEN)
                 val modifiedIndex = c.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED)
                 val widthIndex = c.getColumnIndex(MediaStore.MediaColumns.WIDTH)
                 val heightIndex = c.getColumnIndex(MediaStore.MediaColumns.HEIGHT)
@@ -106,6 +108,10 @@ class MediaStoreScanner(context: Context) {
 
                 while (c.moveToNext()) {
                     val id = c.getLong(idIndex)
+                    val addedSeconds = addedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L
+                    val takenSeconds = takenIndex.takeIf { it >= 0 }
+                        ?.let { c.getLong(it).takeIf { value -> value > 0L }?.div(1000L) }
+                        ?: addedSeconds
                     batch += MediaAsset(
                         mediaStoreId = id,
                         contentUri = ContentUris.withAppendedId(collection, id).toString(),
@@ -113,7 +119,8 @@ class MediaStoreScanner(context: Context) {
                         mimeType = mimeIndex.takeIf { it >= 0 }?.let { c.getString(it) },
                         mediaType = mediaType,
                         sizeBytes = sizeIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
-                        dateAddedSeconds = addedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
+                        dateAddedSeconds = addedSeconds,
+                        dateTakenSeconds = takenSeconds,
                         dateModifiedSeconds = modifiedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
                         width = widthIndex.takeIf { it >= 0 }?.let { c.getInt(it) } ?: 0,
                         height = heightIndex.takeIf { it >= 0 }?.let { c.getInt(it) } ?: 0,
