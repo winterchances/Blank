@@ -16,21 +16,27 @@ class MediaStoreScanner(context: Context) {
     private val resolver = context.applicationContext.contentResolver
 
     suspend fun scanVisibleMedia(
+        includeImages: Boolean,
+        includeVideos: Boolean,
         onBatch: suspend (List<MediaAsset>) -> Unit
     ): Int = withContext(Dispatchers.IO) {
         var total = 0
-        total += queryCollection(
-            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            mediaType = 1,
-            durationColumn = null,
-            onBatch = onBatch
-        )
-        total += queryCollection(
-            collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-            mediaType = 2,
-            durationColumn = MediaStore.Video.Media.DURATION,
-            onBatch = onBatch
-        )
+        if (includeImages) {
+            total += queryCollection(
+                collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                mediaType = 1,
+                durationColumn = null,
+                onBatch = onBatch
+            )
+        }
+        if (includeVideos) {
+            total += queryCollection(
+                collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                mediaType = 2,
+                durationColumn = MediaStore.Video.Media.DURATION,
+                onBatch = onBatch
+            )
+        }
         total
     }
 
