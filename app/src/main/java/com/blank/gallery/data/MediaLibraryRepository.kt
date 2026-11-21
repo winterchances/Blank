@@ -75,12 +75,13 @@ class MediaLibraryRepository(context: Context) {
         }
 
         val completedAt = System.currentTimeMillis()
-        preferences.edit()
+        val editor = preferences.edit()
             .putLong(KEY_LAST_SCAN_AT, completedAt)
             .putString(KEY_LAST_SCAN_SCOPE, permissionScope)
-            .apply {
-                if (requiresFullScan) putLong(KEY_LAST_FULL_SCAN_AT, completedAt)
-            }
+        if (requiresFullScan) {
+            editor.putLong(KEY_LAST_FULL_SCAN_AT, completedAt)
+        }
+        editor.apply()
         _lastScanAt.value = completedAt
         return scannedCount
     }
