@@ -1,8 +1,8 @@
 package com.blank.gallery.data
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.paging.PagingSource
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
@@ -32,7 +32,10 @@ interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
     suspend fun findByMediaStoreId(mediaStoreId: Long): MediaAsset?
 
-    @Query("UPDATE media_assets SET isVisible = 0")\n    suspend fun hideAllBeforePermissionScopedScan()\n\n    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Query("UPDATE media_assets SET isVisible = 0")
+    suspend fun hideAllBeforePermissionScopedScan()
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfNew(item: MediaAsset)
 
     @Query("""
@@ -46,7 +49,8 @@ interface MediaAssetDao {
             dateModifiedSeconds = :dateModifiedSeconds,
             width = :width,
             height = :height,
-            durationMs = :durationMs
+            durationMs = :durationMs,
+            isVisible = 1
         WHERE mediaStoreId = :mediaStoreId
     """)
     suspend fun updateMediaMetadata(
