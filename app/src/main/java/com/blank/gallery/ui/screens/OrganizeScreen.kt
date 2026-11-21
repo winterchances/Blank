@@ -1,5 +1,8 @@
 package com.blank.gallery
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -109,7 +112,7 @@ internal fun OrganizeContent(
 
 
 @Composable
-private fun OrganizeSubPageContent(page: OrganizeSubPage) {
+internal fun OrganizeSubPageContent(page: OrganizeSubPage) {
     val message = when (page) {
         OrganizeSubPage.SELF_ORDERED ->
             "扫描完成后，将按照照片时间顺序，从尚未整理且未受保护的照片开始"
