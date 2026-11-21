@@ -1,5 +1,17 @@
 package com.blank.gallery
 
+import com.blank.gallery.ui.navigation.BottomNavigation
+import com.blank.gallery.ui.navigation.MainPage
+import com.blank.gallery.ui.screens.AlbumsContent
+import com.blank.gallery.ui.screens.FavoritesContent
+import com.blank.gallery.ui.screens.HomeContent
+import com.blank.gallery.ui.screens.OrganizeContent
+import com.blank.gallery.ui.screens.OrganizeSubPage
+import com.blank.gallery.ui.screens.OrganizeSubPageContent
+import com.blank.gallery.ui.theme.PageBackground
+import com.blank.gallery.ui.theme.MainText
+import com.blank.gallery.ui.theme.ThemeMint
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
