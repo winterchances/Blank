@@ -173,7 +173,7 @@ class MediaLibraryRepository(context: Context) {
         dao.applySelfOrganizeDecision(id, status)
     }
 
-    suspend fun undoLastSelfOrganizeDecision(): Boolean =
+    suspend fun undoLastSelfOrganizeDecision(): MediaAsset? =
         dao.undoLastSelfOrganizeDecision()
 
     suspend fun setSelfOrganizeStatus(id: Long, status: Int) {
