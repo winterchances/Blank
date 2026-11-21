@@ -1,6 +1,7 @@
 package com.blank.gallery.ui.screens
 
 import com.blank.gallery.data.MediaAsset
+import com.blank.gallery.data.MediaFolder
 import com.blank.gallery.ui.components.EmptyState
 import com.blank.gallery.ui.components.FeatureTile
 import com.blank.gallery.ui.theme.MainText
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -163,7 +166,10 @@ internal fun AlbumsContent(
     gridColumns: Int,
     onGridColumnsChange: (Int) -> Unit,
     sortBySize: Boolean,
-    onSortBySizeChange: (Boolean) -> Unit
+    onSortBySizeChange: (Boolean) -> Unit,
+    folders: List<MediaFolder>,
+    selectedFolderPath: String?,
+    onFolderSelect: (String?) -> Unit
 ) {
     if (!hasMediaAccess) {
         EmptyState(
@@ -228,6 +234,30 @@ internal fun AlbumsContent(
             }
             AlbumFilterChip("时间", !sortBySize) { onSortBySizeChange(false) }
             AlbumFilterChip("大小", sortBySize) { onSortBySizeChange(true) }
+        }
+
+        if (folders.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+            ) {
+                item(key = "all-folders") {
+                    AlbumFilterChip("全部文件夹", selectedFolderPath == null) {
+                        onFolderSelect(null)
+                    }
+                }
+                lazyItems(items = folders, key = { it.relativePath }) { folder ->
+                    AlbumFilterChip(
+                        label = folder.relativePath.trimEnd('/'),
+                        selected = selectedFolderPath == folder.relativePath
+                    ) {
+                        onFolderSelect(folder.relativePath)
+                    }
+                }
+            }
         }
 
         if (media.itemCount == 0) {
