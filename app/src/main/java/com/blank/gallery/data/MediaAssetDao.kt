@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -27,17 +28,59 @@ interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
     suspend fun findByMediaStoreId(mediaStoreId: Long): MediaAsset?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(items: List<MediaAsset>)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIfNew(item: MediaAsset)
+
+    @Query("""
+        UPDATE media_assets SET
+            contentUri = :contentUri,
+            displayName = :displayName,
+            mimeType = :mimeType,
+            mediaType = :mediaType,
+            sizeBytes = :sizeBytes,
+            dateAddedSeconds = :dateAddedSeconds,
+            dateModifiedSeconds = :dateModifiedSeconds,
+            width = :width,
+            height = :height,
+            durationMs = :durationMs
+        WHERE mediaStoreId = :mediaStoreId
+    """)
+    suspend fun updateMediaMetadata(
+        mediaStoreId: Long,
+        contentUri: String,
+        displayName: String,
+        mimeType: String?,
+        mediaType: Int,
+        sizeBytes: Long,
+        dateAddedSeconds: Long,
+        dateModifiedSeconds: Long,
+        width: Int,
+        height: Int,
+        durationMs: Long
+    )
+
+    @Transaction
+    suspend fun syncScanned(items: List<MediaAsset>) {
+        items.forEach { item ->
+            insertIfNew(item)
+            updateMediaMetadata(
+                mediaStoreId = item.mediaStoreId,
+                contentUri = item.contentUri,
+                displayName = item.displayName,
+                mimeType = item.mimeType,
+                mediaType = item.mediaType,
+                sizeBytes = item.sizeBytes,
+                dateAddedSeconds = item.dateAddedSeconds,
+                dateModifiedSeconds = item.dateModifiedSeconds,
+                width = item.width,
+                height = item.height,
+                durationMs = item.durationMs
+            )
+        }
+    }
 
     @Update
     suspend fun update(item: MediaAsset)
-
-    @Query("DELETE FROM media_assets WHERE mediaStoreId NOT IN (:existingIds)")
-    suspend fun deleteMissing(existingIds: List<Long>)
-
-    @Query("DELETE FROM media_assets")
-    suspend fun clearAll()
 
     @Query("UPDATE media_assets SET isFavorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: Long, favorite: Boolean)
