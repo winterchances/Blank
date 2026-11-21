@@ -245,6 +245,8 @@ private fun BlankApp() {
                     processNextLegacyDelete()
                 }
                 MediaDeletionManager.LegacyDeleteResult.Missing -> {
+                    // The file was already removed outside the app; reconcile its stale local row.
+                    legacyDeletedIds = legacyDeletedIds + asset.id
                     legacyDeleteQueue = legacyDeleteQueue.drop(1)
                     processNextLegacyDelete()
                 }
@@ -258,6 +260,8 @@ private fun BlankApp() {
                                     processNextLegacyDelete()
                                 }
                                 MediaDeletionManager.LegacyDeleteResult.Missing -> {
+                                    // The file was already removed outside the app; reconcile its stale local row.
+                                    legacyDeletedIds = legacyDeletedIds + asset.id
                                     legacyDeleteQueue = legacyDeleteQueue.drop(1)
                                     processNextLegacyDelete()
                                 }
