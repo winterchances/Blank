@@ -122,6 +122,7 @@ private fun BlankApp() {
                     pagedMedia.refresh()
                 } catch (error: SecurityException) {
                     hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
+                    selectedMedia = emptyMap()
                     scanMessage = "照片访问权限已变化，请重新授权后扫描"
                 } catch (error: Exception) {
                     scanMessage = "扫描未完成，请稍后重试"
@@ -177,6 +178,7 @@ private fun BlankApp() {
                         permissionDenied = false
                         runScan()
                     } else {
+                        selectedMedia = emptyMap()
                         scope.launch { repository.hideAllFromCurrentLibrary() }
                     }
                 } else if (accessNow && !isScanning) {
