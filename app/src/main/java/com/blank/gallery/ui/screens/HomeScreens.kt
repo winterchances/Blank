@@ -51,6 +51,7 @@ internal fun HomeContent(
     totalBytes: Long,
     lastScanAt: Long?,
     hasMediaAccess: Boolean,
+    permissionDenied: Boolean,
     isScanning: Boolean,
     scannedItems: Int,
     scanMessage: String?,
@@ -97,6 +98,7 @@ internal fun HomeContent(
             Text(
                 text = when {
                     isScanning -> "扫描中…"
+                    !hasMediaAccess && permissionDenied -> "前往系统设置开启照片访问权限"
                     !hasMediaAccess -> "开启照片访问权限后，即可建立本机相册索引"
                     photoCount + videoCount == 0 -> "扫描本机照片和视频"
                     else -> "重新扫描，更新相册内容"
