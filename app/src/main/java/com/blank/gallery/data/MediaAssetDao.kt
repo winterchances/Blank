@@ -14,8 +14,14 @@ interface MediaAssetDao {
     @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
     fun observeAll(): Flow<List<MediaAsset>>
 
-    @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
-    fun pagingSource(): PagingSource<Int, MediaAsset>
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1
+          AND (:mediaType IS NULL OR mediaType = :mediaType)
+          AND (:query = '' OR displayName LIKE '%' || :query || '%')
+        ORDER BY dateAddedSeconds DESC, id DESC
+    """)
+    fun pagingSource(mediaType: Int?, query: String): PagingSource<Int, MediaAsset>
 
     @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
     fun observePhotoCount(): Flow<Int>
