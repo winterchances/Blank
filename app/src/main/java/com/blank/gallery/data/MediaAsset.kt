@@ -40,6 +40,7 @@ data class MediaAsset(
     val isProtected: Boolean = false,
     /** 0 = not reviewed, 1 = kept, 2 = pending deletion, 3 = skipped. */
     val selfOrganizeStatus: Int = 0,
+    @ColumnInfo(defaultValue = "0") val selfOrganizeSkipOrder: Long = 0L,
     /** Hidden when the current MediaStore permission scope no longer exposes this item. */
     @ColumnInfo(defaultValue = "1") val isVisible: Boolean = true,
     /** Scan token used to finalize visibility only after a complete scan. */
