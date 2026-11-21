@@ -40,12 +40,16 @@ import androidx.compose.ui.unit.sp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 internal fun HomeContent(
     photoCount: Int,
     videoCount: Int,
     totalBytes: Long,
+    lastScanAt: Long?,
     hasMediaAccess: Boolean,
     isScanning: Boolean,
     scannedItems: Int,
@@ -69,6 +73,11 @@ internal fun HomeContent(
                 OverviewMetric("视频", videoCount.toString())
                 OverviewMetric("占用空间", formatStorage(totalBytes))
             }
+            Text(
+                text = lastScanAt?.let { "最近扫描 · ${formatScanTime(it)}" } ?: "尚未扫描",
+                fontSize = 11.sp,
+                color = MutedText
+            )
             if (!hasMediaAccess) {
                 Text(
                     text = "照片和视频仅在本机读取，不会上传",
@@ -129,6 +138,9 @@ private fun OverviewMetric(label: String, value: String) {
         Text(value, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = MainText)
     }
 }
+
+private fun formatScanTime(timestamp: Long): String =
+    SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()).format(Date(timestamp))
 
 private fun formatStorage(bytes: Long): String = when {
     bytes >= 1024L * 1024L * 1024L -> String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
