@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -154,7 +155,13 @@ private fun formatStorage(bytes: Long): String = when {
 @Composable
 internal fun AlbumsContent(
     media: LazyPagingItems<MediaAsset>,
-    hasMediaAccess: Boolean
+    hasMediaAccess: Boolean,
+    mediaType: Int?,
+    onMediaTypeChange: (Int?) -> Unit,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    gridColumns: Int,
+    onGridColumnsChange: (Int) -> Unit
 ) {
     if (!hasMediaAccess) {
         EmptyState(
@@ -164,58 +171,144 @@ internal fun AlbumsContent(
         return
     }
 
-    if (media.itemCount == 0) {
-        val message = when (media.loadState.refresh) {
-            is LoadState.Loading -> "正在加载相册内容"
-            is LoadState.Error -> "相册暂时无法加载，请稍后重试"
-            else -> "还没有相册内容，先到首页开始扫描"
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AlbumFilterChip("全部", mediaType == null) { onMediaTypeChange(null) }
+            AlbumFilterChip("照片", mediaType == 1) { onMediaTypeChange(1) }
+            AlbumFilterChip("视频", mediaType == 2) { onMediaTypeChange(2) }
+            Spacer(Modifier.weight(1f))
+            AlbumFilterChip("四宫格", gridColumns == 4) { onGridColumnsChange(4) }
+            AlbumFilterChip("三宫格", gridColumns == 3) { onGridColumnsChange(3) }
         }
-        EmptyState(
-            message = message,
-            modifier = Modifier.fillMaxSize()
-        )
-        return
-    }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        items(media.itemCount) { index ->
-            val asset = media[index]
-            if (asset != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(GlassWhite)
-                ) {
-                    AsyncImage(
-                        model = asset.contentUri,
-                        contentDescription = asset.displayName,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    if (asset.mediaType == 2) {
-                        Text(
-                            text = "▶",
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(4.dp),
-                            color = Color.White,
-                            fontSize = 10.sp
-                        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(GlassWhite)
+                .padding(horizontal = 13.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("⌕", color = MutedText, fontSize = 18.sp)
+            Spacer(Modifier.width(8.dp))
+            BasicTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    color = MainText,
+                    fontSize = 13.sp
+                ),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (searchQuery.isEmpty()) {
+                            Text("搜索照片或视频", color = MutedText, fontSize = 13.sp)
+                        }
+                        innerTextField()
                     }
                 }
-            } else {
-                Spacer(Modifier.aspectRatio(1f))
+            )
+            if (searchQuery.isNotEmpty()) {
+                Text(
+                    text = "清除",
+                    modifier = Modifier.clickable { onSearchQueryChange("") },
+                    color = MutedText,
+                    fontSize = 12.sp
+                )
             }
         }
+
+        if (media.itemCount == 0) {
+            val message = when {
+                media.loadState.refresh is LoadState.Loading -> "正在加载相册内容"
+                media.loadState.refresh is LoadState.Error -> "相册暂时无法加载，请稍后重试"
+                searchQuery.isNotBlank() -> "没有找到匹配的照片或视频"
+                mediaType != null -> "当前分类还没有媒体内容"
+                else -> "还没有相册内容，先到首页开始扫描"
+            }
+            EmptyState(
+                message = message,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            )
+            return
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(gridColumns),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            items(
+                count = media.itemCount,
+                key = { index -> media.peek(index)?.id ?: "placeholder-$index" }
+            ) { index ->
+                val asset = media[index]
+                if (asset != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(GlassWhite)
+                    ) {
+                        AsyncImage(
+                            model = asset.contentUri,
+                            contentDescription = asset.displayName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        if (asset.mediaType == 2) {
+                            Text(
+                                text = "▶",
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(4.dp),
+                                color = Color.White,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                } else {
+                    Spacer(Modifier.aspectRatio(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlbumFilterChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) ThemeMint.copy(alpha = 0.13f) else GlassWhite)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 9.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            color = if (selected) MainText else MutedText
+        )
     }
 }
 
