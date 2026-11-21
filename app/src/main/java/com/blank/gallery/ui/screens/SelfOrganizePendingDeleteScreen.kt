@@ -38,6 +38,7 @@ import com.blank.gallery.ui.theme.ThemeMint
 internal fun SelfOrganizePendingDeleteScreen(
     assets: List<MediaAsset>,
     isLoading: Boolean,
+    feedbackMessage: String? = null,
     onCancel: (MediaAsset) -> Unit,
     onConfirmDelete: () -> Unit
 ) {
@@ -53,6 +54,14 @@ internal fun SelfOrganizePendingDeleteScreen(
             lineHeight = 19.sp,
             modifier = Modifier.padding(bottom = 14.dp)
         )
+        feedbackMessage?.let {
+            Text(
+                it,
+                color = MutedText,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
 
         if (assets.isEmpty()) {
             EmptyState(
