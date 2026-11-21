@@ -66,7 +66,7 @@ class MediaStoreScanner(context: Context) {
                 putInt(ContentResolver.QUERY_ARG_OFFSET, offset)
                 putStringArray(
                     ContentResolver.QUERY_ARG_SORT_COLUMNS,
-                    arrayOf(MediaStore.MediaColumns.DATE_ADDED)
+                    arrayOf(MediaStore.MediaColumns.DATE_ADDED, MediaStore.MediaColumns._ID)
                 )
                 putInt(
                     ContentResolver.QUERY_ARG_SORT_DIRECTION,
