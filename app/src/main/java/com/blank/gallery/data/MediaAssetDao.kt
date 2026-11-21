@@ -19,9 +19,10 @@ interface MediaAssetDao {
         WHERE isVisible = 1
           AND (:mediaType IS NULL OR mediaType = :mediaType)
           AND (:query = '' OR displayName LIKE '%' || :query || '%')
-        ORDER BY dateAddedSeconds DESC, id DESC
+        ORDER BY CASE WHEN :sortBySize = 1 THEN sizeBytes END DESC,
+                 dateAddedSeconds DESC, id DESC
     """)
-    fun pagingSource(mediaType: Int?, query: String): PagingSource<Int, MediaAsset>
+    fun pagingSource(mediaType: Int?, query: String, sortBySize: Int): PagingSource<Int, MediaAsset>
 
     @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
     fun observePhotoCount(): Flow<Int>
