@@ -170,10 +170,7 @@ private fun BlankApp() {
                         } else null
                     )
                     if (organizeSubPage != null) {
-                        OrganizeSubPageContent(
-                            page = organizeSubPage!!,
-                            onOpen = { organizeSubPage = it }
-                        )
+                        OrganizeSubPageContent(page = organizeSubPage!!)
                     } else {
                         when (currentPage) {
                             MainPage.HOME -> HomeContent(
@@ -438,15 +435,12 @@ private fun QuickAction(
 }
 
 @Composable
-private fun OrganizeSubPageContent(
-    page: OrganizeSubPage,
-    onOpen: (OrganizeSubPage) -> Unit
-) {
+private fun OrganizeSubPageContent(page: OrganizeSubPage) {
     val message = when (page) {
         OrganizeSubPage.SELF_ORDERED ->
-            "扫描完成后，将按照照片时间顺序，从尚未整理的照片开始"
+            "扫描完成后，将按照照片时间顺序，从尚未整理且未受保护的照片开始"
         OrganizeSubPage.SELF_RANDOM ->
-            "扫描完成后，将随机选择一张尚未整理的照片作为起点"
+            "扫描完成后，从尚未整理且未受保护的照片中随机选择起点，之后也会继续随机抽取"
         else ->
             "尚未扫描，扫描完成后会显示待整理内容"
     }
