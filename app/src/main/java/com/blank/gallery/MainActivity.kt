@@ -7,6 +7,7 @@ import com.blank.gallery.data.MediaPermission
 import com.blank.gallery.ui.navigation.BottomNavigation
 import com.blank.gallery.ui.navigation.MainPage
 import com.blank.gallery.ui.screens.AlbumBatchActionBar
+import com.blank.gallery.ui.screens.AlbumDeleteConfirmationSheet
 import com.blank.gallery.ui.screens.AlbumsContent
 import com.blank.gallery.ui.screens.FavoritesContent
 import com.blank.gallery.ui.screens.HomeContent
@@ -62,6 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.blur
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -336,6 +338,7 @@ private fun BlankApp() {
                             bottom = (if (organizeSubPage == null) 104.dp else 24.dp) +
                                 WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         )
+                        .blur(if (deleteConfirmationVisible) 5.dp else 0.dp)
                 ) {
                     val selectionMode = currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty()
                     PageHeader(
@@ -404,6 +407,7 @@ private fun BlankApp() {
                     targetState = organizeSubPage == null && currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty(),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .blur(if (deleteConfirmationVisible) 5.dp else 0.dp)
                         .padding(
                             start = 16.dp,
                             end = 16.dp,
