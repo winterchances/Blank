@@ -20,10 +20,13 @@ class MediaLibraryRepository(context: Context) {
     )
 
     val lastScanAt = _lastScanAt.asStateFlow()
-    fun pagedMedia(mediaType: Int?, query: String, sortBySize: Boolean) = Pager(
+    fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, sortBySize: Boolean) = Pager(
         config = PagingConfig(pageSize = 60, prefetchDistance = 20, enablePlaceholders = false),
-        pagingSourceFactory = { dao.pagingSource(mediaType, query.trim(), if (sortBySize) 1 else 0) }
+        pagingSourceFactory = {
+            dao.pagingSource(mediaType, query.trim(), folderPath, if (sortBySize) 1 else 0)
+        }
     ).flow
+    val folders = dao.observeFolders()
     val photoCount = dao.observePhotoCount()
     val videoCount = dao.observeVideoCount()
     val totalBytes = dao.observeTotalBytes()
