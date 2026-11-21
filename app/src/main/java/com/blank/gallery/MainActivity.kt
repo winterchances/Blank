@@ -26,6 +26,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -281,53 +286,55 @@ private fun BlankApp() {
                     }
                 }
 
-                if (organizeSubPage == null && currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty()) {
-                    val allFavorite = selectedMedia.values.all { it.isFavorite }
-                    val allProtected = selectedMedia.values.all { it.isProtected }
-                    AlbumBatchActionBar(
-                        favoriteLabel = if (allFavorite) "取消收藏" else "收藏",
-                        protectLabel = if (allProtected) "取消保护" else "保护",
-                        onFavorite = {
-                            val nextValue = !allFavorite
-                            val ids = selectedMedia.keys.toList()
-                            scope.launch {
-                                repository.setFavoriteForIds(ids, nextValue)
-                                selectedMedia = selectedMedia.mapValues { (_, asset) -> asset.copy(isFavorite = nextValue) }
-                                pagedMedia.refresh()
-                            }
-                        },
-                        onProtect = {
-                            val nextValue = !allProtected
-                            val ids = selectedMedia.keys.toList()
-                            scope.launch {
-                                repository.setProtectedForIds(ids, nextValue)
-                                selectedMedia = selectedMedia.mapValues { (_, asset) -> asset.copy(isProtected = nextValue) }
-                                pagedMedia.refresh()
-                            }
-                        },
-                        onCancel = { selectedMedia = emptyMap() },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                            )
-                    )
-                } else if (organizeSubPage == null) {
-                    BottomNavigation(
-                        currentPage = currentPage,
-                        onSelect = { selectedMedia = emptyMap(); currentPage = it },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                            )
-                    )
-                }
-            }
+                AnimatedContent(
+                    targetState = organizeSubPage == null && currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                        ),
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(200)) togetherWith
+                            fadeOut(animationSpec = tween(200))
+                    },
+                    label = "album-selection-navigation"
+                ) { selectionMode ->
+                    if (selectionMode) {
+                        val allFavorite = selectedMedia.values.all { it.isFavorite }
+                        val allProtected = selectedMedia.values.all { it.isProtected }
+                        AlbumBatchActionBar(
+                            favoriteLabel = if (allFavorite) "取消收藏" else "收藏",
+                            protectLabel = if (allProtected) "取消保护" else "保护",
+                            onFavorite = {
+                                val nextValue = !allFavorite
+                                val ids = selectedMedia.keys.toList()
+                                scope.launch {
+                                    repository.setFavoriteForIds(ids, nextValue)
+                                    selectedMedia = selectedMedia.mapValues { (_, asset) -> asset.copy(isFavorite = nextValue) }
+                                    pagedMedia.refresh()
+                                }
+                            },
+                            onProtect = {
+                                val nextValue = !allProtected
+                                val ids = selectedMedia.keys.toList()
+                                scope.launch {
+                                    repository.setProtectedForIds(ids, nextValue)
+                                    selectedMedia = selectedMedia.mapValues { (_, asset) -> asset.copy(isProtected = nextValue) }
+                                    pagedMedia.refresh()
+                                }
+                            },
+                            onCancel = { selectedMedia = emptyMap() }
+                        )
+                    } else if (organizeSubPage == null) {
+                        BottomNavigation(
+                            currentPage = currentPage,
+                            onSelect = { selectedMedia = emptyMap(); currentPage = it },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }            }
         }
     }
 }
