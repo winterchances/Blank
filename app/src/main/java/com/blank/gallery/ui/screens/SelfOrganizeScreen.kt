@@ -50,6 +50,7 @@ internal fun SelfOrganizeScreen(
     isLoading: Boolean,
     hasPhotoAccess: Boolean,
     isScanning: Boolean,
+    feedbackMessage: String? = null,
     onRequestAccess: () -> Unit,
     onKeep: () -> Unit,
     onPendingDelete: () -> Unit,
@@ -92,6 +93,10 @@ internal fun SelfOrganizeScreen(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
+        }
+
+        feedbackMessage?.let {
+            Text(it, color = MutedText, fontSize = 12.sp)
         }
 
         if (!hasPhotoAccess) {
