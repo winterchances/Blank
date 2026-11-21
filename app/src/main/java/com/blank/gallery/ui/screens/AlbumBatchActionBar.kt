@@ -30,6 +30,8 @@ internal fun AlbumBatchActionBar(
     protectLabel: String,
     onFavorite: () -> Unit,
     onProtect: () -> Unit,
+    onDelete: () -> Unit,
+    deleteEnabled: Boolean,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -52,20 +54,21 @@ internal fun AlbumBatchActionBar(
     ) {
         BatchAction(favoriteLabel, onFavorite, Modifier.weight(1f))
         BatchAction(protectLabel, onProtect, Modifier.weight(1f))
+        BatchAction("删除", onDelete, Modifier.weight(1f), enabled = deleteEnabled)
         BatchAction("取消", onCancel, Modifier.weight(1f))
     }
 }
 
 @Composable
-private fun BatchAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun BatchAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Column(
         modifier = modifier
             .height(48.dp)
             .clip(CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(label, color = MainText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = if (enabled) MainText else MainText.copy(alpha = 0.35f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
     }
 }
