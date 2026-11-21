@@ -114,6 +114,7 @@ private fun BlankApp() {
     var isDeletionInProgress by remember { mutableStateOf(false) }
     var pendingTrashIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var pendingTrashQueue by remember { mutableStateOf<List<List<MediaAsset>>>(emptyList()) }
+    var launchNextTrashBatch by remember { mutableStateOf<(() -> Unit)?>(null) }
     var legacyDeleteQueue by remember { mutableStateOf<List<MediaAsset>>(emptyList()) }
     var legacyDeletedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var continueLegacyDelete by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -164,23 +165,7 @@ private fun BlankApp() {
                 selectedMedia = selectedMedia - ids
                 pagedMedia.refresh()
                 pendingTrashQueue = pendingTrashQueue.drop(1)
-                val nextBatch = pendingTrashQueue.firstOrNull()
-                if (nextBatch == null) {
-                    isDeletionInProgress = false
-                } else {
-                    try {
-                        val request = deletionManager.createTrashRequest(nextBatch.map { it.contentUri })
-                        pendingTrashIds = nextBatch.map { it.id }.toSet()
-                        trashRequestLauncher.launch(
-                            IntentSenderRequest.Builder(request.intentSender).build()
-                        )
-                    } catch (_: Exception) {
-                        pendingTrashQueue = emptyList()
-                        pendingTrashIds = emptySet()
-                        isDeletionInProgress = false
-                        scanMessage = "无法发起系统回收站请求，请稍后重试"
-                    }
-                }
+                launchNextTrashBatch?.invoke()
             }
         } else {
             pendingTrashQueue = emptyList()
@@ -275,23 +260,26 @@ private fun BlankApp() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // Android 16+ limits each MediaStore group request to 2,000 items.
             pendingTrashQueue = eligible.chunked(2000)
-            val firstBatch = pendingTrashQueue.firstOrNull()
-            if (firstBatch != null) {
-                try {
-                    val request = deletionManager.createTrashRequest(firstBatch.map { it.contentUri })
-                    pendingTrashIds = firstBatch.map { it.id }.toSet()
-                    trashRequestLauncher.launch(
-                        IntentSenderRequest.Builder(request.intentSender).build()
-                    )
-                } catch (_: Exception) {
-                    pendingTrashQueue = emptyList()
-                    pendingTrashIds = emptySet()
+            launchNextTrashBatch = {
+                val batch = pendingTrashQueue.firstOrNull()
+                if (batch == null) {
                     isDeletionInProgress = false
-                    scanMessage = "无法发起系统回收站请求，请稍后重试"
+                } else {
+                    try {
+                        val request = deletionManager.createTrashRequest(batch.map { it.contentUri })
+                        pendingTrashIds = batch.map { it.id }.toSet()
+                        trashRequestLauncher.launch(
+                            IntentSenderRequest.Builder(request.intentSender).build()
+                        )
+                    } catch (_: Exception) {
+                        pendingTrashQueue = emptyList()
+                        pendingTrashIds = emptySet()
+                        isDeletionInProgress = false
+                        scanMessage = "无法发起系统回收站请求，请稍后重试"
+                    }
                 }
-            } else {
-                isDeletionInProgress = false
             }
+            launchNextTrashBatch?.invoke()
         } else {
             // Android 10 has no shared MediaStore trash API; each non-owned item
             // may require its own RecoverableSecurityException consent prompt.
