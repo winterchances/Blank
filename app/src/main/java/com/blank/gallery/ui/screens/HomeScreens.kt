@@ -13,6 +13,8 @@ import com.blank.gallery.ui.theme.GlassWhite
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -158,6 +161,7 @@ private fun formatStorage(bytes: Long): String = when {
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 internal fun AlbumsContent(
     media: LazyPagingItems<AlbumGridItem>,
     hasMediaAccess: Boolean,
@@ -174,7 +178,9 @@ internal fun AlbumsContent(
     onFolderSelect: (String?) -> Unit,
     months: List<MediaMonth>,
     selectedMonthKey: String?,
-    onMonthSelect: (String?) -> Unit
+    onMonthSelect: (String?) -> Unit,
+    selectedIds: Set<Long>,
+    onToggleSelection: (MediaAsset) -> Unit
 ) {
     if (!hasMediaAccess) {
         EmptyState(
@@ -342,6 +348,10 @@ internal fun AlbumsContent(
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(GlassWhite)
+                                .combinedClickable(
+                                    onClick = { if (selectedIds.isNotEmpty()) onToggleSelection(asset) },
+                                    onLongClick = { onToggleSelection(asset) }
+                                )
                         ) {
                             AsyncImage(
                                 model = asset.contentUri,
@@ -356,6 +366,22 @@ internal fun AlbumsContent(
                                     color = Color.White,
                                     fontSize = 10.sp
                                 )
+                            }
+                            if (asset.id in selectedIds) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.12f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(5.dp)
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .background(ThemeMint),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("✓", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                }
                             }
                         }
                     }
