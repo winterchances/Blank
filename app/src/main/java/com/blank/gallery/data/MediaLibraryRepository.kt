@@ -164,7 +164,7 @@ class MediaLibraryRepository(context: Context) {
 
     /** Retain local records while removing trashed items from the active grid. */
     suspend fun hideFromLibraryForIds(ids: List<Long>) {
-        if (ids.isNotEmpty()) dao.hideFromLibraryForIds(ids)
+        if (ids.isNotEmpty()) dao.finalizeTrashedMedia(ids)
     }
 
     suspend fun nextSelfOrganizePhoto(random: Boolean): MediaAsset? =
