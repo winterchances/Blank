@@ -88,13 +88,15 @@ private fun BlankApp() {
     val totalBytes by repository.totalBytes.collectAsState(initial = 0L)
     val lastScanAt by repository.lastScanAt.collectAsState()
     val albumFolders by repository.folders.collectAsState(initial = emptyList())
+    val albumMonths by repository.months.collectAsState(initial = emptyList())
+    var selectedMonthKey by remember { mutableStateOf<String?>(null) }
     var selectedFolderPath by remember { mutableStateOf<String?>(null) }
     var albumMediaType by remember { mutableStateOf<Int?>(null) }
     var albumSearchQuery by remember { mutableStateOf("") }
     var albumGridColumns by remember { mutableStateOf(4) }
     var albumSortBySize by remember { mutableStateOf(false) }
-    val mediaFlow = remember(repository, albumMediaType, albumSearchQuery, selectedFolderPath, albumSortBySize) {
-        repository.pagedMedia(albumMediaType, albumSearchQuery, selectedFolderPath, albumSortBySize)
+    val mediaFlow = remember(repository, albumMediaType, albumSearchQuery, selectedFolderPath, selectedMonthKey, albumSortBySize) {
+        repository.pagedMedia(albumMediaType, albumSearchQuery, selectedFolderPath, selectedMonthKey, albumSortBySize)
     }
     val pagedMedia = mediaFlow.collectAsLazyPagingItems()
     val scope = rememberCoroutineScope()
@@ -244,7 +246,10 @@ private fun BlankApp() {
                                 onSortBySizeChange = { albumSortBySize = it },
                                 folders = albumFolders,
                                 selectedFolderPath = selectedFolderPath,
-                                onFolderSelect = { selectedFolderPath = it }
+                                onFolderSelect = { selectedFolderPath = it },
+                                months = albumMonths,
+                                selectedMonthKey = selectedMonthKey,
+                                onMonthSelect = { selectedMonthKey = it }
                             )
                             MainPage.ORGANIZE -> OrganizeContent(
                                 onOpenCategory = { organizeSubPage = it },
