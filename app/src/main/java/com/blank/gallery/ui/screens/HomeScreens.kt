@@ -251,10 +251,7 @@ internal fun AlbumsContent(
             verticalArrangement = Arrangement.spacedBy(3.dp),
             horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            items(
-                count = media.itemCount,
-                key = { index -> media.peek(index)?.id ?: "placeholder-$index" }
-            ) { index ->
+            items(count = media.itemCount) { index ->
                 val asset = media[index]
                 if (asset != null) {
                     Box(
