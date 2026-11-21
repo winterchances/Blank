@@ -60,10 +60,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val PageBackground = Color(0xFFF5F5F7)
-private val MainText = Color(0xFF1A1A1A)
-private val ThemeMint = Color(0xFF7FB5B1)
-private val MutedText = Color(0xFF888888)
-private val GlassWhite = Color.White.copy(alpha = 0.85f)
+internal val MainText = Color(0xFF1A1A1A)
+internal val ThemeMint = Color(0xFF7FB5B1)
+internal val MutedText = Color(0xFF888888)
+internal val GlassWhite = Color.White.copy(alpha = 0.85f)
 
 private enum class MainPage(val title: String, val icon: NavIconType) {
     HOME("首页", NavIconType.HOME),
@@ -73,16 +73,6 @@ private enum class MainPage(val title: String, val icon: NavIconType) {
 }
 
 private enum class NavIconType { HOME, ALBUMS, ORGANIZE, FAVORITES }
-
-private enum class OrganizeSubPage(val title: String) {
-    DUPLICATES("重复照片"),
-    SIMILAR("相似照片"),
-    BURSTS("连拍"),
-    SCREENSHOTS("截图"),
-    LARGE_FILES("大文件"),
-    SELF_ORDERED("按顺序整理"),
-    SELF_RANDOM("随机整理")
-}
 
 private val BlankHomeIcon: ImageVector = ImageVector.Builder("BlankHome", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
@@ -286,81 +276,6 @@ private fun AlbumsContent() {
 }
 
 @Composable
-private fun OrganizeContent(
-    onOpenCategory: (OrganizeSubPage) -> Unit,
-    onOpenSelfMode: (OrganizeSubPage) -> Unit
-) {
-    val smartItems = listOf(
-        Triple(OrganizeSubPage.DUPLICATES, "重复照片", "查找内容完全相同的照片"),
-        Triple(OrganizeSubPage.SIMILAR, "相似照片", "找出画面相近的照片"),
-        Triple(OrganizeSubPage.BURSTS, "连拍", "集中整理连续拍摄的照片"),
-        Triple(OrganizeSubPage.SCREENSHOTS, "截图", "集中查看保存的截图"),
-        Triple(OrganizeSubPage.LARGE_FILES, "大文件", "查找占用空间较大的照片和视频")
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "智能整理",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MainText
-            )
-            smartItems.chunked(2).forEach { rowItems ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    rowItems.forEach { (page, title, description) ->
-                        OrganizeCategoryTile(
-                            title = title,
-                            description = description,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onOpenCategory(page) }
-                        )
-                    }
-                    if (rowItems.size == 1) {
-                        Spacer(Modifier.weight(1f))
-                    }
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "自己整理",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MainText
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OrganizeCategoryTile(
-                    title = "按顺序整理",
-                    description = "按照照片时间顺序，逐张浏览",
-                    modifier = Modifier.weight(1f),
-                    onClick = { onOpenSelfMode(OrganizeSubPage.SELF_ORDERED) }
-                )
-                OrganizeCategoryTile(
-                    title = "随机整理",
-                    description = "随机选择一张照片作为起点",
-                    modifier = Modifier.weight(1f),
-                    onClick = { onOpenSelfMode(OrganizeSubPage.SELF_RANDOM) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun FavoritesContent() {
     Column(
         modifier = Modifier
@@ -435,69 +350,6 @@ private fun QuickAction(
 }
 
 @Composable
-private fun OrganizeSubPageContent(page: OrganizeSubPage) {
-    val message = when (page) {
-        OrganizeSubPage.SELF_ORDERED ->
-            "扫描完成后，将按照照片时间顺序，从尚未整理且未受保护的照片开始"
-        OrganizeSubPage.SELF_RANDOM ->
-            "扫描完成后，从尚未整理且未受保护的照片中随机选择起点，之后也会继续随机抽取"
-        else ->
-            "尚未扫描，扫描完成后会显示待整理内容"
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp)
-    ) {
-        EmptyState(
-            message = message,
-            modifier = Modifier.fillMaxSize()
-        )
-    }
-}
-
-@Composable
-private fun OrganizeCategoryTile(
-    title: String,
-    description: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = modifier
-            .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(18.dp),
-                ambientColor = Color.Black.copy(alpha = 0.02f),
-                spotColor = Color.Black.copy(alpha = 0.02f)
-            )
-            .clip(RoundedCornerShape(18.dp))
-            .background(GlassWhite)
-            .border(1.dp, Color.Black.copy(alpha = 0.045f), RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = title,
-                modifier = Modifier.weight(1f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MainText
-            )
-            Text("›", fontSize = 20.sp, color = MutedText)
-        }
-        Text(
-            text = description,
-            fontSize = 12.sp,
-            lineHeight = 17.sp,
-            color = MutedText
-        )
-    }
-}
-
-@Composable
 private fun FeatureTile(
     title: String,
     description: String,
@@ -526,7 +378,7 @@ private fun FeatureTile(
 }
 
 @Composable
-private fun EmptyState(
+internal fun EmptyState(
     message: String,
     modifier: Modifier = Modifier,
     compact: Boolean = false
