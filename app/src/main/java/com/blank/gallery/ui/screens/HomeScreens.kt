@@ -1,7 +1,6 @@
 package com.blank.gallery.ui.screens
 
 import com.blank.gallery.data.MediaAsset
-import com.blank.gallery.data.MediaFolder
 import com.blank.gallery.data.MediaMonth
 import com.blank.gallery.ui.components.EmptyState
 import com.blank.gallery.ui.components.FeatureTile
@@ -34,7 +33,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -178,14 +176,12 @@ internal fun AlbumsContent(
     mediaType: Int?,
     onMediaTypeChange: (Int?) -> Unit,
     searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
     gridColumns: Int,
     onGridColumnsChange: (Int) -> Unit,
     sortBySize: Boolean,
     onSortBySizeChange: (Boolean) -> Unit,
-    folders: List<MediaFolder>,
     selectedFolderPath: String?,
-    onFolderSelect: (String?) -> Unit,
+    onOpenFolderDrawer: () -> Unit,
     months: List<MediaMonth>,
     selectedMonthKey: String?,
     onMonthSelect: (String?) -> Unit,
@@ -216,68 +212,16 @@ internal fun AlbumsContent(
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(GlassWhite)
-                .padding(horizontal = 13.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("⌕", color = MutedText, fontSize = 18.sp)
-            Spacer(Modifier.width(8.dp))
-            BasicTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                textStyle = androidx.compose.ui.text.TextStyle(
-                    color = MainText,
-                    fontSize = 13.sp
-                ),
-                decorationBox = { innerTextField ->
-                    Box {
-                        if (searchQuery.isEmpty()) {
-                            Text("搜索照片或视频", color = MutedText, fontSize = 13.sp)
-                        }
-                        innerTextField()
-                    }
-                }
-            )
-            if (searchQuery.isNotEmpty()) {
-                Text(
-                    text = "清除",
-                    modifier = Modifier.clickable { onSearchQueryChange("") },
-                    color = MutedText,
-                    fontSize = 12.sp
-                )
-            }
             AlbumFilterChip("时间", !sortBySize) { onSortBySizeChange(false) }
             AlbumFilterChip("大小", sortBySize) { onSortBySizeChange(true) }
-        }
-
-        if (folders.isNotEmpty()) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
-            ) {
-                item(key = "all-folders") {
-                    AlbumFilterChip("全部文件夹", selectedFolderPath == null) {
-                        onFolderSelect(null)
-                    }
-                }
-                lazyItems(items = folders, key = { it.relativePath }) { folder ->
-                    AlbumFilterChip(
-                        label = folder.relativePath.trimEnd('/'),
-                        selected = selectedFolderPath == folder.relativePath
-                    ) {
-                        onFolderSelect(folder.relativePath)
-                    }
-                }
-            }
+            AlbumFilterChip(
+                label = selectedFolderPath?.substringAfterLast('/')?.ifBlank { "文件夹" } ?: "文件夹",
+                selected = selectedFolderPath != null
+            ) { onOpenFolderDrawer() }
         }
 
         if (months.isNotEmpty()) {
