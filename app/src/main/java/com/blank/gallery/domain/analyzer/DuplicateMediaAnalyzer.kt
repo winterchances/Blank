@@ -34,10 +34,30 @@ class DuplicateMediaAnalyzer(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): DuplicateAnalysisResult = withContext(Dispatchers.IO) {
         val total = dao.countDuplicateCandidates()
-        val hashGroups = mutableMapOf<String, MutableList<MediaAsset>>()
+        val groups = mutableListOf<DuplicateMediaGroup>()
+        // DAO ordering keeps each equal-size cohort contiguous, including
+        // across page boundaries. Discard singleton hashes as soon as their
+        // cohort is complete instead of retaining them for the whole scan.
+        var cohortSizeBytes: Long? = null
+        var cohortHashGroups = mutableMapOf<String, MutableList<MediaAsset>>()
         var analyzedCount = 0
         var unreadableCount = 0
         var offset = 0
+
+        fun flushCohort() {
+            cohortHashGroups.forEach { (hash, assets) ->
+                if (assets.size >= 2) {
+                    groups += DuplicateMediaGroup(
+                        sha256 = hash,
+                        items = assets.sortedWith(
+                            compareByDescending<MediaAsset> { it.dateTakenSeconds }
+                                .thenByDescending { it.dateAddedSeconds }
+                        )
+                    )
+                }
+            }
+            cohortHashGroups = mutableMapOf()
+        }
 
         while (offset < total) {
             coroutineContext.ensureActive()
@@ -49,6 +69,11 @@ class DuplicateMediaAnalyzer(
 
             for (asset in batch) {
                 coroutineContext.ensureActive()
+                if (cohortSizeBytes != null && cohortSizeBytes != asset.sizeBytes) {
+                    flushCohort()
+                }
+                cohortSizeBytes = asset.sizeBytes
+
                 val cached = dao.getMediaAnalysisCache(asset.id)
                     ?.takeIf { it.matches(asset) }
 
@@ -68,7 +93,7 @@ class DuplicateMediaAnalyzer(
                             )
                         )
                     }
-                    hashGroups.getOrPut(hash) { mutableListOf() }.add(asset)
+                    cohortHashGroups.getOrPut(hash) { mutableListOf() }.add(asset)
                 }
 
                 analyzedCount++
@@ -78,24 +103,13 @@ class DuplicateMediaAnalyzer(
             offset += batch.size
         }
 
-        val groups = hashGroups.mapNotNull { (hash, assets) ->
-            if (assets.size < 2) {
-                null
-            } else {
-                DuplicateMediaGroup(
-                    sha256 = hash,
-                    items = assets.sortedWith(
-                        compareByDescending<MediaAsset> { it.dateTakenSeconds }
-                            .thenByDescending { it.dateAddedSeconds }
-                    )
-                )
-            }
-        }.sortedByDescending { group ->
+        flushCohort()
+        val sortedGroups = groups.sortedByDescending { group ->
             group.items.sumOf { it.sizeBytes }
         }
 
         DuplicateAnalysisResult(
-            groups = groups,
+            groups = sortedGroups,
             analyzedCount = analyzedCount,
             unreadableCount = unreadableCount
         )
