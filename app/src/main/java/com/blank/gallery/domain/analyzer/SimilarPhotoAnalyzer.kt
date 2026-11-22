@@ -84,8 +84,10 @@ class SimilarPhotoAnalyzer(
         threshold: Int
     ): List<SimilarPhotoGroup> {
         val sorted = entries.sortedWith(
-            compareByDescending<Pair<MediaAsset, String>> { it.first.dateTakenSeconds }
-                .thenByDescending { it.first.dateAddedSeconds }
+            compareByDescending<Pair<MediaAsset, String>> {
+                it.first.dateTakenMillis.takeIf { value -> value > 0L }
+                    ?: it.first.dateTakenSeconds * 1000L
+            }.thenByDescending { it.first.dateAddedSeconds }
                 .thenBy { it.first.id }
         )
         val rootHolder = arrayOfNulls<HashTreeNode>(1)
