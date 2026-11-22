@@ -24,21 +24,32 @@ class LargeMediaAnalyzer(
         val total = dao.countLargeMediaCandidates(minimumSizeBytes)
         val matches = mutableListOf<MediaAsset>()
         var analyzedCount = 0
-        var offset = 0
+        var lastSizeBytes = 0L
+        var lastDateAddedSeconds = 0L
+        var lastId = 0L
+        var hasCursor = false
 
-        while (offset < total) {
+        while (true) {
             coroutineContext.ensureActive()
             val batch = dao.getLargeMediaCandidates(
                 minimumSizeBytes = minimumSizeBytes,
                 limit = BATCH_SIZE,
-                offset = offset
+                lastSizeBytes = lastSizeBytes,
+                lastDateAddedSeconds = lastDateAddedSeconds,
+                lastId = lastId,
+                hasCursor = hasCursor
             )
             if (batch.isEmpty()) break
 
             matches.addAll(batch)
             analyzedCount += batch.size
             onProgress(analyzedCount, total)
-            offset += batch.size
+            batch.last().let { last ->
+                lastSizeBytes = last.sizeBytes
+                lastDateAddedSeconds = last.dateAddedSeconds
+                lastId = last.id
+                hasCursor = true
+            }
         }
 
         val currentAssets = dao.revalidateAnalysisAssets(matches)
