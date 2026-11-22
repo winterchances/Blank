@@ -571,7 +571,20 @@ private fun BlankApp() {
                             OrganizeSubPageContent(page = organizeSubPage!!)
                         }
                     } else {
-                        when (currentPage) {
+                        AnimatedContent(
+                            targetState = currentPage,
+                            modifier = Modifier.weight(1f),
+                            transitionSpec = {
+                                androidx.compose.animation.slideInHorizontally(
+                                    animationSpec = tween(260)
+                                ) { it / 5 } + fadeIn(tween(220)) togetherWith
+                                    androidx.compose.animation.slideOutHorizontally(
+                                        animationSpec = tween(220)
+                                    ) { -it / 5 } + fadeOut(tween(180))
+                            },
+                            label = "blank-page"
+                        ) { page ->
+                            when (page) {
                             MainPage.HOME -> HomeContent(
                                 photoCount = photoCount,
                                 videoCount = videoCount,
@@ -618,6 +631,7 @@ private fun BlankApp() {
                                 onOpenSelfMode = { organizeSubPage = it }
                             )
                             MainPage.FAVORITES -> FavoritesContent()
+                            }
                         }
                     }
                 }
