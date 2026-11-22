@@ -88,6 +88,20 @@ interface MediaAssetDao {
     """)
     suspend fun getBurstPhotoCandidates(limit: Int, offset: Int): List<MediaAsset>
 
+    @Query("""
+        SELECT COUNT(*) FROM media_assets
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
+    """)
+    suspend fun countScreenshotCandidates(): Int
+
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
+        ORDER BY dateAddedSeconds DESC, id ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getScreenshotCandidates(limit: Int, offset: Int): List<MediaAsset>
+
     @Query("SELECT * FROM media_analysis_cache WHERE mediaAssetId = :mediaAssetId LIMIT 1")
     suspend fun getMediaAnalysisCache(mediaAssetId: Long): MediaAnalysisCache?
 
