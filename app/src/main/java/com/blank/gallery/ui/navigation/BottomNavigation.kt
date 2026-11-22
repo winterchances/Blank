@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
@@ -104,7 +105,6 @@ internal fun BottomNavigation(
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
-            .blur(0.dp)
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(28.dp),
@@ -140,7 +140,7 @@ internal fun BottomNavigation(
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.06f))
         )
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             MainPage.values().forEach { page ->
                 Column(
                     modifier = Modifier
