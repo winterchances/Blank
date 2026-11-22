@@ -127,6 +127,9 @@ interface MediaAssetDao {
         offset: Int
     ): List<MediaAsset>
 
+    @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0")
+    suspend fun getVisibleUnprotectedMediaForIds(ids: List<Long>): List<MediaAsset>
+
     @Query("SELECT * FROM media_analysis_cache WHERE mediaAssetId = :mediaAssetId LIMIT 1")
     suspend fun getMediaAnalysisCache(mediaAssetId: Long): MediaAnalysisCache?
 
