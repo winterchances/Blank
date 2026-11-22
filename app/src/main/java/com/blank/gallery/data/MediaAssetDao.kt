@@ -56,10 +56,17 @@ interface MediaAssetDao {
         WHERE media_assets.isVisible = 1
           AND media_assets.isProtected = 0
           AND media_assets.sizeBytes > 0
+          AND (:hasCursor = 0 OR media_assets.sizeBytes < :lastSizeBytes
+               OR (media_assets.sizeBytes = :lastSizeBytes AND media_assets.id > :lastId))
         ORDER BY media_assets.sizeBytes DESC, media_assets.id ASC
-        LIMIT :limit OFFSET :offset
+        LIMIT :limit
     """)
-    suspend fun getDuplicateCandidates(limit: Int, offset: Int): List<MediaAsset>
+    suspend fun getDuplicateCandidates(
+        limit: Int,
+        lastSizeBytes: Long,
+        lastId: Long,
+        hasCursor: Boolean
+    ): List<MediaAsset>
 
     @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0")
     suspend fun countSimilarPhotoCandidates(): Int
@@ -67,15 +74,27 @@ interface MediaAssetDao {
     @Query("""
         SELECT * FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0
+          AND (:hasCursor = 0 OR
+               CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis ELSE dateTakenSeconds * 1000 END < :lastCaptureTimeMillis
+               OR (CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis ELSE dateTakenSeconds * 1000 END = :lastCaptureTimeMillis
+                   AND dateAddedSeconds < :lastDateAddedSeconds)
+               OR (CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis ELSE dateTakenSeconds * 1000 END = :lastCaptureTimeMillis
+                   AND dateAddedSeconds = :lastDateAddedSeconds AND id > :lastId))
         ORDER BY CASE
                      WHEN dateTakenMillis > 0 THEN dateTakenMillis
                      ELSE dateTakenSeconds * 1000
                  END DESC,
                  dateAddedSeconds DESC,
                  id ASC
-        LIMIT :limit OFFSET :offset
+        LIMIT :limit
     """)
-    suspend fun getSimilarPhotoCandidates(limit: Int, offset: Int): List<MediaAsset>
+    suspend fun getSimilarPhotoCandidates(
+        limit: Int,
+        lastCaptureTimeMillis: Long,
+        lastDateAddedSeconds: Long,
+        lastId: Long,
+        hasCursor: Boolean
+    ): List<MediaAsset>
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
@@ -88,10 +107,17 @@ interface MediaAssetDao {
         SELECT * FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
           AND sizeBytes > 0 AND dateTakenMillis > 0
+          AND (:hasCursor = 0 OR dateTakenMillis > :lastDateTakenMillis
+               OR (dateTakenMillis = :lastDateTakenMillis AND id > :lastId))
         ORDER BY dateTakenMillis ASC, id ASC
-        LIMIT :limit OFFSET :offset
+        LIMIT :limit
     """)
-    suspend fun getBurstPhotoCandidates(limit: Int, offset: Int): List<MediaAsset>
+    suspend fun getBurstPhotoCandidates(
+        limit: Int,
+        lastDateTakenMillis: Long,
+        lastId: Long,
+        hasCursor: Boolean
+    ): List<MediaAsset>
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
@@ -102,10 +128,17 @@ interface MediaAssetDao {
     @Query("""
         SELECT * FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
+          AND (:hasCursor = 0 OR dateAddedSeconds < :lastDateAddedSeconds
+               OR (dateAddedSeconds = :lastDateAddedSeconds AND id > :lastId))
         ORDER BY dateAddedSeconds DESC, id ASC
-        LIMIT :limit OFFSET :offset
+        LIMIT :limit
     """)
-    suspend fun getScreenshotCandidates(limit: Int, offset: Int): List<MediaAsset>
+    suspend fun getScreenshotCandidates(
+        limit: Int,
+        lastDateAddedSeconds: Long,
+        lastId: Long,
+        hasCursor: Boolean
+    ): List<MediaAsset>
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
@@ -118,13 +151,19 @@ interface MediaAssetDao {
         SELECT * FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0
           AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes
+          AND (:hasCursor = 0 OR sizeBytes < :lastSizeBytes
+               OR (sizeBytes = :lastSizeBytes AND dateAddedSeconds < :lastDateAddedSeconds)
+               OR (sizeBytes = :lastSizeBytes AND dateAddedSeconds = :lastDateAddedSeconds AND id > :lastId))
         ORDER BY sizeBytes DESC, dateAddedSeconds DESC, id ASC
-        LIMIT :limit OFFSET :offset
+        LIMIT :limit
     """)
     suspend fun getLargeMediaCandidates(
         minimumSizeBytes: Long,
         limit: Int,
-        offset: Int
+        lastSizeBytes: Long,
+        lastDateAddedSeconds: Long,
+        lastId: Long,
+        hasCursor: Boolean
     ): List<MediaAsset>
 
     @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0")
