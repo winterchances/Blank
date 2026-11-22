@@ -14,7 +14,10 @@ internal suspend fun MediaAssetDao.revalidateAnalysisAssets(
     analyzedAssets: Collection<MediaAsset>
 ): Map<Long, MediaAsset> {
     if (analyzedAssets.isEmpty()) return emptyMap()
-    val currentById = getVisibleUnprotectedMediaForIds(analyzedAssets.map { it.id })
+    val uniqueAssets = analyzedAssets.distinctBy { it.id }
+    // Stay below SQLite's bind-parameter limit on devices with older SQLite.
+    val currentById = uniqueAssets.chunked(500)
+        .flatMap { batch -> getVisibleUnprotectedMediaForIds(batch.map { it.id }) }
         .associateBy { it.id }
 
     return analyzedAssets.mapNotNull { analyzed ->
