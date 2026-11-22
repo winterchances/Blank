@@ -323,7 +323,25 @@ private fun BlankApp() {
 
     fun confirmSelfOrganizePendingDelete() {
         selfOrganizeDeleteConfirmationVisible = false
-        startDeleteItems(selfOrganizePendingDelete)
+        if (isSelfOrganizeLoading || isDeletionInProgress) return
+        val requestedIds = selfOrganizePendingDelete.map { it.id }
+        isSelfOrganizeLoading = true
+        scope.launch {
+            try {
+                // The pending list may have changed while the confirmation
+                // sheet was open. Re-check visibility, protection and status.
+                val currentItems = repository.currentPendingSelfOrganizePhotos(requestedIds)
+                if (currentItems.isEmpty()) {
+                    selfOrganizeMessage = "待删除照片已发生变化，请检查列表后重试"
+                } else {
+                    startDeleteItems(currentItems)
+                }
+            } catch (_: Exception) {
+                selfOrganizeMessage = "无法读取最新的待删除照片，请稍后重试"
+            } finally {
+                isSelfOrganizeLoading = false
+            }
+        }
     }
 
     val requestAccessOrScan: () -> Unit = {
