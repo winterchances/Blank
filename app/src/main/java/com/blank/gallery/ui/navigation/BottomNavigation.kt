@@ -34,6 +34,9 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeEffect
 
 internal enum class MainPage(val title: String, val icon: NavIconType) {
     HOME("首页", NavIconType.HOME),
@@ -89,12 +92,14 @@ private val BlankFavoritesIcon: ImageVector = ImageVector.Builder("BlankFavorite
 @Composable
 internal fun BottomNavigation(
     currentPage: MainPage,
+    hazeState: HazeState,
     onSelect: (MainPage) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Color(0xFFF5F5F7), tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
             .height(56.dp)
             .shadow(
                 elevation = 8.dp,
