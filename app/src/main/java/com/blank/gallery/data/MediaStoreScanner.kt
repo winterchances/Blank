@@ -111,9 +111,10 @@ class MediaStoreScanner(context: Context) {
                 while (c.moveToNext()) {
                     val id = c.getLong(idIndex)
                     val addedSeconds = addedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L
-                    val takenSeconds = takenIndex.takeIf { it >= 0 }
-                        ?.let { c.getLong(it).takeIf { value -> value > 0L }?.div(1000L) }
-                        ?: addedSeconds
+                    val takenMillis = takenIndex.takeIf { it >= 0 }
+                        ?.let { c.getLong(it).takeIf { value -> value > 0L } }
+                        ?: (addedSeconds * 1000L)
+                    val takenSeconds = takenMillis / 1000L
                     batch += MediaAsset(
                         mediaStoreId = id,
                         contentUri = ContentUris.withAppendedId(collection, id).toString(),
@@ -124,6 +125,7 @@ class MediaStoreScanner(context: Context) {
                         sizeBytes = sizeIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
                         dateAddedSeconds = addedSeconds,
                         dateTakenSeconds = takenSeconds,
+                        dateTakenMillis = takenMillis,
                         dateModifiedSeconds = modifiedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L,
                         width = widthIndex.takeIf { it >= 0 }?.let { c.getInt(it) } ?: 0,
                         height = heightIndex.takeIf { it >= 0 }?.let { c.getInt(it) } ?: 0,
