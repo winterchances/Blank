@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -128,6 +134,142 @@ private fun FolderDrawerItem(label: String, selected: Boolean, onClick: () -> Un
                 maxLines = 2
             )
             if (selected) Text("✓", fontSize = 14.sp, color = MainText)
+        }
+    }
+}
+
+
+private val AlbumSortVector: ImageVector = ImageVector.Builder(
+    name = "AlbumSort",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f
+).apply {
+    path(
+        fill = null,
+        stroke = SolidColor(Color(0xFF333333)),
+        strokeLineWidth = 2.2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ) {
+        moveTo(12f, 20f)
+        lineTo(12f, 4f)
+        moveTo(6f, 10f)
+        lineTo(12f, 4f)
+        lineTo(18f, 10f)
+    }
+}.build()
+
+private val AlbumGridVector: ImageVector = ImageVector.Builder(
+    name = "AlbumGrid",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f
+).apply {
+    path(
+        fill = null,
+        stroke = SolidColor(Color(0xFF333333)),
+        strokeLineWidth = 2.2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ) {
+        moveTo(3f, 3f)
+        lineTo(10f, 3f)
+        lineTo(10f, 10f)
+        lineTo(3f, 10f)
+        close()
+        moveTo(14f, 3f)
+        lineTo(21f, 3f)
+        lineTo(21f, 10f)
+        lineTo(14f, 10f)
+        close()
+        moveTo(14f, 14f)
+        lineTo(21f, 14f)
+        lineTo(21f, 21f)
+        lineTo(14f, 21f)
+        close()
+        moveTo(3f, 14f)
+        lineTo(10f, 14f)
+        lineTo(10f, 21f)
+        lineTo(3f, 21f)
+        close()
+    }
+}.build()
+
+@Composable
+internal fun AlbumHeaderActionButtons(
+    onSortClick: () -> Unit,
+    onGridClick: () -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        AlbumHeaderAction(AlbumSortVector, "排序", onSortClick)
+        AlbumHeaderAction(AlbumGridVector, "网格布局", onGridClick)
+    }
+}
+
+@Composable
+private fun AlbumHeaderAction(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.size(36.dp).clickable(onClick = onClick),
+        shape = androidx.compose.foundation.shape.CircleShape,
+        color = Color.White,
+        shadowElevation = 1.dp
+    ) {
+        androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
+            androidx.compose.foundation.Image(
+                imageVector = icon,
+                contentDescription = description,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+internal fun AlbumOptionsSheet(
+    title: String,
+    options: List<String>,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = PageBackground,
+        shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+        scrimColor = Color.Black.copy(alpha = 0.4f)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)
+        ) {
+            Text(
+                title,
+                modifier = Modifier.padding(vertical = 16.dp),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MainText
+            )
+            options.forEach { option ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).clickable { onSelect(option) },
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    shadowElevation = 1.dp
+                ) {
+                    Text(
+                        option,
+                        modifier = Modifier.padding(17.dp),
+                        fontSize = 15.sp,
+                        color = MainText
+                    )
+                }
+            }
         }
     }
 }
