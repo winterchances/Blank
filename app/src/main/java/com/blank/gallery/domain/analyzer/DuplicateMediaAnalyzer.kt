@@ -122,6 +122,8 @@ class DuplicateMediaAnalyzer(
             null
         } catch (error: SecurityException) {
             null
+        } catch (error: IllegalArgumentException) {
+            null
         }
     }
 
