@@ -682,7 +682,7 @@ private fun PageHeader(title: String, onBack: (() -> Unit)? = null, backLabel: S
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 20.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 36.dp, bottom = 15.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (onBack != null) {
