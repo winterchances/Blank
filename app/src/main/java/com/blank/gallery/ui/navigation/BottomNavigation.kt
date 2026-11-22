@@ -95,16 +95,34 @@ private val BlankFavoritesIcon: ImageVector = ImageVector.Builder("BlankFavorite
     }
 }.build()
 
+private val BlankSearchIcon: ImageVector = ImageVector.Builder("BlankSearch", 24.dp, 24.dp, 24f, 24f).apply {
+    path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
+        moveTo(11f, 3f)
+        curveTo(15.42f, 3f, 19f, 6.58f, 19f, 11f)
+        curveTo(19f, 15.42f, 15.42f, 19f, 11f, 19f)
+        curveTo(6.58f, 19f, 3f, 15.42f, 3f, 11f)
+        curveTo(3f, 6.58f, 6.58f, 3f, 11f, 3f)
+        close()
+        moveTo(21f, 21f); lineTo(16.65f, 16.65f)
+    }
+}.build()
+
 @Composable
 internal fun BottomNavigation(
     currentPage: MainPage,
     hazeState: HazeState,
     onSelect: (MainPage) -> Unit,
+    onSearchClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
     BoxWithConstraints(
-        modifier
-            .fillMaxWidth()
+        Modifier
+            .weight(1f)
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(28.dp),
@@ -162,6 +180,18 @@ internal fun BottomNavigation(
                 }
             }
         }
+    }
+    androidx.compose.material3.Surface(
+        modifier = Modifier.size(56.dp).clickable(onClick = onSearchClick),
+        shape = CircleShape,
+        color = GlassWhite,
+        shadowElevation = 8.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(BlankSearchIcon, "搜索", Modifier.size(21.dp), tint = MainText)
+        }
+    }
     }
 }
 
