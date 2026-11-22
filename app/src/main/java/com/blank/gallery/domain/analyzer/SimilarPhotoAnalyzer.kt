@@ -32,7 +32,7 @@ class SimilarPhotoAnalyzer(
     ): SimilarPhotoAnalysisResult = withContext(Dispatchers.IO) {
         require(maxHammingDistance in 0..MAX_HASH_BITS)
         val total = dao.countSimilarPhotoCandidates()
-        val groupMembers = mutableListOf<MutableList<MediaAsset>?>()
+        val groupMembers = mutableMapOf<Int, MutableList<MediaAsset>>()
         val rootHolder = arrayOfNulls<HashTreeNode>(1)
         var analyzedCount = 0
         var unreadableCount = 0
@@ -77,8 +77,7 @@ class SimilarPhotoAnalyzer(
                 val existingMembers = groupMembers[nearest.groupIndex]
                 if (existingMembers == null) {
                     val representative = dao.findById(nearest.representativeId) ?: return
-                    groupMembers[nearest.groupIndex] =
-                        mutableListOf(representative, asset)
+                    groupMembers[nearest.groupIndex] = mutableListOf(representative, asset)
                 } else {
                     existingMembers += asset
                 }
@@ -86,7 +85,6 @@ class SimilarPhotoAnalyzer(
                 val groupIndex = groupMembers.size
                 // Keep only each representative asset. Assets that never join
                 // a group are not retained after their batch is processed.
-                groupMembers += null
                 rootHolder[0] = insertRepresentative(
                     rootHolder[0],
                     bits,
@@ -129,13 +127,11 @@ class SimilarPhotoAnalyzer(
             offset += batch.size
         }
 
-        val groups = groupMembers.mapNotNull { members ->
-            members?.takeIf { it.size >= 2 }?.let {
-                SimilarPhotoGroup(
-                    representativeId = it.first().id,
-                    items = it
-                )
-            }
+        val groups = groupMembers.toSortedMap().values.map { members ->
+            SimilarPhotoGroup(
+                representativeId = members.first().id,
+                items = members
+            )
         }.sortedByDescending { group -> group.items.sumOf { it.sizeBytes } }
 
         SimilarPhotoAnalysisResult(groups, analyzedCount, unreadableCount)
