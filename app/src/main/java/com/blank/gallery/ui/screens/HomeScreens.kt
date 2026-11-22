@@ -25,8 +25,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -178,10 +176,6 @@ internal fun AlbumsContent(
     mediaType: Int?,
     onMediaTypeChange: (Int?) -> Unit,
     searchQuery: String,
-    gridColumns: Int,
-    onGridColumnsChange: (Int) -> Unit,
-    sortBySize: Boolean,
-    onSortBySizeChange: (Boolean) -> Unit,
     selectedFolderPath: String?,
     onOpenFolderDrawer: () -> Unit,
     months: List<MediaMonth>,
@@ -209,27 +203,18 @@ internal fun AlbumsContent(
             AlbumMediaTypeTab("视频", mediaType == 2) { onMediaTypeChange(2) }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
         ) {
-            AlbumFilterChip("时间", !sortBySize) { onSortBySizeChange(false) }
-            AlbumFilterChip("大小", sortBySize) { onSortBySizeChange(true) }
-            AlbumFilterChip("四宫格", gridColumns == 4) { onGridColumnsChange(4) }
-            AlbumFilterChip("三宫格", gridColumns == 3) { onGridColumnsChange(3) }
-            AlbumFilterChip(
-                label = selectedFolderPath?.substringAfterLast('/')?.ifBlank { "文件夹" } ?: "文件夹",
-                selected = selectedFolderPath != null
-            ) { onOpenFolderDrawer() }
-        }
-
-        if (months.isNotEmpty()) {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
-            ) {
+            item(key = "folder-filter") {
+                AlbumFilterChip(
+                    label = selectedFolderPath?.substringAfterLast('/')?.ifBlank { "文件夹" } ?: "文件夹",
+                    selected = selectedFolderPath != null
+                ) { onOpenFolderDrawer() }
+            }
+            if (months.isNotEmpty()) {
                 item(key = "all-months") {
                     AlbumFilterChip("全部月份", selectedMonthKey == null) { onMonthSelect(null) }
                 }
