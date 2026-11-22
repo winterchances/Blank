@@ -11,6 +11,9 @@ import com.blank.gallery.domain.SimilarPhotoAnalysisResult
 import com.blank.gallery.domain.BurstPhotoAnalysisResult
 import com.blank.gallery.domain.ScreenshotAnalysisResult
 import com.blank.gallery.domain.LargeMediaAnalysisResult
+import com.blank.gallery.domain.SmartAnalysisTaskCoordinator
+import com.blank.gallery.domain.SmartAnalysisTaskState
+import com.blank.gallery.domain.SmartAnalysisType
 import com.blank.gallery.domain.analyzer.DuplicateMediaAnalyzer
 import com.blank.gallery.domain.analyzer.SimilarPhotoAnalyzer
 import com.blank.gallery.domain.analyzer.BurstPhotoAnalyzer
@@ -33,6 +36,7 @@ class MediaLibraryRepository(context: Context) {
     private val burstPhotoAnalyzer = BurstPhotoAnalyzer(context, dao)
     private val screenshotAnalyzer = ScreenshotAnalyzer(dao)
     private val largeMediaAnalyzer = LargeMediaAnalyzer(dao)
+    private val smartAnalysisCoordinator = SmartAnalysisTaskCoordinator()
     private val preferences = context.applicationContext.getSharedPreferences(
         "blank_local_state",
         Context.MODE_PRIVATE
@@ -42,6 +46,8 @@ class MediaLibraryRepository(context: Context) {
     )
 
     val lastScanAt = _lastScanAt.asStateFlow()
+    val smartAnalysisStates = smartAnalysisCoordinator.states
+
     fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, monthKey: String?, sortBySize: Boolean) = Pager(
         config = PagingConfig(pageSize = 60, prefetchDistance = 20, enablePlaceholders = false),
         pagingSourceFactory = {
@@ -163,36 +169,76 @@ class MediaLibraryRepository(context: Context) {
 
     suspend fun analyzeDuplicateMedia(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
-    ): DuplicateAnalysisResult = duplicateMediaAnalyzer.analyze(onProgress)
+    ): DuplicateAnalysisResult = smartAnalysisCoordinator.execute(
+        type = SmartAnalysisType.DUPLICATES,
+        parameterKey = "sha256-v1"
+    ) { reportProgress ->
+        duplicateMediaAnalyzer.analyze { completed, total ->
+            reportProgress(completed, total)
+            onProgress(completed, total)
+        }
+    }
 
     suspend fun analyzeSimilarPhotos(
         maxHammingDistance: Int = 6,
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
-    ): SimilarPhotoAnalysisResult = similarPhotoAnalyzer.analyze(maxHammingDistance, onProgress)
+    ): SimilarPhotoAnalysisResult = smartAnalysisCoordinator.execute(
+        type = SmartAnalysisType.SIMILAR_PHOTOS,
+        parameterKey = "maxHammingDistance=$maxHammingDistance"
+    ) { reportProgress ->
+        similarPhotoAnalyzer.analyze(maxHammingDistance) { completed, total ->
+            reportProgress(completed, total)
+            onProgress(completed, total)
+        }
+    }
 
     suspend fun analyzeBurstPhotos(
         maxAdjacentGapMillis: Long = 1_200L,
         maxBurstDurationMillis: Long = 6_000L,
         maxRepresentativeHammingDistance: Int = 8,
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
-    ): BurstPhotoAnalysisResult = burstPhotoAnalyzer.analyze(
-        maxAdjacentGapMillis = maxAdjacentGapMillis,
-        maxBurstDurationMillis = maxBurstDurationMillis,
-        maxRepresentativeHammingDistance = maxRepresentativeHammingDistance,
-        onProgress = onProgress
-    )
+    ): BurstPhotoAnalysisResult = smartAnalysisCoordinator.execute(
+        type = SmartAnalysisType.BURST_PHOTOS,
+        parameterKey = "gap=$maxAdjacentGapMillis;duration=$maxBurstDurationMillis;distance=$maxRepresentativeHammingDistance"
+    ) { reportProgress ->
+        burstPhotoAnalyzer.analyze(
+            maxAdjacentGapMillis = maxAdjacentGapMillis,
+            maxBurstDurationMillis = maxBurstDurationMillis,
+            maxRepresentativeHammingDistance = maxRepresentativeHammingDistance
+        ) { completed, total ->
+            reportProgress(completed, total)
+            onProgress(completed, total)
+        }
+    }
 
     suspend fun analyzeScreenshots(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
-    ): ScreenshotAnalysisResult = screenshotAnalyzer.analyze(onProgress)
+    ): ScreenshotAnalysisResult = smartAnalysisCoordinator.execute(
+        type = SmartAnalysisType.SCREENSHOTS,
+        parameterKey = "filename-folder-rules-v1"
+    ) { reportProgress ->
+        screenshotAnalyzer.analyze { completed, total ->
+            reportProgress(completed, total)
+            onProgress(completed, total)
+        }
+    }
 
     suspend fun analyzeLargeMedia(
         minimumSizeBytes: Long = 100L * 1024L * 1024L,
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
-    ): LargeMediaAnalysisResult = largeMediaAnalyzer.analyze(
-        minimumSizeBytes = minimumSizeBytes,
-        onProgress = onProgress
-    )
+    ): LargeMediaAnalysisResult = smartAnalysisCoordinator.execute(
+        type = SmartAnalysisType.LARGE_MEDIA,
+        parameterKey = "minimumSizeBytes=$minimumSizeBytes"
+    ) { reportProgress ->
+        largeMediaAnalyzer.analyze(minimumSizeBytes) { completed, total ->
+            reportProgress(completed, total)
+            onProgress(completed, total)
+        }
+    }
+
+    suspend fun cancelSmartAnalysis(type: SmartAnalysisType) {
+        smartAnalysisCoordinator.cancel(type)
+    }
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {
         dao.setFavorite(id, favorite)
