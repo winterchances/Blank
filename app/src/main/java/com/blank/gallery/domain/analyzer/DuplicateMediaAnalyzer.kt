@@ -96,7 +96,8 @@ class DuplicateMediaAnalyzer(
                                 sha256 = hash,
                                 hashAlgorithmVersion = MediaAnalysisCache.SHA256_ALGORITHM_VERSION,
                                 analyzedAtMillis = System.currentTimeMillis()
-                            )
+                            ),
+                            expectedContentUri = asset.contentUri
                         )
                     }
                     cohortHashGroups.getOrPut(hash) { mutableListOf() }.add(asset)
