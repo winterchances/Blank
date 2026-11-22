@@ -421,19 +421,18 @@ private fun AlbumFilterChip(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(if (selected) ThemeMint.copy(alpha = 0.13f) else GlassWhite)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 7.dp),
-        contentAlignment = Alignment.Center
+    androidx.compose.material3.Surface(
+        modifier = Modifier.clickable(onClick = onClick),
+        shape = CircleShape,
+        color = if (selected) ThemeMint else Color.White,
+        shadowElevation = if (selected) 2.dp else 1.dp
     ) {
         Text(
             text = label,
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-            color = if (selected) MainText else MutedText
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) Color.White else Color(0xFF666666),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
 }
