@@ -153,7 +153,11 @@ class BurstPhotoAnalyzer(
         sourceSizeBytes == asset.sizeBytes &&
             sourceDateModifiedSeconds == asset.dateModifiedSeconds &&
             perceptualHashAlgorithmVersion == MediaAnalysisCache.PERCEPTUAL_HASH_ALGORITHM_VERSION &&
-            !perceptualHash.isNullOrBlank()
+            perceptualHash?.let { value ->
+                value.length == 16 && value.all { char ->
+                    char in '0'..'9' || char in 'a'..'f' || char in 'A'..'F'
+                }
+            } == true
 
     private companion object {
         const val MIN_GROUP_SIZE = 2
