@@ -37,7 +37,10 @@ class SimilarPhotoAnalyzer(
         var nextGroupIndex = 0
         var analyzedCount = 0
         var unreadableCount = 0
-        var offset = 0
+        var lastCaptureTimeMillis = 0L
+        var lastDateAddedSeconds = 0L
+        var lastId = 0L
+        var hasCursor = false
 
         fun findMatches(
             node: HashTreeNode?,
@@ -95,9 +98,15 @@ class SimilarPhotoAnalyzer(
             }
         }
 
-        while (offset < total) {
+        while (true) {
             coroutineContext.ensureActive()
-            val batch = dao.getSimilarPhotoCandidates(CANDIDATE_BATCH_SIZE, offset)
+            val batch = dao.getSimilarPhotoCandidates(
+                limit = CANDIDATE_BATCH_SIZE,
+                lastCaptureTimeMillis = lastCaptureTimeMillis,
+                lastDateAddedSeconds = lastDateAddedSeconds,
+                lastId = lastId,
+                hasCursor = hasCursor
+            )
             if (batch.isEmpty()) break
 
             for (asset in batch) {
@@ -125,7 +134,16 @@ class SimilarPhotoAnalyzer(
                 analyzedCount++
                 onProgress(analyzedCount, total)
             }
-            offset += batch.size
+            batch.last().let { last ->
+                lastCaptureTimeMillis = if (last.dateTakenMillis > 0L) {
+                    last.dateTakenMillis
+                } else {
+                    last.dateTakenSeconds * 1000L
+                }
+                lastDateAddedSeconds = last.dateAddedSeconds
+                lastId = last.id
+                hasCursor = true
+            }
         }
 
         val groups = groupMembers.toSortedMap().values.map { members ->
