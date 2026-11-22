@@ -79,16 +79,12 @@ class BurstPhotoAnalyzer(
                     finishCurrentGroup()
                 } else {
                     if (cached?.perceptualHash == null) {
-                        val previous = dao.getMediaAnalysisCache(asset.id)
                         dao.saveMediaAnalysisCache(
                             MediaAnalysisCache(
                                 mediaAssetId = asset.id,
                                 sourceSizeBytes = asset.sizeBytes,
                                 sourceDateModifiedSeconds = asset.dateModifiedSeconds,
-                                sha256 = previous?.sha256,
                                 perceptualHash = hash,
-                                hashAlgorithmVersion = previous?.hashAlgorithmVersion
-                                    ?: MediaAnalysisCache.SHA256_ALGORITHM_VERSION,
                                 perceptualHashAlgorithmVersion = MediaAnalysisCache.PERCEPTUAL_HASH_ALGORITHM_VERSION,
                                 analyzedAtMillis = System.currentTimeMillis()
                             )
