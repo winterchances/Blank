@@ -49,7 +49,7 @@ class MediaLibraryRepository(context: Context) {
     val lastScanAt = _lastScanAt.asStateFlow()
     val smartAnalysisStates = smartAnalysisCoordinator.states
 
-    fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, monthKey: String?, sortBySize: Boolean) = Pager(
+    fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, monthKey: String?, sortBySize: Boolean) = Pager<Int, MediaAsset>(
         config = PagingConfig(pageSize = 60, prefetchDistance = 20, enablePlaceholders = false),
         pagingSourceFactory = {
             dao.pagingSource(mediaType, query.trim(), folderPath, monthKey, if (sortBySize) 1 else 0)
