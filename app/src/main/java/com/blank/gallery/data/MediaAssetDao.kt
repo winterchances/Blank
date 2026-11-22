@@ -327,12 +327,17 @@ interface MediaAssetDao {
     suspend fun cancelSelfOrganizePendingDelete(id: Long) {
         val asset = findById(id) ?: return
         if (!asset.isVisible || asset.mediaType != 1 || asset.isProtected || asset.selfOrganizeStatus != 2) return
-        updateSelfOrganizeState(id, 0, 0L)
-        deleteSelfOrganizeActionsForAsset(id)
+        val action = getLastSelfOrganizeActionForAsset(id)
+        if (action != null) {
+            restoreSelfOrganizeState(id, action.previousStatus, action.previousSkipOrder)
+            deleteSelfOrganizeAction(action.id)
+        } else {
+            updateSelfOrganizeState(id, 0, 0L)
+        }
     }
 
-    @Query("DELETE FROM self_organize_actions WHERE mediaAssetId = :id")
-    suspend fun deleteSelfOrganizeActionsForAsset(id: Long)
+    @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND selfOrganizeStatus = 2")
+    suspend fun getVisibleUnprotectedPendingSelfOrganizePhotos(ids: List<Long>): List<MediaAsset>
 
     @Query("SELECT * FROM media_assets WHERE id = :id LIMIT 1")
     suspend fun findById(id: Long): MediaAsset?
@@ -346,6 +351,9 @@ interface MediaAssetDao {
     @Query("SELECT * FROM self_organize_actions ORDER BY id DESC LIMIT 1")
     suspend fun getLastSelfOrganizeAction(): SelfOrganizeActionRecord?
 
+    @Query("SELECT * FROM self_organize_actions WHERE mediaAssetId = :mediaAssetId ORDER BY id DESC LIMIT 1")
+    suspend fun getLastSelfOrganizeActionForAsset(mediaAssetId: Long): SelfOrganizeActionRecord?
+
     @Query("DELETE FROM self_organize_actions WHERE id = :id")
     suspend fun deleteSelfOrganizeAction(id: Long)
 
@@ -357,8 +365,11 @@ interface MediaAssetDao {
 
     @Transaction
     suspend fun applySelfOrganizeDecision(id: Long, status: Int) {
+        if (status !in 1..3) return
         val current = findById(id) ?: return
-        if (!current.isVisible || current.mediaType != 1 || current.isProtected) return
+        if (!current.isVisible || current.mediaType != 1 || current.isProtected ||
+            current.selfOrganizeStatus !in listOf(0, 3)
+        ) return
         insertSelfOrganizeAction(
             SelfOrganizeActionRecord(
                 mediaAssetId = id,
