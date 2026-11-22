@@ -21,7 +21,8 @@ class LargeMediaAnalyzer(
     ): LargeMediaAnalysisResult = withContext(Dispatchers.IO) {
         require(minimumSizeBytes > 0L) { "Minimum file size must be positive." }
 
-        val total = dao.countLargeMediaCandidates(minimumSizeBytes)
+        val maxMediaAssetId = dao.getMaxMediaAssetId()
+        val total = dao.countLargeMediaCandidates(minimumSizeBytes, maxMediaAssetId)
         val matches = mutableListOf<MediaAsset>()
         var analyzedCount = 0
         var lastSizeBytes = 0L
@@ -34,6 +35,7 @@ class LargeMediaAnalyzer(
             val batch = dao.getLargeMediaCandidates(
                 minimumSizeBytes = minimumSizeBytes,
                 limit = BATCH_SIZE,
+                maxId = maxMediaAssetId,
                 lastSizeBytes = lastSizeBytes,
                 lastDateAddedSeconds = lastDateAddedSeconds,
                 lastId = lastId,
