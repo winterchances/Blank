@@ -31,7 +31,8 @@ class BurstPhotoAnalyzer(
         require(maxBurstDurationMillis in maxAdjacentGapMillis..MAX_BURST_DURATION_MILLIS)
         require(maxRepresentativeHammingDistance in 0..MAX_HASH_BITS)
 
-        val total = dao.countBurstPhotoCandidates()
+        val maxMediaAssetId = dao.getMaxMediaAssetId()
+        val total = dao.countBurstPhotoCandidates(maxMediaAssetId)
         val groups = mutableListOf<BurstPhotoGroup>()
         var currentItems = mutableListOf<MediaAsset>()
         var currentHashes = mutableListOf<ULong>()
@@ -68,6 +69,7 @@ class BurstPhotoAnalyzer(
             coroutineContext.ensureActive()
             val batch = dao.getBurstPhotoCandidates(
                 limit = CANDIDATE_BATCH_SIZE,
+                maxId = maxMediaAssetId,
                 lastDateTakenMillis = lastDateTakenMillis,
                 lastId = lastId,
                 hasCursor = hasCursor
