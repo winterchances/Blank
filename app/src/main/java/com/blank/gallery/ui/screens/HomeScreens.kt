@@ -71,82 +71,88 @@ internal fun HomeContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .padding(horizontal = 20.dp)
     ) {
-        SectionCard(title = "相册概览") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OverviewMetric("照片", photoCount.toString())
-                OverviewMetric("视频", videoCount.toString())
-                OverviewMetric("占用空间", formatStorage(totalBytes))
-            }
-            Text(
-                text = lastScanAt?.let { "最近扫描 · ${formatScanTime(it)}" } ?: "尚未扫描",
-                fontSize = 11.sp,
-                color = MutedText
-            )
-            if (!hasMediaAccess) {
-                Text(
-                    text = "照片和视频仅在本机读取，不会上传",
-                    fontSize = 12.sp,
-                    color = MutedText
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(
+                    8.dp,
+                    RoundedCornerShape(20.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.03f),
+                    spotColor = Color.Black.copy(alpha = 0.03f)
                 )
-            }
-            if (isScanning) {
-                Text(
-                    text = "正在扫描 · 已读取 $scannedItems 项",
-                    fontSize = 12.sp,
-                    color = MutedText
-                )
-            } else if (scanMessage != null) {
-                Text(text = scanMessage, fontSize = 12.sp, color = MutedText)
-            }
-            Text(
-                text = when {
-                    isScanning -> "扫描中…"
-                    !hasMediaAccess && permissionDenied -> "前往系统设置开启照片访问权限"
-                    !hasMediaAccess -> "开启照片访问权限后，即可建立本机相册索引"
-                    photoCount + videoCount == 0 -> "扫描本机照片和视频"
-                    else -> "检查更新"
-                },
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ThemeMint.copy(alpha = 0.10f))
-                    .clickable(enabled = !isScanning, onClick = onScanClick)
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = MainText
-            )
+                .clip(RoundedCornerShape(20.dp))
+                .background(GlassWhite)
+                .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(20.dp))
+                .padding(horizontal = 10.dp, vertical = 15.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OverviewMetric("照片", photoCount.toString(), Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = 0.05f)))
+            OverviewMetric("视频", videoCount.toString(), Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = 0.05f)))
+            OverviewMetric("占用空间", formatStorage(totalBytes), Modifier.weight(1f))
         }
-        SectionCard(title = "快捷整理") {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                QuickAction(
-                    title = "智能整理",
-                    onClick = onOpenSmart,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickAction(
-                    title = "自己整理",
-                    onClick = onOpenSelf,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = lastScanAt?.let { "最近扫描 · ${formatScanTime(it)}" } ?: "尚未扫描",
+            fontSize = 11.sp,
+            color = MutedText
+        )
+        if (!hasMediaAccess) {
+            Text("照片和视频仅在本机读取，不会上传", fontSize = 12.sp, color = MutedText)
+        }
+        if (isScanning) {
+            Text("正在扫描 · 已读取 $scannedItems 项", fontSize = 12.sp, color = MutedText)
+        } else if (scanMessage != null) {
+            Text(scanMessage, fontSize = 12.sp, color = MutedText)
+        }
+        Text(
+            text = when {
+                isScanning -> "扫描中…"
+                !hasMediaAccess && permissionDenied -> "前往系统设置开启照片访问权限"
+                !hasMediaAccess -> "开启照片访问权限后，即可建立本机相册索引"
+                photoCount + videoCount == 0 -> "扫描本机照片和视频"
+                else -> "检查更新"
+            },
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(ThemeMint.copy(alpha = 0.10f))
+                .clickable(enabled = !isScanning, onClick = onScanClick)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = MainText
+        )
+        Spacer(Modifier.height(25.dp))
+        SectionHeading("快捷整理")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            QuickAction(
+                title = "智能整理",
+                onClick = onOpenSmart,
+                modifier = Modifier.weight(1f)
+            )
+            QuickAction(
+                title = "自己整理",
+                onClick = onOpenSelf,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
 
 @Composable
-private fun OverviewMetric(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun OverviewMetric(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, fontSize = 12.sp, color = MutedText)
-        Text(value, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = MainText)
+        Spacer(Modifier.height(4.dp))
+        Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF111111), maxLines = 1)
     }
 }
 
@@ -393,6 +399,23 @@ internal fun AlbumsContent(
 }
 
 @Composable
+private fun SectionHeading(text: String) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ThemeMint))
+        Text(
+            text,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = MainText,
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
+}
+
+@Composable
 private fun AlbumFilterChip(
     label: String,
     selected: Boolean,
@@ -471,10 +494,11 @@ private fun QuickAction(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(ThemeMint.copy(alpha = 0.10f))
+            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.03f), spotColor = Color.Black.copy(alpha = 0.03f))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 13.dp),
+            .padding(horizontal = 14.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -485,6 +509,6 @@ private fun QuickAction(
             color = MainText
         )
         Spacer(Modifier.width(5.dp))
-        Text("›", fontSize = 19.sp, color = ThemeMint)
+        Text("›", fontSize = 19.sp, color = MutedText)
     }
 }
