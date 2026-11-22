@@ -1,5 +1,6 @@
 package com.blank.gallery.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -24,7 +25,7 @@ data class MediaAnalysisCache(
     val sha256: String? = null,
     val perceptualHash: String? = null,
     val hashAlgorithmVersion: Int = SHA256_ALGORITHM_VERSION,
-    val perceptualHashAlgorithmVersion: Int = PERCEPTUAL_HASH_ALGORITHM_VERSION,
+    @ColumnInfo(defaultValue = "1") val perceptualHashAlgorithmVersion: Int = PERCEPTUAL_HASH_ALGORITHM_VERSION,
     val analyzedAtMillis: Long
 ) {
     companion object {
