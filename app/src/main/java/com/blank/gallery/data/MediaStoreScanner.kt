@@ -68,6 +68,8 @@ class MediaStoreScanner(context: Context) {
         var lastDateAddedSeconds: Long? = null
         var lastMediaStoreId: Long? = null
         while (true) {
+            val cursorDateAdded = lastDateAddedSeconds
+            val cursorMediaStoreId = lastMediaStoreId
             val queryArgs = Bundle().apply {
                 putInt(ContentResolver.QUERY_ARG_LIMIT, BATCH_SIZE)
                 val selectionParts = mutableListOf<String>()
@@ -79,13 +81,13 @@ class MediaStoreScanner(context: Context) {
                     selectionArgs += modifiedSinceSeconds.toString()
                     selectionArgs += modifiedSinceSeconds.toString()
                 }
-                if (lastDateAddedSeconds != null && lastMediaStoreId != null) {
+                if (cursorDateAdded != null && cursorMediaStoreId != null) {
                     val added = MediaStore.MediaColumns.DATE_ADDED
                     val id = MediaStore.MediaColumns._ID
                     selectionParts += "($added < ? OR ($added = ? AND $id < ?))"
-                    selectionArgs += lastDateAddedSeconds.toString()
-                    selectionArgs += lastDateAddedSeconds.toString()
-                    selectionArgs += lastMediaStoreId.toString()
+                    selectionArgs += cursorDateAdded.toString()
+                    selectionArgs += cursorDateAdded.toString()
+                    selectionArgs += cursorMediaStoreId.toString()
                 }
                 if (selectionParts.isNotEmpty()) {
                     putString(
