@@ -37,6 +37,11 @@ class SimilarPhotoAnalyzer(
     private val dao: MediaAssetDao
 ) {
     private val resolver: ContentResolver = context.applicationContext.contentResolver
+    private val cosine = Array(LOW_FREQUENCY_SIZE) { frequency ->
+        DoubleArray(HASH_IMAGE_SIZE) { position ->
+            cos((2 * position + 1) * frequency * PI / (2.0 * HASH_IMAGE_SIZE))
+        }
+    }
 
     suspend fun analyze(
         maxHammingDistance: Int = DEFAULT_MAX_HAMMING_DISTANCE,
@@ -141,7 +146,7 @@ class SimilarPhotoAnalyzer(
             }
         }
 
-        return groups.mapIndexedNotNull { index, members ->
+        return groups.mapNotNull { members ->
             if (members.size < 2) {
                 null
             } else {
@@ -227,10 +232,9 @@ class SimilarPhotoAnalyzer(
             for (u in 0 until LOW_FREQUENCY_SIZE) {
                 var sum = 0.0
                 for (y in 0 until HASH_IMAGE_SIZE) {
-                    val vertical = cos((2 * y + 1) * v * PI / (2.0 * HASH_IMAGE_SIZE))
+                    val vertical = cosine[v][y]
                     for (x in 0 until HASH_IMAGE_SIZE) {
-                        val horizontal = cos((2 * x + 1) * u * PI / (2.0 * HASH_IMAGE_SIZE))
-                        sum += gray[y * HASH_IMAGE_SIZE + x] * horizontal * vertical
+                        sum += gray[y * HASH_IMAGE_SIZE + x] * cosine[u][x] * vertical
                     }
                 }
                 coefficients[v * LOW_FREQUENCY_SIZE + u] = sum
