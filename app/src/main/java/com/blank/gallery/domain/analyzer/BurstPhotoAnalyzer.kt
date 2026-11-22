@@ -152,7 +152,10 @@ class BurstPhotoAnalyzer(
         val validGroups = groups.mapNotNull { group ->
             if (group.representativeId !in currentAssets) return@mapNotNull null
             val currentItems = group.items.mapNotNull { currentAssets[it.id] }
-            currentItems.takeIf { it.size >= 2 }?.let { group.copy(items = it) }
+            // Burst membership depends on every adjacent capture-time gap.
+            // Removing a stale middle item could incorrectly join two photos
+            // that were never adjacent within the configured time window.
+            currentItems.takeIf { it.size == group.items.size }?.let { group.copy(items = it) }
         }.sortedWith(
             compareByDescending<BurstPhotoGroup> { it.items.size }
                 .thenByDescending { group -> group.items.sumOf { it.sizeBytes } }
