@@ -31,6 +31,20 @@ android {
     }
 }
 
+val generatedLauncherResDir = layout.buildDirectory.dir("generated/res/launcherIcon")
+
+android.sourceSets.getByName("main").res.srcDir(generatedLauncherResDir)
+
+val prepareLauncherIcon by tasks.registering(Copy::class) {
+    from(rootProject.file("assets/app-icon/blank-icon.png"))
+    into(generatedLauncherResDir.map { it.dir("mipmap-nodpi") })
+    rename { "ic_launcher.png" }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(prepareLauncherIcon)
+}
+
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.10.00"))
     implementation("androidx.activity:activity-compose:1.11.0")
