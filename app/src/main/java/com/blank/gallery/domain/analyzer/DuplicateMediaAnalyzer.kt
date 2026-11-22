@@ -20,7 +20,8 @@ import kotlin.coroutines.coroutineContext
  * and SHA-256 as the final equality check.
  *
  * Only visible, unprotected assets are supplied by the DAO. File bytes are
- * read locally in bounded chunks on Dispatchers.IO.
+ * read locally in bounded chunks on Dispatchers.IO, and metadata candidates
+ * are loaded from Room in small batches.
  */
 class DuplicateMediaAnalyzer(
     context: Context,
@@ -32,42 +33,56 @@ class DuplicateMediaAnalyzer(
     suspend fun analyze(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): DuplicateAnalysisResult = withContext(Dispatchers.IO) {
-        val candidates = dao.getDuplicateCandidates()
-        val groups = mutableListOf<DuplicateMediaGroup>()
+        val total = dao.countDuplicateCandidates()
+        val hashGroups = mutableMapOf<String, MutableList<MediaAsset>>()
         var analyzedCount = 0
         var unreadableCount = 0
+        var offset = 0
 
-        val hashGroups = mutableMapOf<String, MutableList<MediaAsset>>()
-        candidates.forEachIndexed { index, asset ->
+        while (offset < total) {
             coroutineContext.ensureActive()
-            val cached = dao.getMediaAnalysisCache(asset.id)
-                ?.takeIf { it.matches(asset) }
+            val batch = dao.getDuplicateCandidates(
+                limit = CANDIDATE_BATCH_SIZE,
+                offset = offset
+            )
+            if (batch.isEmpty()) break
 
-            val hash = cached?.sha256 ?: calculateSha256(asset.contentUri)
-            if (hash == null) {
-                unreadableCount++
-            } else {
-                if (cached?.sha256 == null) {
-                    dao.saveMediaAnalysisCache(
-                        MediaAnalysisCache(
-                            mediaAssetId = asset.id,
-                            sourceSizeBytes = asset.sizeBytes,
-                            sourceDateModifiedSeconds = asset.dateModifiedSeconds,
-                            sha256 = hash,
-                            hashAlgorithmVersion = MediaAnalysisCache.SHA256_ALGORITHM_VERSION,
-                            analyzedAtMillis = System.currentTimeMillis()
+            for (asset in batch) {
+                coroutineContext.ensureActive()
+                val cached = dao.getMediaAnalysisCache(asset.id)
+                    ?.takeIf { it.matches(asset) }
+
+                val hash = cached?.sha256 ?: calculateSha256(asset.contentUri)
+                if (hash == null) {
+                    unreadableCount++
+                } else {
+                    if (cached?.sha256 == null) {
+                        dao.saveMediaAnalysisCache(
+                            MediaAnalysisCache(
+                                mediaAssetId = asset.id,
+                                sourceSizeBytes = asset.sizeBytes,
+                                sourceDateModifiedSeconds = asset.dateModifiedSeconds,
+                                sha256 = hash,
+                                hashAlgorithmVersion = MediaAnalysisCache.SHA256_ALGORITHM_VERSION,
+                                analyzedAtMillis = System.currentTimeMillis()
+                            )
                         )
-                    )
+                    }
+                    hashGroups.getOrPut(hash) { mutableListOf() }.add(asset)
                 }
-                hashGroups.getOrPut(hash) { mutableListOf() }.add(asset)
+
+                analyzedCount++
+                onProgress(analyzedCount, total)
             }
-            analyzedCount++
-            onProgress(index + 1, candidates.size)
+
+            offset += batch.size
         }
 
-        hashGroups.forEach { (hash, assets) ->
-            if (assets.size > 1) {
-                groups += DuplicateMediaGroup(
+        val groups = hashGroups.mapNotNull { (hash, assets) ->
+            if (assets.size < 2) {
+                null
+            } else {
+                DuplicateMediaGroup(
                     sha256 = hash,
                     items = assets.sortedWith(
                         compareByDescending<MediaAsset> { it.dateTakenSeconds }
@@ -75,12 +90,12 @@ class DuplicateMediaAnalyzer(
                     )
                 )
             }
+        }.sortedByDescending { group ->
+            group.items.sumOf { it.sizeBytes }
         }
 
         DuplicateAnalysisResult(
-            groups = groups.sortedByDescending { group ->
-                group.items.sumOf { it.sizeBytes }
-            },
+            groups = groups,
             analyzedCount = analyzedCount,
             unreadableCount = unreadableCount
         )
@@ -118,5 +133,6 @@ class DuplicateMediaAnalyzer(
 
     private companion object {
         const val BUFFER_SIZE = 64 * 1024
+        const val CANDIDATE_BATCH_SIZE = 200
     }
 }
