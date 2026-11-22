@@ -12,6 +12,8 @@ import com.blank.gallery.ui.navigation.BottomNavigation
 import com.blank.gallery.ui.navigation.MainPage
 import com.blank.gallery.ui.screens.AlbumBatchActionBar
 import com.blank.gallery.ui.screens.AlbumDeleteConfirmationSheet
+import com.blank.gallery.ui.screens.AlbumFolderDrawer
+import com.blank.gallery.ui.screens.AlbumSearchSheet
 import com.blank.gallery.ui.screens.AlbumsContent
 import com.blank.gallery.ui.screens.FavoritesContent
 import com.blank.gallery.ui.screens.HomeContent
@@ -93,6 +95,8 @@ class MainActivity : ComponentActivity() {
 private fun BlankApp() {
     val context = LocalContext.current
     val hazeState = remember { HazeState() }
+    val albumDrawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
+    var isAlbumSearchVisible by remember { mutableStateOf(false) }
     val repository = remember(context) { MediaLibraryRepository(context.applicationContext) }
     val deletionManager = remember(context) { MediaDeletionManager(context.applicationContext) }
     val selfOrganizeManager = remember(repository) { SelfOrganizeManager(repository) }
@@ -501,6 +505,21 @@ private fun BlankApp() {
             onSurface = MainText
         )
     ) {
+        androidx.compose.material3.ModalNavigationDrawer(
+            drawerState = albumDrawerState,
+            gesturesEnabled = currentPage == MainPage.ALBUMS && albumFolders.isNotEmpty(),
+            drawerContent = {
+                AlbumFolderDrawer(
+                    folders = albumFolders,
+                    selectedFolderPath = selectedFolderPath,
+                    onFolderSelect = { path ->
+                        selectedMedia = emptyMap()
+                        selectedFolderPath = path
+                        scope.launch { albumDrawerState.close() }
+                    }
+                )
+            }
+        ) {
         Surface(modifier = Modifier.fillMaxSize(), color = PageBackground) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(
@@ -606,14 +625,12 @@ private fun BlankApp() {
                                 mediaType = albumMediaType,
                                 onMediaTypeChange = { selectedMedia = emptyMap(); albumMediaType = it },
                                 searchQuery = albumSearchQuery,
-                                onSearchQueryChange = { selectedMedia = emptyMap(); albumSearchQuery = it },
                                 gridColumns = albumGridColumns,
                                 onGridColumnsChange = { albumGridColumns = it },
                                 sortBySize = albumSortBySize,
                                 onSortBySizeChange = { albumSortBySize = it },
-                                folders = albumFolders,
                                 selectedFolderPath = selectedFolderPath,
-                                onFolderSelect = { selectedMedia = emptyMap(); selectedFolderPath = it },
+                                onOpenFolderDrawer = { scope.launch { albumDrawerState.open() } },
                                 months = albumMonths,
                                 selectedMonthKey = selectedMonthKey,
                                 onMonthSelect = { selectedMedia = emptyMap(); selectedMonthKey = it },
@@ -685,9 +702,18 @@ private fun BlankApp() {
                             currentPage = currentPage,
                             hazeState = hazeState,
                             onSelect = { selectedMedia = emptyMap(); currentPage = it },
-                            modifier = Modifier.fillMaxWidth()
+                            onSearchClick = { isAlbumSearchVisible = true },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                         )
                     }
+                }
+
+                if (isAlbumSearchVisible) {
+                    AlbumSearchSheet(
+                        query = albumSearchQuery,
+                        onQueryChange = { selectedMedia = emptyMap(); albumSearchQuery = it },
+                        onDismiss = { isAlbumSearchVisible = false }
+                    )
                 }
 
                 AlbumDeleteConfirmationSheet(
@@ -708,6 +734,7 @@ private fun BlankApp() {
                     onConfirm = { confirmSelfOrganizePendingDelete() }
                 )
             }
+        }
         }
     }
 }
