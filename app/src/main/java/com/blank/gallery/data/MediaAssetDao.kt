@@ -61,6 +61,17 @@ interface MediaAssetDao {
     """)
     suspend fun getDuplicateCandidates(limit: Int, offset: Int): List<MediaAsset>
 
+    @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0")
+    suspend fun countSimilarPhotoCandidates(): Int
+
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0
+        ORDER BY dateModifiedSeconds DESC, id ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getSimilarPhotoCandidates(limit: Int, offset: Int): List<MediaAsset>
+
     @Query("SELECT * FROM media_analysis_cache WHERE mediaAssetId = :mediaAssetId LIMIT 1")
     suspend fun getMediaAnalysisCache(mediaAssetId: Long): MediaAnalysisCache?
 
