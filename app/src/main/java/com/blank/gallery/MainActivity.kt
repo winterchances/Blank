@@ -279,7 +279,9 @@ private fun BlankApp() {
     }
 
     fun startDeleteItems(items: List<MediaAsset>) {
-        val eligible = items.filter { it.isVisible && it.mediaType == 1 && !it.isProtected }
+        val eligible = items.filter {
+            it.isVisible && it.mediaType in 1..2 && !it.isProtected
+        }
         if (eligible.isEmpty() || isDeletionInProgress) return
         isDeletionInProgress = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
