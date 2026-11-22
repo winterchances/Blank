@@ -60,6 +60,7 @@ internal fun HomeContent(
     totalBytes: Long,
     lastScanAt: Long?,
     hasMediaAccess: Boolean,
+    hasFullMediaAccess: Boolean,
     permissionDenied: Boolean,
     isScanning: Boolean,
     scannedItems: Int,
@@ -103,6 +104,8 @@ internal fun HomeContent(
         )
         if (!hasMediaAccess) {
             Text("照片和视频仅在本机读取，不会上传", fontSize = 12.sp, color = MutedText)
+        } else if (!hasFullMediaAccess) {
+            Text("目前只能读取已授权的部分照片和视频", fontSize = 12.sp, color = MutedText)
         }
         if (isScanning) {
             Text("正在扫描 · 已读取 $scannedItems 项", fontSize = 12.sp, color = MutedText)
@@ -112,8 +115,9 @@ internal fun HomeContent(
         Text(
             text = when {
                 isScanning -> "扫描中…"
-                !hasMediaAccess && permissionDenied -> "前往系统设置开启照片访问权限"
-                !hasMediaAccess -> "开启照片访问权限后，即可建立本机相册索引"
+                !hasMediaAccess && permissionDenied -> "前往系统设置开启照片和视频访问权限"
+                !hasMediaAccess -> "允许访问照片和视频后，即可建立本机相册索引"
+                !hasFullMediaAccess -> "允许访问全部照片和视频"
                 photoCount + videoCount == 0 -> "扫描本机照片和视频"
                 else -> "检查更新"
             },
