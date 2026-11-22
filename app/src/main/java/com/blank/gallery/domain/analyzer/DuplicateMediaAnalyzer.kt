@@ -42,7 +42,9 @@ class DuplicateMediaAnalyzer(
         var cohortHashGroups = mutableMapOf<String, MutableList<MediaAsset>>()
         var analyzedCount = 0
         var unreadableCount = 0
-        var offset = 0
+        var lastSizeBytes = 0L
+        var lastId = 0L
+        var hasCursor = false
 
         fun flushCohort() {
             cohortHashGroups.forEach { (hash, assets) ->
@@ -59,11 +61,13 @@ class DuplicateMediaAnalyzer(
             cohortHashGroups = mutableMapOf()
         }
 
-        while (offset < total) {
+        while (true) {
             coroutineContext.ensureActive()
             val batch = dao.getDuplicateCandidates(
                 limit = CANDIDATE_BATCH_SIZE,
-                offset = offset
+                lastSizeBytes = lastSizeBytes,
+                lastId = lastId,
+                hasCursor = hasCursor
             )
             if (batch.isEmpty()) break
 
@@ -100,7 +104,11 @@ class DuplicateMediaAnalyzer(
                 onProgress(analyzedCount, total)
             }
 
-            offset += batch.size
+            batch.last().let { last ->
+                lastSizeBytes = last.sizeBytes
+                lastId = last.id
+                hasCursor = true
+            }
         }
 
         flushCohort()
