@@ -180,16 +180,28 @@ interface MediaAssetDao {
     @Query("SELECT * FROM media_analysis_cache WHERE mediaAssetId = :mediaAssetId LIMIT 1")
     suspend fun getMediaAnalysisCache(mediaAssetId: Long): MediaAnalysisCache?
 
+    @Query("SELECT * FROM media_assets WHERE id = :mediaAssetId LIMIT 1")
+    suspend fun getMediaAssetForAnalysisCache(mediaAssetId: Long): MediaAsset?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertMediaAnalysisCacheRow(cache: MediaAnalysisCache)
 
     /**
      * Merge independently computed hashes atomically. Different analyzers may
      * run at the same time, so replacing the whole row can otherwise discard
-     * a hash written by another analyzer.
+     * a hash written by another analyzer. The source is checked against the
+     * current media row so a late result from an obsolete scan cannot replace
+     * a newer source's cache.
      */
     @Transaction
-    suspend fun saveMediaAnalysisCache(cache: MediaAnalysisCache) {
+    suspend fun saveMediaAnalysisCache(cache: MediaAnalysisCache, expectedContentUri: String) {
+        val currentAsset = getMediaAssetForAnalysisCache(cache.mediaAssetId) ?: return
+        if (!currentAsset.isVisible ||
+            currentAsset.contentUri != expectedContentUri ||
+            currentAsset.sizeBytes != cache.sourceSizeBytes ||
+            currentAsset.dateModifiedSeconds != cache.sourceDateModifiedSeconds
+        ) return
+
         val existing = getMediaAnalysisCache(cache.mediaAssetId)
         val sameSource = existing != null &&
             existing.sourceSizeBytes == cache.sourceSizeBytes &&
