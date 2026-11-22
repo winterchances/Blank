@@ -52,7 +52,7 @@ interface MediaAssetDao {
         INNER JOIN (
             SELECT sizeBytes
             FROM media_assets
-            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0
+            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0 AND id <= :maxId
             GROUP BY sizeBytes
             HAVING COUNT(*) > 1
         ) AS candidate_sizes ON candidate_sizes.sizeBytes = media_assets.sizeBytes
@@ -77,7 +77,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0 AND id <= :maxId
           AND (:hasCursor = 0 OR
                CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis ELSE dateTakenSeconds * 1000 END < :lastCaptureTimeMillis
                OR (CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis ELSE dateTakenSeconds * 1000 END = :lastCaptureTimeMillis
