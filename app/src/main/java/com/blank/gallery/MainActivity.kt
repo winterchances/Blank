@@ -578,6 +578,7 @@ private fun BlankApp() {
                                 totalBytes = totalBytes,
                                 lastScanAt = lastScanAt,
                                 hasMediaAccess = hasMediaAccess,
+                                hasFullMediaAccess = MediaPermission.hasFullLibraryAccess(context),
                                 permissionDenied = permissionDenied,
                                 isScanning = isScanning,
                                 scannedItems = scannedItems,
