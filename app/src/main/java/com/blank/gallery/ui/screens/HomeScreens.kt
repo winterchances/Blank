@@ -399,7 +399,7 @@ internal fun AlbumsContent(
 }
 
 @Composable
-private fun SectionHeading(text: String) {
+internal fun SectionHeading(text: String) {
     Row(
         Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically
