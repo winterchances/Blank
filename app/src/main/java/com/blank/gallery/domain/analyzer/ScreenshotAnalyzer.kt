@@ -25,11 +25,18 @@ class ScreenshotAnalyzer(
         val total = dao.countScreenshotCandidates()
         val matches = mutableListOf<ScreenshotPhotoMatch>()
         var analyzedCount = 0
-        var offset = 0
+        var lastDateAddedSeconds = 0L
+        var lastId = 0L
+        var hasCursor = false
 
-        while (offset < total) {
+        while (true) {
             coroutineContext.ensureActive()
-            val batch = dao.getScreenshotCandidates(BATCH_SIZE, offset)
+            val batch = dao.getScreenshotCandidates(
+                limit = BATCH_SIZE,
+                lastDateAddedSeconds = lastDateAddedSeconds,
+                lastId = lastId,
+                hasCursor = hasCursor
+            )
             if (batch.isEmpty()) break
 
             for (asset in batch) {
@@ -38,7 +45,11 @@ class ScreenshotAnalyzer(
                 analyzedCount++
                 onProgress(analyzedCount, total)
             }
-            offset += batch.size
+            batch.last().let { last ->
+                lastDateAddedSeconds = last.dateAddedSeconds
+                lastId = last.id
+                hasCursor = true
+            }
         }
 
         val currentAssets = dao.revalidateAnalysisAssets(matches.map { it.asset })
