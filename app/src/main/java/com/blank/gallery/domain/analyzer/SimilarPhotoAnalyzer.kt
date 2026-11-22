@@ -133,9 +133,15 @@ class SimilarPhotoAnalyzer(
                 representativeId = members.first().id,
                 items = members
             )
+        }
+        val currentAssets = dao.revalidateAnalysisAssets(groups.flatMap { it.items })
+        val validGroups = groups.mapNotNull { group ->
+            if (group.representativeId !in currentAssets) return@mapNotNull null
+            val currentItems = group.items.mapNotNull { currentAssets[it.id] }
+            currentItems.takeIf { it.size >= 2 }?.let { group.copy(items = it) }
         }.sortedByDescending { group -> group.items.sumOf { it.sizeBytes } }
 
-        SimilarPhotoAnalysisResult(groups, analyzedCount, unreadableCount)
+        SimilarPhotoAnalysisResult(validGroups, analyzedCount, unreadableCount)
     }
 
     private class HashTreeNode(
