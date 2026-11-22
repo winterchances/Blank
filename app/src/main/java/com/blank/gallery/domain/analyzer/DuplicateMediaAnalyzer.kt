@@ -104,7 +104,12 @@ class DuplicateMediaAnalyzer(
         }
 
         flushCohort()
-        val sortedGroups = groups.sortedByDescending { group ->
+        val currentAssets = dao.revalidateAnalysisAssets(groups.flatMap { it.items })
+        val validGroups = groups.mapNotNull { group ->
+            val currentItems = group.items.mapNotNull { currentAssets[it.id] }
+            currentItems.takeIf { it.size >= 2 }?.let { group.copy(items = it) }
+        }
+        val sortedGroups = validGroups.sortedByDescending { group ->
             group.items.sumOf { it.sizeBytes }
         }
 
