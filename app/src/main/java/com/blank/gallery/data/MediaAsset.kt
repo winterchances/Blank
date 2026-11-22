@@ -32,6 +32,7 @@ data class MediaAsset(
     val sizeBytes: Long,
     val dateAddedSeconds: Long,
     @ColumnInfo(defaultValue = "0") val dateTakenSeconds: Long = 0L,
+    @ColumnInfo(defaultValue = "0") val dateTakenMillis: Long = 0L,
     val dateModifiedSeconds: Long,
     val width: Int,
     val height: Int,
