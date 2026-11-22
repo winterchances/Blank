@@ -58,17 +58,17 @@ class SimilarPhotoAnalyzer(
         fun insertRepresentative(
             node: HashTreeNode?,
             target: ULong,
-            asset: MediaAsset,
+            representativeId: Long,
             groupIndex: Int
         ): HashTreeNode {
-            if (node == null) return HashTreeNode(target, groupIndex, asset)
+            if (node == null) return HashTreeNode(target, groupIndex, representativeId)
             val distance = (node.hash xor target).countOneBits()
             val child = node.children[distance]
-            node.children[distance] = insertRepresentative(child, target, asset, groupIndex)
+            node.children[distance] = insertRepresentative(child, target, representativeId, groupIndex)
             return node
         }
 
-        fun addToRepresentativeGroups(asset: MediaAsset, hash: String) {
+        suspend fun addToRepresentativeGroups(asset: MediaAsset, hash: String) {
             val bits = hash.toULong(16)
             val matches = mutableListOf<Pair<Int, HashTreeNode>>()
             findMatches(rootHolder[0], bits, matches)
@@ -76,8 +76,9 @@ class SimilarPhotoAnalyzer(
             if (nearest != null) {
                 val existingMembers = groupMembers[nearest.groupIndex]
                 if (existingMembers == null) {
+                    val representative = dao.findById(nearest.representativeId) ?: return
                     groupMembers[nearest.groupIndex] =
-                        mutableListOf(nearest.representativeAsset, asset)
+                        mutableListOf(representative, asset)
                 } else {
                     existingMembers += asset
                 }
@@ -89,7 +90,7 @@ class SimilarPhotoAnalyzer(
                 rootHolder[0] = insertRepresentative(
                     rootHolder[0],
                     bits,
-                    asset,
+                    asset.id,
                     groupIndex
                 )
             }
@@ -143,7 +144,7 @@ class SimilarPhotoAnalyzer(
     private class HashTreeNode(
         val hash: ULong,
         val groupIndex: Int,
-        val representativeAsset: MediaAsset,
+        val representativeId: Long,
         val children: MutableMap<Int, HashTreeNode> = mutableMapOf()
     )
 
