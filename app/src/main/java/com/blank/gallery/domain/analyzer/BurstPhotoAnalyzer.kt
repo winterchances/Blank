@@ -70,8 +70,6 @@ class BurstPhotoAnalyzer(
             for (asset in batch) {
                 coroutineContext.ensureActive()
                 val captureMillis = asset.dateTakenMillis
-                    .takeIf { it > 0L }
-                    ?: (asset.dateTakenSeconds.takeIf { it > 0L } ?: asset.dateAddedSeconds) * 1000L
                 val cached = dao.getMediaAnalysisCache(asset.id)
                     ?.takeIf { it.matchesForPerceptualHash(asset) }
                 val hash = cached?.perceptualHash ?: hashCalculator.calculate(asset.contentUri)
