@@ -164,7 +164,12 @@ private fun BlankApp() {
                     ) { count ->
                         scannedItems = count
                     }
-                    scanMessage = if (total == 0) "相册已是最新" else "扫描完成 · 更新 $total 项"
+                    scanMessage = when {
+                        !MediaPermission.hasFullLibraryAccess(context) ->
+                            "当前为部分访问 · 已扫描授权范围内的 $scannedItems 项"
+                        total == 0 -> "相册已是最新"
+                        else -> "扫描完成 · 更新 $total 项"
+                    }
                     pagedMedia.refresh()
                 } catch (error: SecurityException) {
                     hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
@@ -359,7 +364,7 @@ private fun BlankApp() {
     }
 
     val requestAccessOrScan: () -> Unit = {
-        if (MediaPermission.canReadImages(context)) {
+        if (MediaPermission.hasFullLibraryAccess(context)) {
             runScan()
         } else if (permissionDenied) {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -372,7 +377,22 @@ private fun BlankApp() {
     }
 
     LaunchedEffect(Unit) {
-        if (hasMediaAccess) {
+        val permissionPreferences = context.getSharedPreferences(
+            "blank_permission_state",
+            android.content.Context.MODE_PRIVATE
+        )
+        val hasAskedForInitialAccess = permissionPreferences.getBoolean(
+            "initial_media_permission_requested",
+            false
+        )
+        if (!MediaPermission.hasFullLibraryAccess(context) && !hasAskedForInitialAccess) {
+            // Ask on the first app launch so Android can show the full-library
+            // choice (or its selected-photos alternative) before scanning.
+            permissionPreferences.edit()
+                .putBoolean("initial_media_permission_requested", true)
+                .apply()
+            permissionLauncher.launch(MediaPermission.requiredPermissions())
+        } else if (hasMediaAccess) {
             runScan()
         } else {
             repository.hideAllFromCurrentLibrary()
