@@ -100,11 +100,11 @@ class BurstPhotoAnalyzer(
                     val hashBits = hash.toULong(16)
                     if (currentItems.isEmpty()) {
                         currentItems = mutableListOf(asset)
-                                                currentHashes = mutableListOf(hashBits)
-                                                currentStartMillis = captureMillis
-                                                previousCaptureMillis = captureMillis
-                                                currentMaxAdjacentGap = 0L
-                                                currentMaxRepresentativeDistance = 0
+                        currentHashes = mutableListOf(hashBits)
+                        currentStartMillis = captureMillis
+                        previousCaptureMillis = captureMillis
+                        currentMaxAdjacentGap = 0L
+                        currentMaxRepresentativeDistance = 0
                     } else {
                         val gap = (captureMillis - previousCaptureMillis).coerceAtLeast(0L)
                         val span = captureMillis - currentStartMillis
@@ -125,11 +125,11 @@ class BurstPhotoAnalyzer(
                         } else {
                             finishCurrentGroup()
                             currentItems = mutableListOf(asset)
-                                                    currentHashes = mutableListOf(hashBits)
-                                                    currentStartMillis = captureMillis
-                                                    previousCaptureMillis = captureMillis
-                                                    currentMaxAdjacentGap = 0L
-                                                    currentMaxRepresentativeDistance = 0
+                            currentHashes = mutableListOf(hashBits)
+                            currentStartMillis = captureMillis
+                            previousCaptureMillis = captureMillis
+                            currentMaxAdjacentGap = 0L
+                            currentMaxRepresentativeDistance = 0
                         }
                     }
                 }
