@@ -113,8 +113,12 @@ class MediaStoreScanner(context: Context) {
                     val addedSeconds = addedIndex.takeIf { it >= 0 }?.let { c.getLong(it) } ?: 0L
                     val takenMillis = takenIndex.takeIf { it >= 0 }
                         ?.let { c.getLong(it).takeIf { value -> value > 0L } }
-                        ?: (addedSeconds * 1000L)
-                    val takenSeconds = takenMillis / 1000L
+                        ?: 0L
+                    val takenSeconds = if (takenMillis > 0L) {
+                        takenMillis / 1000L
+                    } else {
+                        addedSeconds
+                    }
                     batch += MediaAsset(
                         mediaStoreId = id,
                         contentUri = ContentUris.withAppendedId(collection, id).toString(),
