@@ -7,7 +7,9 @@ import androidx.paging.map
 import androidx.paging.insertSeparators
 import com.blank.gallery.ui.screens.AlbumGridItem
 import com.blank.gallery.domain.DuplicateAnalysisResult
+import com.blank.gallery.domain.SimilarPhotoAnalysisResult
 import com.blank.gallery.domain.analyzer.DuplicateMediaAnalyzer
+import com.blank.gallery.domain.analyzer.SimilarPhotoAnalyzer
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -21,6 +23,7 @@ class MediaLibraryRepository(context: Context) {
     private val scanner = MediaStoreScanner(context)
     private val dao = database.mediaAssetDao()
     private val duplicateMediaAnalyzer = DuplicateMediaAnalyzer(context, dao)
+    private val similarPhotoAnalyzer = SimilarPhotoAnalyzer(context, dao)
     private val preferences = context.applicationContext.getSharedPreferences(
         "blank_local_state",
         Context.MODE_PRIVATE
@@ -152,6 +155,11 @@ class MediaLibraryRepository(context: Context) {
     suspend fun analyzeDuplicateMedia(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): DuplicateAnalysisResult = duplicateMediaAnalyzer.analyze(onProgress)
+
+    suspend fun analyzeSimilarPhotos(
+        maxHammingDistance: Int = 6,
+        onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
+    ): SimilarPhotoAnalysisResult = similarPhotoAnalyzer.analyze(maxHammingDistance, onProgress)
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {
         dao.setFavorite(id, favorite)
