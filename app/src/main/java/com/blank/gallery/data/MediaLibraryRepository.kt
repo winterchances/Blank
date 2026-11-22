@@ -305,6 +305,9 @@ class MediaLibraryRepository(context: Context) {
         dao.cancelSelfOrganizePendingDelete(id)
     }
 
+    suspend fun currentPendingSelfOrganizePhotos(ids: List<Long>): List<MediaAsset> =
+        if (ids.isEmpty()) emptyList() else dao.getVisibleUnprotectedPendingSelfOrganizePhotos(ids)
+
     private companion object {
         const val KEY_LAST_SCAN_AT = "last_scan_at"
         const val KEY_LAST_SCAN_CUTOFF_SECONDS = "last_scan_cutoff_seconds"
