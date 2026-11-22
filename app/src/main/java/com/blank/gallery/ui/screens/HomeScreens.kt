@@ -197,27 +197,25 @@ internal fun AlbumsContent(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            item { AlbumFilterChip("全部", mediaType == null) { onMediaTypeChange(null) } }
-            item { AlbumFilterChip("照片", mediaType == 1) { onMediaTypeChange(1) } }
-            item { AlbumFilterChip("视频", mediaType == 2) { onMediaTypeChange(2) } }
-            item { AlbumFilterChip("四宫格", gridColumns == 4) { onGridColumnsChange(4) } }
-            item { AlbumFilterChip("三宫格", gridColumns == 3) { onGridColumnsChange(3) } }
+            AlbumMediaTypeTab("全部", mediaType == null) { onMediaTypeChange(null) }
+            AlbumMediaTypeTab("照片", mediaType == 1) { onMediaTypeChange(1) }
+            AlbumMediaTypeTab("视频", mediaType == 2) { onMediaTypeChange(2) }
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             AlbumFilterChip("时间", !sortBySize) { onSortBySizeChange(false) }
             AlbumFilterChip("大小", sortBySize) { onSortBySizeChange(true) }
+            AlbumFilterChip("四宫格", gridColumns == 4) { onGridColumnsChange(4) }
+            AlbumFilterChip("三宫格", gridColumns == 3) { onGridColumnsChange(3) }
             AlbumFilterChip(
                 label = selectedFolderPath?.substringAfterLast('/')?.ifBlank { "文件夹" } ?: "文件夹",
                 selected = selectedFolderPath != null
@@ -360,6 +358,35 @@ internal fun SectionHeading(text: String) {
             color = MainText,
             modifier = Modifier.padding(start = 8.dp)
         )
+    }
+}
+
+@Composable
+private fun AlbumMediaTypeTab(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            color = if (selected) MainText else MutedText,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = 15.sp
+        )
+        if (selected) {
+            Spacer(
+                Modifier
+                    .padding(top = 5.dp)
+                    .width(20.dp)
+                    .height(3.dp)
+                    .clip(CircleShape)
+                    .background(ThemeMint)
+            )
+        }
     }
 }
 
