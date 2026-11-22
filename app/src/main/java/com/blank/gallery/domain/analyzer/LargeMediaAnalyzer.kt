@@ -41,13 +41,15 @@ class LargeMediaAnalyzer(
             offset += batch.size
         }
 
+        val currentAssets = dao.revalidateAnalysisAssets(matches)
+        val currentMatches = matches.mapNotNull { currentAssets[it.id] }
         LargeMediaAnalysisResult(
             minimumSizeBytes = minimumSizeBytes,
-            items = matches,
+            items = currentMatches,
             analyzedCount = analyzedCount,
-            totalSizeBytes = matches.sumOf { it.sizeBytes },
-            photoCount = matches.count { it.mediaType == MEDIA_TYPE_IMAGE },
-            videoCount = matches.count { it.mediaType == MEDIA_TYPE_VIDEO }
+            totalSizeBytes = currentMatches.sumOf { it.sizeBytes },
+            photoCount = currentMatches.count { it.mediaType == MEDIA_TYPE_IMAGE },
+            videoCount = currentMatches.count { it.mediaType == MEDIA_TYPE_VIDEO }
         )
     }
 
