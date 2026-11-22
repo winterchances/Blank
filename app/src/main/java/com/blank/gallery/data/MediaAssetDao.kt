@@ -74,18 +74,16 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
+          AND sizeBytes > 0 AND dateTakenMillis > 0
     """)
     suspend fun countBurstPhotoCandidates(): Int
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0
-        ORDER BY
-            CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis
-                 WHEN dateTakenSeconds > 0 THEN dateTakenSeconds * 1000
-                 ELSE dateAddedSeconds * 1000 END ASC,
-            id ASC
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
+          AND sizeBytes > 0 AND dateTakenMillis > 0
+        ORDER BY dateTakenMillis ASC, id ASC
         LIMIT :limit OFFSET :offset
     """)
     suspend fun getBurstPhotoCandidates(limit: Int, offset: Int): List<MediaAsset>
