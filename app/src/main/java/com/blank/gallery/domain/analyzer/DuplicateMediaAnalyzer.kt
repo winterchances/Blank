@@ -33,7 +33,8 @@ class DuplicateMediaAnalyzer(
     suspend fun analyze(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): DuplicateAnalysisResult = withContext(Dispatchers.IO) {
-        val total = dao.countDuplicateCandidates()
+        val maxMediaAssetId = dao.getMaxMediaAssetId()
+        val total = dao.countDuplicateCandidates(maxMediaAssetId)
         val groups = mutableListOf<DuplicateMediaGroup>()
         // DAO ordering keeps each equal-size cohort contiguous, including
         // across page boundaries. Discard singleton hashes as soon as their
@@ -65,6 +66,7 @@ class DuplicateMediaAnalyzer(
             coroutineContext.ensureActive()
             val batch = dao.getDuplicateCandidates(
                 limit = CANDIDATE_BATCH_SIZE,
+                maxId = maxMediaAssetId,
                 lastSizeBytes = lastSizeBytes,
                 lastId = lastId,
                 hasCursor = hasCursor
