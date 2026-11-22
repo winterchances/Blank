@@ -479,14 +479,14 @@ interface MediaAssetDao {
     @Query("UPDATE media_assets SET isFavorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: Long, favorite: Boolean)
 
-    @Query("UPDATE media_assets SET isProtected = :protected WHERE id = :id")
-    suspend fun setProtected(id: Long, protected: Boolean)
+    @Query("UPDATE media_assets SET isProtected = :protectedValue WHERE id = :id")
+    suspend fun setProtected(id: Long, protectedValue: Boolean)
 
     @Query("UPDATE media_assets SET isFavorite = :favorite WHERE id IN (:ids)")
     suspend fun setFavoriteForIds(ids: List<Long>, favorite: Boolean)
 
-    @Query("UPDATE media_assets SET isProtected = :protected WHERE id IN (:ids)")
-    suspend fun setProtectedForIds(ids: List<Long>, protected: Boolean)
+    @Query("UPDATE media_assets SET isProtected = :protectedValue WHERE id IN (:ids)")
+    suspend fun setProtectedForIds(ids: List<Long>, protectedValue: Boolean)
 
     /** Hide trashed items without deleting their local metadata or user state. */
     @Query("UPDATE media_assets SET isVisible = 0 WHERE id IN (:ids)")
