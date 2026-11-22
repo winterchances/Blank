@@ -24,9 +24,11 @@ data class MediaAnalysisCache(
     val sha256: String? = null,
     val perceptualHash: String? = null,
     val hashAlgorithmVersion: Int = SHA256_ALGORITHM_VERSION,
+    val perceptualHashAlgorithmVersion: Int = PERCEPTUAL_HASH_ALGORITHM_VERSION,
     val analyzedAtMillis: Long
 ) {
     companion object {
         const val SHA256_ALGORITHM_VERSION = 1
+        const val PERCEPTUAL_HASH_ALGORITHM_VERSION = 1
     }
 }
