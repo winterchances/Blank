@@ -8,8 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [MediaAsset::class, SelfOrganizeActionRecord::class],
-    version = 6,
+    entities = [MediaAsset::class, SelfOrganizeActionRecord::class, MediaAnalysisCache::class],
+    version = 7,
     exportSchema = false
 )
 abstract class BlankDatabase : RoomDatabase() {
@@ -76,6 +76,31 @@ abstract class BlankDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS media_analysis_cache (
+                        mediaAssetId INTEGER NOT NULL,
+                        sourceSizeBytes INTEGER NOT NULL,
+                        sourceDateModifiedSeconds INTEGER NOT NULL,
+                        sha256 TEXT,
+                        perceptualHash TEXT,
+                        hashAlgorithmVersion INTEGER NOT NULL,
+                        analyzedAtMillis INTEGER NOT NULL,
+                        PRIMARY KEY(mediaAssetId)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_media_analysis_cache_sha256 ON media_analysis_cache (sha256)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_media_analysis_cache_sourceSizeBytes_sha256 ON media_analysis_cache (sourceSizeBytes, sha256)"
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: BlankDatabase? = null
 
@@ -86,7 +111,7 @@ abstract class BlankDatabase : RoomDatabase() {
                     BlankDatabase::class.java,
                     "blank-local.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .build()
                     .also { INSTANCE = it }
             }
