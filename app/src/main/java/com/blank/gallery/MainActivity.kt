@@ -78,6 +78,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.launch
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,6 +92,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun BlankApp() {
     val context = LocalContext.current
+    val hazeState = remember { HazeState() }
     val repository = remember(context) { MediaLibraryRepository(context.applicationContext) }
     val deletionManager = remember(context) { MediaDeletionManager(context.applicationContext) }
     val selfOrganizeManager = remember(repository) { SelfOrganizeManager(repository) }
@@ -483,6 +486,7 @@ private fun BlankApp() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .hazeSource(hazeState)
                         .padding(
                             top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
                             bottom = (if (organizeSubPage == null) 104.dp else 24.dp) +
@@ -644,6 +648,7 @@ private fun BlankApp() {
                     } else if (organizeSubPage == null) {
                         BottomNavigation(
                             currentPage = currentPage,
+                            hazeState = hazeState,
                             onSelect = { selectedMedia = emptyMap(); currentPage = it },
                             modifier = Modifier.fillMaxWidth()
                         )
