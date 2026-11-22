@@ -64,22 +64,37 @@ class MediaStoreScanner(context: Context) {
             durationColumn?.let(::add)
         }.toTypedArray()
 
-        var offset = 0
         var total = 0
+        var lastDateAddedSeconds: Long? = null
+        var lastMediaStoreId: Long? = null
         while (true) {
             val queryArgs = Bundle().apply {
                 putInt(ContentResolver.QUERY_ARG_LIMIT, BATCH_SIZE)
-                putInt(ContentResolver.QUERY_ARG_OFFSET, offset)
+                val selectionParts = mutableListOf<String>()
+                val selectionArgs = mutableListOf<String>()
                 if (modifiedSinceSeconds != null) {
                     val modified = MediaStore.MediaColumns.DATE_MODIFIED
                     val added = MediaStore.MediaColumns.DATE_ADDED
+                    selectionParts += "($modified >= ? OR $added >= ?)"
+                    selectionArgs += modifiedSinceSeconds.toString()
+                    selectionArgs += modifiedSinceSeconds.toString()
+                }
+                if (lastDateAddedSeconds != null && lastMediaStoreId != null) {
+                    val added = MediaStore.MediaColumns.DATE_ADDED
+                    val id = MediaStore.MediaColumns._ID
+                    selectionParts += "($added < ? OR ($added = ? AND $id < ?))"
+                    selectionArgs += lastDateAddedSeconds.toString()
+                    selectionArgs += lastDateAddedSeconds.toString()
+                    selectionArgs += lastMediaStoreId.toString()
+                }
+                if (selectionParts.isNotEmpty()) {
                     putString(
                         ContentResolver.QUERY_ARG_SQL_SELECTION,
-                        "$modified >= ? OR $added >= ?"
+                        selectionParts.joinToString(" AND ")
                     )
                     putStringArray(
                         ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                        arrayOf(modifiedSinceSeconds.toString(), modifiedSinceSeconds.toString())
+                        selectionArgs.toTypedArray()
                     )
                 }
                 putStringArray(
@@ -141,7 +156,10 @@ class MediaStoreScanner(context: Context) {
             if (batch.isEmpty()) break
             onBatch(batch)
             total += batch.size
-            offset += batch.size
+            batch.last().let { last ->
+                lastDateAddedSeconds = last.dateAddedSeconds
+                lastMediaStoreId = last.mediaStoreId
+            }
             if (batch.size < BATCH_SIZE) break
         }
         return total
