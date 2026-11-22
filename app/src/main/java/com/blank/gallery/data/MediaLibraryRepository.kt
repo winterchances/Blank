@@ -165,6 +165,13 @@ class MediaLibraryRepository(context: Context) {
             // permission scope. Hide them until a complete authorized scan.
             dao.hideAllBeforePermissionScopedScan()
             throw error
+        } catch (error: Exception) {
+            // A provider may surface a permission transition as a non-security
+            // failure. Do not leave partially indexed rows visible if access changed.
+            if (MediaPermission.accessScope(appContext) != permissionScope) {
+                dao.hideAllBeforePermissionScopedScan()
+            }
+            throw error
         }
 
         if (MediaPermission.accessScope(appContext) != permissionScope) {
