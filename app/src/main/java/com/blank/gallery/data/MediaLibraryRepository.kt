@@ -6,6 +6,8 @@ import androidx.paging.PagingConfig
 import androidx.paging.map
 import androidx.paging.insertSeparators
 import com.blank.gallery.ui.screens.AlbumGridItem
+import com.blank.gallery.domain.DuplicateAnalysisResult
+import com.blank.gallery.domain.analyzer.DuplicateMediaAnalyzer
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -18,6 +20,7 @@ class MediaLibraryRepository(context: Context) {
     private val database = BlankDatabase.getInstance(context)
     private val scanner = MediaStoreScanner(context)
     private val dao = database.mediaAssetDao()
+    private val duplicateMediaAnalyzer = DuplicateMediaAnalyzer(context, dao)
     private val preferences = context.applicationContext.getSharedPreferences(
         "blank_local_state",
         Context.MODE_PRIVATE
@@ -145,6 +148,10 @@ class MediaLibraryRepository(context: Context) {
         _lastScanAt.value = completedAt
         return scannedCount
     }
+
+    suspend fun analyzeDuplicateMedia(
+        onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
+    ): DuplicateAnalysisResult = duplicateMediaAnalyzer.analyze(onProgress)
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {
         dao.setFavorite(id, favorite)
