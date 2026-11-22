@@ -9,9 +9,11 @@ import com.blank.gallery.ui.screens.AlbumGridItem
 import com.blank.gallery.domain.DuplicateAnalysisResult
 import com.blank.gallery.domain.SimilarPhotoAnalysisResult
 import com.blank.gallery.domain.BurstPhotoAnalysisResult
+import com.blank.gallery.domain.ScreenshotAnalysisResult
 import com.blank.gallery.domain.analyzer.DuplicateMediaAnalyzer
 import com.blank.gallery.domain.analyzer.SimilarPhotoAnalyzer
 import com.blank.gallery.domain.analyzer.BurstPhotoAnalyzer
+import com.blank.gallery.domain.analyzer.ScreenshotAnalyzer
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -27,6 +29,7 @@ class MediaLibraryRepository(context: Context) {
     private val duplicateMediaAnalyzer = DuplicateMediaAnalyzer(context, dao)
     private val similarPhotoAnalyzer = SimilarPhotoAnalyzer(context, dao)
     private val burstPhotoAnalyzer = BurstPhotoAnalyzer(context, dao)
+    private val screenshotAnalyzer = ScreenshotAnalyzer(dao)
     private val preferences = context.applicationContext.getSharedPreferences(
         "blank_local_state",
         Context.MODE_PRIVATE
@@ -175,6 +178,10 @@ class MediaLibraryRepository(context: Context) {
         maxRepresentativeHammingDistance = maxRepresentativeHammingDistance,
         onProgress = onProgress
     )
+
+    suspend fun analyzeScreenshots(
+        onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
+    ): ScreenshotAnalysisResult = screenshotAnalyzer.analyze(onProgress)
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {
         dao.setFavorite(id, favorite)
