@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 enum class SmartAnalysisType {
     DUPLICATES,
@@ -106,6 +104,10 @@ class SmartAnalysisTaskCoordinator {
                                 )
                             )
                         }
+                        // Complete the shared result before publishing Completed.
+                        // cancel() checks this flag, avoiding a late transition to
+                        // Cancelling after the work has already produced its result.
+                        result.complete(value)
                         setState(
                             type,
                             SmartAnalysisTaskState.Completed(
@@ -115,12 +117,11 @@ class SmartAnalysisTaskCoordinator {
                                 completedAtMillis = System.currentTimeMillis()
                             )
                         )
-                        result.complete(value)
                     } catch (cancelled: CancellationException) {
                         setState(type, SmartAnalysisTaskState.Cancelled(parameterKey))
                         result.cancel(cancelled)
                         throw cancelled
-                    } catch (error: Throwable) {
+                    } catch (error: Exception) {
                         setState(
                             type,
                             SmartAnalysisTaskState.Failed(
@@ -129,12 +130,45 @@ class SmartAnalysisTaskCoordinator {
                             )
                         )
                         result.completeExceptionally(error)
-                    } finally {
-                        withContext(NonCancellable) {
-                            mutex.withLock {
-                                if (activeTasks[type]?.result === result) {
-                                    activeTasks.remove(type)
-                                }
+                    } catch (fatal: Throwable) {
+                        setState(
+                            type,
+                            SmartAnalysisTaskState.Failed(
+                                parameterKey = parameterKey,
+                                message = fatal.message ?: fatal::class.java.simpleName
+                            )
+                        )
+                        result.completeExceptionally(fatal)
+                        throw fatal
+                    }
+                }
+
+                // Completion handlers also run when a lazy job is cancelled
+                // before its body starts. This guarantees that every waiter is
+                // released and that the active-task slot is eventually cleared.
+                job.invokeOnCompletion { cause ->
+                    if (!result.isCompleted) {
+                        if (cause is CancellationException) {
+                            setState(type, SmartAnalysisTaskState.Cancelled(parameterKey))
+                            result.cancel(cause)
+                        } else {
+                            val failure = cause
+                                ?: IllegalStateException("Smart analysis ended without a result.")
+                            setState(
+                                type,
+                                SmartAnalysisTaskState.Failed(
+                                    parameterKey = parameterKey,
+                                    message = failure.message ?: failure::class.java.simpleName
+                                )
+                            )
+                            result.completeExceptionally(failure)
+                        }
+                    }
+
+                    scope.launch {
+                        mutex.withLock {
+                            if (activeTasks[type]?.result === result) {
+                                activeTasks.remove(type)
                             }
                         }
                     }
@@ -162,10 +196,13 @@ class SmartAnalysisTaskCoordinator {
     suspend fun cancel(type: SmartAnalysisType) {
         mutex.withLock {
             activeTasks[type]?.let { task ->
-                setState(type, SmartAnalysisTaskState.Cancelling(task.parameterKey))
-                task.job.cancel(
-                    CancellationException("Smart analysis cancelled by the user.")
-                )
+                // A completed result must not be overwritten by a late cancel.
+                if (!task.result.isCompleted) {
+                    setState(type, SmartAnalysisTaskState.Cancelling(task.parameterKey))
+                    task.job.cancel(
+                        CancellationException("Smart analysis cancelled by the user.")
+                    )
+                }
             }
         }
     }
