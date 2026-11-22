@@ -1,7 +1,6 @@
 package com.blank.gallery.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +35,6 @@ import coil.compose.AsyncImage
 import com.blank.gallery.data.MediaAsset
 import com.blank.gallery.data.SelfOrganizeSummary
 import com.blank.gallery.ui.components.EmptyState
-import com.blank.gallery.ui.theme.GlassWhite
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.MutedText
 import com.blank.gallery.ui.theme.ThemeMint
@@ -141,7 +139,8 @@ internal fun SelfOrganizeScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.03f), spotColor = Color.Black.copy(alpha = 0.03f))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Color.Black.copy(alpha = 0.035f))
                     .pointerInput(asset.id) {
                         var dragDistance = 0f
@@ -214,13 +213,12 @@ private fun ActionSurface(
         modifier = modifier
             .shadow(
                 4.dp,
-                RoundedCornerShape(18.dp),
-                ambientColor = Color.Black.copy(alpha = 0.02f),
-                spotColor = Color.Black.copy(alpha = 0.02f)
+                RoundedCornerShape(16.dp),
+                ambientColor = Color.Black.copy(alpha = 0.03f),
+                spotColor = Color.Black.copy(alpha = 0.03f)
             )
-            .clip(RoundedCornerShape(18.dp))
-            .background(GlassWhite)
-            .border(1.dp, Color.Black.copy(alpha = 0.045f), RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
             .clickable(
                 enabled = enabled,
                 onClick = onClick
