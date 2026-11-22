@@ -28,7 +28,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
 class MediaLibraryRepository(context: Context) {
-    private val database = BlankDatabase.getInstance(context)
+    private val appContext = context.applicationContext
+    private val database = BlankDatabase.getInstance(appContext)
     private val scanner = MediaStoreScanner(context)
     private val dao = database.mediaAssetDao()
     private val duplicateMediaAnalyzer = DuplicateMediaAnalyzer(context, dao)
@@ -113,6 +114,10 @@ class MediaLibraryRepository(context: Context) {
         permissionScope: String,
         onProgress: suspend (Int) -> Unit = {}
     ): Int {
+        if (MediaPermission.accessScope(appContext) != permissionScope) {
+            dao.hideAllBeforePermissionScopedScan()
+            throw SecurityException("Media access scope changed before scan")
+        }
         val now = System.currentTimeMillis()
         val scanStartedAtSeconds = now / 1000L
         val previousScanAt = preferences.getLong(KEY_LAST_SCAN_AT, 0L)
@@ -145,14 +150,26 @@ class MediaLibraryRepository(context: Context) {
 
         val scanToken = UUID.randomUUID().toString()
         var scannedCount = 0
-        scanner.scanVisibleMedia(
-            includeImages = includeImages,
-            includeVideos = includeVideos,
-            modifiedSinceSeconds = modifiedSinceSeconds
-        ) { batch ->
-            dao.syncScanned(batch, scanToken)
-            scannedCount += batch.size
-            onProgress(scannedCount)
+        try {
+            scanner.scanVisibleMedia(
+                includeImages = includeImages,
+                includeVideos = includeVideos,
+                modifiedSinceSeconds = modifiedSinceSeconds
+            ) { batch ->
+                dao.syncScanned(batch, scanToken)
+                scannedCount += batch.size
+                onProgress(scannedCount)
+            }
+        } catch (error: SecurityException) {
+            // Some batches may already have been synchronized under the old
+            // permission scope. Hide them until a complete authorized scan.
+            dao.hideAllBeforePermissionScopedScan()
+            throw error
+        }
+
+        if (MediaPermission.accessScope(appContext) != permissionScope) {
+            dao.hideAllBeforePermissionScopedScan()
+            throw SecurityException("Media access scope changed during scan")
         }
 
         if (requiresFullScan) {
