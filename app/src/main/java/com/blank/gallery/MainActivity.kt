@@ -269,7 +269,9 @@ private fun BlankApp() {
                                     legacyDeleteQueue = legacyDeleteQueue.drop(1)
                                     processNextLegacyDelete()
                                 }
-                                else -> finishLegacyDeleteFlow()
+                                else -> finishLegacyDeleteFlow(
+                                    "部分项目未能移至回收站，未处理的项目仍保留在列表中"
+                                )
                             }
                         }
                     }
