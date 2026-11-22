@@ -10,10 +10,12 @@ import com.blank.gallery.domain.DuplicateAnalysisResult
 import com.blank.gallery.domain.SimilarPhotoAnalysisResult
 import com.blank.gallery.domain.BurstPhotoAnalysisResult
 import com.blank.gallery.domain.ScreenshotAnalysisResult
+import com.blank.gallery.domain.LargeMediaAnalysisResult
 import com.blank.gallery.domain.analyzer.DuplicateMediaAnalyzer
 import com.blank.gallery.domain.analyzer.SimilarPhotoAnalyzer
 import com.blank.gallery.domain.analyzer.BurstPhotoAnalyzer
 import com.blank.gallery.domain.analyzer.ScreenshotAnalyzer
+import com.blank.gallery.domain.analyzer.LargeMediaAnalyzer
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -30,6 +32,7 @@ class MediaLibraryRepository(context: Context) {
     private val similarPhotoAnalyzer = SimilarPhotoAnalyzer(context, dao)
     private val burstPhotoAnalyzer = BurstPhotoAnalyzer(context, dao)
     private val screenshotAnalyzer = ScreenshotAnalyzer(dao)
+    private val largeMediaAnalyzer = LargeMediaAnalyzer(dao)
     private val preferences = context.applicationContext.getSharedPreferences(
         "blank_local_state",
         Context.MODE_PRIVATE
@@ -182,6 +185,14 @@ class MediaLibraryRepository(context: Context) {
     suspend fun analyzeScreenshots(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): ScreenshotAnalysisResult = screenshotAnalyzer.analyze(onProgress)
+
+    suspend fun analyzeLargeMedia(
+        minimumSizeBytes: Long = 100L * 1024L * 1024L,
+        onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
+    ): LargeMediaAnalysisResult = largeMediaAnalyzer.analyze(
+        minimumSizeBytes = minimumSizeBytes,
+        onProgress = onProgress
+    )
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {
         dao.setFavorite(id, favorite)
