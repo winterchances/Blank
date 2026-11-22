@@ -41,7 +41,9 @@ class BurstPhotoAnalyzer(
         var currentMaxRepresentativeDistance = 0
         var analyzedCount = 0
         var unreadableCount = 0
-        var offset = 0
+        var lastDateTakenMillis = 0L
+        var lastId = 0L
+        var hasCursor = false
 
         fun finishCurrentGroup() {
             if (currentItems.size >= MIN_GROUP_SIZE) {
@@ -62,9 +64,14 @@ class BurstPhotoAnalyzer(
             currentMaxRepresentativeDistance = 0
         }
 
-        while (offset < total) {
+        while (true) {
             coroutineContext.ensureActive()
-            val batch = dao.getBurstPhotoCandidates(CANDIDATE_BATCH_SIZE, offset)
+            val batch = dao.getBurstPhotoCandidates(
+                limit = CANDIDATE_BATCH_SIZE,
+                lastDateTakenMillis = lastDateTakenMillis,
+                lastId = lastId,
+                hasCursor = hasCursor
+            )
             if (batch.isEmpty()) break
 
             for (asset in batch) {
@@ -131,7 +138,11 @@ class BurstPhotoAnalyzer(
                 analyzedCount++
                 onProgress(analyzedCount, total)
             }
-            offset += batch.size
+            batch.last().let { last ->
+                lastDateTakenMillis = last.dateTakenMillis
+                lastId = last.id
+                hasCursor = true
+            }
         }
 
         finishCurrentGroup()
