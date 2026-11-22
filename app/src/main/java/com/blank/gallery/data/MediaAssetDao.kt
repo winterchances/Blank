@@ -102,6 +102,26 @@ interface MediaAssetDao {
     """)
     suspend fun getScreenshotCandidates(limit: Int, offset: Int): List<MediaAsset>
 
+    @Query("""
+        SELECT COUNT(*) FROM media_assets
+        WHERE isVisible = 1 AND isProtected = 0
+          AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes
+    """)
+    suspend fun countLargeMediaCandidates(minimumSizeBytes: Long): Int
+
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND isProtected = 0
+          AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes
+        ORDER BY sizeBytes DESC, dateAddedSeconds DESC, id ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getLargeMediaCandidates(
+        minimumSizeBytes: Long,
+        limit: Int,
+        offset: Int
+    ): List<MediaAsset>
+
     @Query("SELECT * FROM media_analysis_cache WHERE mediaAssetId = :mediaAssetId LIMIT 1")
     suspend fun getMediaAnalysisCache(mediaAssetId: Long): MediaAnalysisCache?
 
