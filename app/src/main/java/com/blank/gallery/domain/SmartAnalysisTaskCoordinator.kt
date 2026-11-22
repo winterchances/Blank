@@ -6,8 +6,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 enum class SmartAnalysisType {
     DUPLICATES,
@@ -119,7 +120,7 @@ class SmartAnalysisTaskCoordinator {
                         setState(type, SmartAnalysisTaskState.Cancelled(parameterKey))
                         result.cancel(cancelled)
                         throw cancelled
-                    } catch (error: Exception) {
+                    } catch (error: Throwable) {
                         setState(
                             type,
                             SmartAnalysisTaskState.Failed(
@@ -129,9 +130,11 @@ class SmartAnalysisTaskCoordinator {
                         )
                         result.completeExceptionally(error)
                     } finally {
-                        mutex.withLock {
-                            if (activeTasks[type]?.result === result) {
-                                activeTasks.remove(type)
+                        withContext(NonCancellable) {
+                            mutex.withLock {
+                                if (activeTasks[type]?.result === result) {
+                                    activeTasks.remove(type)
+                                }
                             }
                         }
                     }
