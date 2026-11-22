@@ -3,19 +3,24 @@ package com.blank.gallery.ui.navigation
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.GlassWhite
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -96,48 +101,65 @@ internal fun BottomNavigation(
     onSelect: (MainPage) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
+    BoxWithConstraints(
+        modifier
             .fillMaxWidth()
-            .hazeEffect(state = hazeState, style = HazeStyle(backgroundColor = Color(0xFFF5F5F7), tints = emptyList(), blurRadius = 20.dp, noiseFactor = 0f))
-            .height(56.dp)
+            .blur(0.dp)
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(28.dp),
                 ambientColor = Color.Black.copy(alpha = 0.06f),
                 spotColor = Color.Black.copy(alpha = 0.06f)
             )
+            .height(56.dp)
+            .hazeEffect(
+                state = hazeState,
+                style = HazeStyle(
+                    backgroundColor = Color(0xFFF5F5F7),
+                    tints = emptyList(),
+                    blurRadius = 20.dp,
+                    noiseFactor = 0f
+                )
+            )
             .clip(RoundedCornerShape(28.dp))
             .background(GlassWhite)
             .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(28.dp))
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(4.dp)
     ) {
-        MainPage.values().forEach { page ->
-            val selected = page == currentPage
-            val indicatorColor by animateColorAsState(
-                targetValue = if (selected) Color.Black.copy(alpha = 0.06f) else Color.Transparent,
-                animationSpec = tween(250),
-                label = "nav-indicator-color"
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-                    .clip(CircleShape)
-                    .background(indicatorColor)
-                    .clickable { onSelect(page) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                NavGlyph(page.icon, tint = MainText)
-                Spacer(Modifier.height(0.dp))
-                Text(
-                    text = page.title,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MainText
-                )
+        val slot = maxWidth / 4
+        val target = slot * MainPage.values().indexOf(currentPage)
+        val offset by animateDpAsState(
+            target,
+            tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)),
+            label = "nav-indicator"
+        )
+        Box(
+            Modifier.offset(x = offset)
+                .width(slot - 2.dp)
+                .fillMaxHeight()
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.06f))
+        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            MainPage.values().forEach { page ->
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .clip(CircleShape)
+                        .clickable { onSelect(page) },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    NavGlyph(page.icon, tint = MainText)
+                    Spacer(Modifier.height(0.dp))
+                    Text(
+                        text = page.title,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MainText
+                    )
+                }
             }
         }
     }
