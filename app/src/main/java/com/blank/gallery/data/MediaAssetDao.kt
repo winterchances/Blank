@@ -29,20 +29,23 @@ data class SelfOrganizeSummary(
 
 @Dao
 interface MediaAssetDao {
+    @Query("SELECT COALESCE(MAX(id), 0) FROM media_assets")
+    suspend fun getMaxMediaAssetId(): Long
     @Query("""
         SELECT COUNT(*) FROM media_assets
         INNER JOIN (
             SELECT sizeBytes
             FROM media_assets
-            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0
+            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0 AND id <= :maxId
             GROUP BY sizeBytes
             HAVING COUNT(*) > 1
         ) AS candidate_sizes ON candidate_sizes.sizeBytes = media_assets.sizeBytes
         WHERE media_assets.isVisible = 1
           AND media_assets.isProtected = 0
           AND media_assets.sizeBytes > 0
+          AND media_assets.id <= :maxId
     """)
-    suspend fun countDuplicateCandidates(): Int
+    suspend fun countDuplicateCandidates(maxId: Long): Int
 
     @Query("""
         SELECT media_assets.* FROM media_assets
@@ -55,7 +58,7 @@ interface MediaAssetDao {
         ) AS candidate_sizes ON candidate_sizes.sizeBytes = media_assets.sizeBytes
         WHERE media_assets.isVisible = 1
           AND media_assets.isProtected = 0
-          AND media_assets.sizeBytes > 0
+          AND media_assets.sizeBytes > 0 AND media_assets.id <= :maxId
           AND (:hasCursor = 0 OR media_assets.sizeBytes < :lastSizeBytes
                OR (media_assets.sizeBytes = :lastSizeBytes AND media_assets.id > :lastId))
         ORDER BY media_assets.sizeBytes DESC, media_assets.id ASC
@@ -63,13 +66,14 @@ interface MediaAssetDao {
     """)
     suspend fun getDuplicateCandidates(
         limit: Int,
+        maxId: Long,
         lastSizeBytes: Long,
         lastId: Long,
         hasCursor: Boolean
     ): List<MediaAsset>
 
-    @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0")
-    suspend fun countSimilarPhotoCandidates(): Int
+    @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0 AND id <= :maxId")
+    suspend fun countSimilarPhotoCandidates(maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
@@ -90,6 +94,7 @@ interface MediaAssetDao {
     """)
     suspend fun getSimilarPhotoCandidates(
         limit: Int,
+        maxId: Long,
         lastCaptureTimeMillis: Long,
         lastDateAddedSeconds: Long,
         lastId: Long,
@@ -99,14 +104,14 @@ interface MediaAssetDao {
     @Query("""
         SELECT COUNT(*) FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
-          AND sizeBytes > 0 AND dateTakenMillis > 0
+          AND sizeBytes > 0 AND dateTakenMillis > 0 AND id <= :maxId
     """)
-    suspend fun countBurstPhotoCandidates(): Int
+    suspend fun countBurstPhotoCandidates(maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
-          AND sizeBytes > 0 AND dateTakenMillis > 0
+          AND sizeBytes > 0 AND dateTakenMillis > 0 AND id <= :maxId
           AND (:hasCursor = 0 OR dateTakenMillis > :lastDateTakenMillis
                OR (dateTakenMillis = :lastDateTakenMillis AND id > :lastId))
         ORDER BY dateTakenMillis ASC, id ASC
@@ -114,6 +119,7 @@ interface MediaAssetDao {
     """)
     suspend fun getBurstPhotoCandidates(
         limit: Int,
+        maxId: Long,
         lastDateTakenMillis: Long,
         lastId: Long,
         hasCursor: Boolean
@@ -121,13 +127,13 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND id <= :maxId
     """)
-    suspend fun countScreenshotCandidates(): Int
+    suspend fun countScreenshotCandidates(maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND id <= :maxId
           AND (:hasCursor = 0 OR dateAddedSeconds < :lastDateAddedSeconds
                OR (dateAddedSeconds = :lastDateAddedSeconds AND id > :lastId))
         ORDER BY dateAddedSeconds DESC, id ASC
@@ -135,6 +141,7 @@ interface MediaAssetDao {
     """)
     suspend fun getScreenshotCandidates(
         limit: Int,
+        maxId: Long,
         lastDateAddedSeconds: Long,
         lastId: Long,
         hasCursor: Boolean
@@ -143,14 +150,14 @@ interface MediaAssetDao {
     @Query("""
         SELECT COUNT(*) FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0
-          AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes
+          AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes AND id <= :maxId
     """)
-    suspend fun countLargeMediaCandidates(minimumSizeBytes: Long): Int
+    suspend fun countLargeMediaCandidates(minimumSizeBytes: Long, maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
         WHERE isVisible = 1 AND isProtected = 0
-          AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes
+          AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes AND id <= :maxId
           AND (:hasCursor = 0 OR sizeBytes < :lastSizeBytes
                OR (sizeBytes = :lastSizeBytes AND dateAddedSeconds < :lastDateAddedSeconds)
                OR (sizeBytes = :lastSizeBytes AND dateAddedSeconds = :lastDateAddedSeconds AND id > :lastId))
@@ -160,6 +167,7 @@ interface MediaAssetDao {
     suspend fun getLargeMediaCandidates(
         minimumSizeBytes: Long,
         limit: Int,
+        maxId: Long,
         lastSizeBytes: Long,
         lastDateAddedSeconds: Long,
         lastId: Long,
