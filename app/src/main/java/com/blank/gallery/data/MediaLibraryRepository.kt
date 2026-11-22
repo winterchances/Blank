@@ -183,6 +183,13 @@ class MediaLibraryRepository(context: Context) {
             dao.completePermissionScopedScan(scanToken)
         }
 
+        // Recheck after visibility finalization as well; permission can change
+        // between the first check and the Room transaction above.
+        if (MediaPermission.accessScope(appContext) != permissionScope) {
+            dao.hideAllBeforePermissionScopedScan()
+            throw SecurityException("Media access scope changed while finalizing scan")
+        }
+
         val completedAt = System.currentTimeMillis()
         val editor = preferences.edit()
             .putLong(KEY_LAST_SCAN_AT, completedAt)
