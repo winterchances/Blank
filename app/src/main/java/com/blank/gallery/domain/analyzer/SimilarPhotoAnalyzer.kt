@@ -34,6 +34,7 @@ class SimilarPhotoAnalyzer(
         val total = dao.countSimilarPhotoCandidates()
         val groupMembers = mutableMapOf<Int, MutableList<MediaAsset>>()
         val rootHolder = arrayOfNulls<HashTreeNode>(1)
+        var nextGroupIndex = 0
         var analyzedCount = 0
         var unreadableCount = 0
         var offset = 0
@@ -82,9 +83,9 @@ class SimilarPhotoAnalyzer(
                     existingMembers += asset
                 }
             } else {
-                val groupIndex = groupMembers.size
-                // Keep only each representative asset. Assets that never join
-                // a group are not retained after their batch is processed.
+                val groupIndex = nextGroupIndex++
+                // Keep only representative IDs in the hash tree. Full media
+                // records are fetched only when a second member confirms a group.
                 rootHolder[0] = insertRepresentative(
                     rootHolder[0],
                     bits,
