@@ -99,7 +99,12 @@ class BurstPhotoAnalyzer(
 
                     val hashBits = hash.toULong(16)
                     if (currentItems.isEmpty()) {
-                        startGroup(asset, hashBits, captureMillis)
+                        currentItems = mutableListOf(asset)
+                                                currentHashes = mutableListOf(hashBits)
+                                                currentStartMillis = captureMillis
+                                                previousCaptureMillis = captureMillis
+                                                currentMaxAdjacentGap = 0L
+                                                currentMaxRepresentativeDistance = 0
                     } else {
                         val gap = (captureMillis - previousCaptureMillis).coerceAtLeast(0L)
                         val span = captureMillis - currentStartMillis
@@ -119,7 +124,12 @@ class BurstPhotoAnalyzer(
                                 maxOf(currentMaxRepresentativeDistance, representativeDistance)
                         } else {
                             finishCurrentGroup()
-                            startGroup(asset, hashBits, captureMillis)
+                            currentItems = mutableListOf(asset)
+                                                    currentHashes = mutableListOf(hashBits)
+                                                    currentStartMillis = captureMillis
+                                                    previousCaptureMillis = captureMillis
+                                                    currentMaxAdjacentGap = 0L
+                                                    currentMaxRepresentativeDistance = 0
                         }
                     }
                 }
@@ -141,10 +151,6 @@ class BurstPhotoAnalyzer(
         )
     }
 
-    private fun startGroup(asset: MediaAsset, hash: ULong, captureMillis: Long) {
-        // This helper is intentionally not used; group state is local to analyze().
-    }
-
     private fun MediaAnalysisCache.matchesForPerceptualHash(asset: MediaAsset): Boolean =
         sourceSizeBytes == asset.sizeBytes &&
             sourceDateModifiedSeconds == asset.dateModifiedSeconds &&
@@ -153,7 +159,6 @@ class BurstPhotoAnalyzer(
 
     private companion object {
         const val MIN_GROUP_SIZE = 2
-        const val HASH_BITS = 64
         const val MAX_HASH_BITS = 63
         const val DEFAULT_MAX_ADJACENT_GAP_MILLIS = 1_200L
         const val DEFAULT_MAX_BURST_DURATION_MILLIS = 6_000L
