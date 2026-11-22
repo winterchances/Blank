@@ -2,6 +2,7 @@ package com.blank.gallery.data
 
 import android.content.Context
 import androidx.paging.Pager
+import androidx.paging.PagingData
 import androidx.paging.PagingConfig
 import androidx.paging.map
 import androidx.paging.insertSeparators
@@ -25,6 +26,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map as flowMap
 import java.util.UUID
 
 class MediaLibraryRepository(context: Context) {
@@ -49,13 +52,13 @@ class MediaLibraryRepository(context: Context) {
     val lastScanAt = _lastScanAt.asStateFlow()
     val smartAnalysisStates = smartAnalysisCoordinator.states
 
-    fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, monthKey: String?, sortBySize: Boolean) = Pager<Int, MediaAsset>(
+    fun pagedMedia(mediaType: Int?, query: String, folderPath: String?, monthKey: String?, sortBySize: Boolean): Flow<PagingData<AlbumGridItem>> = Pager<Int, MediaAsset>(
         config = PagingConfig(pageSize = 60, prefetchDistance = 20, enablePlaceholders = false),
         pagingSourceFactory = {
             dao.pagingSource(mediaType, query.trim(), folderPath, monthKey, if (sortBySize) 1 else 0)
         }
-    ).flow.map { pagingData ->
-        val mediaItems = pagingData.map<MediaAsset, AlbumGridItem> { AlbumGridItem.Media(it) }
+    ).flow.flowMap { pagingData: PagingData<MediaAsset> ->
+        val mediaItems: PagingData<AlbumGridItem> = pagingData.map { AlbumGridItem.Media(it) }
         if (sortBySize) {
             mediaItems
         } else {
