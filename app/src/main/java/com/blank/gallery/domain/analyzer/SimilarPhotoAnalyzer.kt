@@ -31,7 +31,8 @@ class SimilarPhotoAnalyzer(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): SimilarPhotoAnalysisResult = withContext(Dispatchers.IO) {
         require(maxHammingDistance in 0..MAX_HASH_BITS)
-        val total = dao.countSimilarPhotoCandidates()
+        val maxMediaAssetId = dao.getMaxMediaAssetId()
+        val total = dao.countSimilarPhotoCandidates(maxMediaAssetId)
         val groupMembers = mutableMapOf<Int, MutableList<MediaAsset>>()
         val rootHolder = arrayOfNulls<HashTreeNode>(1)
         var nextGroupIndex = 0
@@ -102,6 +103,7 @@ class SimilarPhotoAnalyzer(
             coroutineContext.ensureActive()
             val batch = dao.getSimilarPhotoCandidates(
                 limit = CANDIDATE_BATCH_SIZE,
+                maxId = maxMediaAssetId,
                 lastCaptureTimeMillis = lastCaptureTimeMillis,
                 lastDateAddedSeconds = lastDateAddedSeconds,
                 lastId = lastId,
