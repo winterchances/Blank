@@ -41,8 +41,12 @@ class ScreenshotAnalyzer(
             offset += batch.size
         }
 
+        val currentAssets = dao.revalidateAnalysisAssets(matches.map { it.asset })
+        val currentMatches = matches.mapNotNull { match ->
+            currentAssets[match.asset.id]?.let { match.copy(asset = it) }
+        }
         ScreenshotAnalysisResult(
-            matches = matches,
+            matches = currentMatches,
             analyzedCount = analyzedCount
         )
     }
