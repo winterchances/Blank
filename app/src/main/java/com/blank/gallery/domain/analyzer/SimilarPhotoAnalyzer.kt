@@ -8,6 +8,8 @@ import com.blank.gallery.domain.SimilarPhotoAnalysisResult
 import com.blank.gallery.domain.SimilarPhotoGroup
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -151,13 +153,6 @@ class SimilarPhotoAnalyzer(
             sourceDateModifiedSeconds == asset.dateModifiedSeconds &&
             perceptualHashAlgorithmVersion == MediaAnalysisCache.PERCEPTUAL_HASH_ALGORITHM_VERSION &&
             !perceptualHash.isNullOrBlank()
-
-    private inline fun <T> Bitmap.useBitmap(block: (Bitmap) -> T): T =
-        try {
-            block(this)
-        } finally {
-            recycle()
-        }
 
     private companion object {
         const val MAX_HASH_BITS = 63
