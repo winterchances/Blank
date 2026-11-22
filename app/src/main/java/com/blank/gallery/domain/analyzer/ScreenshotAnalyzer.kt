@@ -22,7 +22,8 @@ class ScreenshotAnalyzer(
     suspend fun analyze(
         onProgress: suspend (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): ScreenshotAnalysisResult = withContext(Dispatchers.IO) {
-        val total = dao.countScreenshotCandidates()
+        val maxMediaAssetId = dao.getMaxMediaAssetId()
+        val total = dao.countScreenshotCandidates(maxMediaAssetId)
         val matches = mutableListOf<ScreenshotPhotoMatch>()
         var analyzedCount = 0
         var lastDateAddedSeconds = 0L
@@ -33,6 +34,7 @@ class ScreenshotAnalyzer(
             coroutineContext.ensureActive()
             val batch = dao.getScreenshotCandidates(
                 limit = BATCH_SIZE,
+                maxId = maxMediaAssetId,
                 lastDateAddedSeconds = lastDateAddedSeconds,
                 lastId = lastId,
                 hasCursor = hasCursor
