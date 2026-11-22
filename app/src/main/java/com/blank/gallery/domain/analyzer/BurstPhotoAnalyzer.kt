@@ -135,11 +135,17 @@ class BurstPhotoAnalyzer(
         }
 
         finishCurrentGroup()
+        val currentAssets = dao.revalidateAnalysisAssets(groups.flatMap { it.items })
+        val validGroups = groups.mapNotNull { group ->
+            if (group.representativeId !in currentAssets) return@mapNotNull null
+            val currentItems = group.items.mapNotNull { currentAssets[it.id] }
+            currentItems.takeIf { it.size >= 2 }?.let { group.copy(items = it) }
+        }.sortedWith(
+            compareByDescending<BurstPhotoGroup> { it.items.size }
+                .thenByDescending { group -> group.items.sumOf { it.sizeBytes } }
+        )
         BurstPhotoAnalysisResult(
-            groups = groups.sortedWith(
-                compareByDescending<BurstPhotoGroup> { it.items.size }
-                    .thenByDescending { group -> group.items.sumOf { it.sizeBytes } }
-            ),
+            groups = validGroups,
             analyzedCount = analyzedCount,
             unreadableCount = unreadableCount
         )
