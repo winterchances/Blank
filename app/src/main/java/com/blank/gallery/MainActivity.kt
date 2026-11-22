@@ -13,6 +13,8 @@ import com.blank.gallery.ui.navigation.MainPage
 import com.blank.gallery.ui.screens.AlbumBatchActionBar
 import com.blank.gallery.ui.screens.AlbumDeleteConfirmationSheet
 import com.blank.gallery.ui.screens.AlbumFolderDrawer
+import com.blank.gallery.ui.screens.AlbumHeaderActionButtons
+import com.blank.gallery.ui.screens.AlbumOptionsSheet
 import com.blank.gallery.ui.screens.AlbumSearchSheet
 import com.blank.gallery.ui.screens.AlbumsContent
 import com.blank.gallery.ui.screens.FavoritesContent
@@ -97,6 +99,7 @@ private fun BlankApp() {
     val hazeState = remember { HazeState() }
     val albumDrawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
     var isAlbumSearchVisible by remember { mutableStateOf(false) }
+    var albumOptionsSheet by remember { mutableStateOf<AlbumOptionsSheetType?>(null) }
     val repository = remember(context) { MediaLibraryRepository(context.applicationContext) }
     val deletionManager = remember(context) { MediaDeletionManager(context.applicationContext) }
     val selfOrganizeManager = remember(repository) { SelfOrganizeManager(repository) }
@@ -546,7 +549,10 @@ private fun BlankApp() {
                             organizeSubPage != null -> { { organizeSubPage = null } }
                             else -> null
                         },
-                        backLabel = if (selectionMode) "×" else "‹"
+                        backLabel = if (selectionMode) "×" else "‹",
+                        showAlbumActions = currentPage == MainPage.ALBUMS && !selectionMode,
+                        onSortClick = { albumOptionsSheet = AlbumOptionsSheetType.SORT },
+                        onGridClick = { albumOptionsSheet = AlbumOptionsSheetType.GRID }
                     )
                     if (organizeSubPage != null) {
                         if (isShowingSelfPendingDelete) {
@@ -625,10 +631,6 @@ private fun BlankApp() {
                                 mediaType = albumMediaType,
                                 onMediaTypeChange = { selectedMedia = emptyMap(); albumMediaType = it },
                                 searchQuery = albumSearchQuery,
-                                gridColumns = albumGridColumns,
-                                onGridColumnsChange = { albumGridColumns = it },
-                                sortBySize = albumSortBySize,
-                                onSortBySizeChange = { albumSortBySize = it },
                                 selectedFolderPath = selectedFolderPath,
                                 onOpenFolderDrawer = { scope.launch { albumDrawerState.open() } },
                                 months = albumMonths,
@@ -708,6 +710,27 @@ private fun BlankApp() {
                     }
                 }
 
+                if (albumOptionsSheet != null) {
+                    val sheetType = albumOptionsSheet!!
+                    val options = when (sheetType) {
+                        AlbumOptionsSheetType.SORT -> listOf("按时间排序", "按文件大小排序")
+                        AlbumOptionsSheetType.GRID -> listOf("四宫格", "三宫格")
+                    }
+                    AlbumOptionsSheet(
+                        title = if (sheetType == AlbumOptionsSheetType.SORT) "排序方式" else "网格布局",
+                        options = options,
+                        onSelect = { selected ->
+                            selectedMedia = emptyMap()
+                            when (sheetType) {
+                                AlbumOptionsSheetType.SORT -> albumSortBySize = selected == "按文件大小排序"
+                                AlbumOptionsSheetType.GRID -> albumGridColumns = if (selected == "四宫格") 4 else 3
+                            }
+                            albumOptionsSheet = null
+                        },
+                        onDismiss = { albumOptionsSheet = null }
+                    )
+                }
+
                 if (isAlbumSearchVisible) {
                     AlbumSearchSheet(
                         query = albumSearchQuery,
@@ -739,8 +762,17 @@ private fun BlankApp() {
     }
 }
 
+private enum class AlbumOptionsSheetType { SORT, GRID }
+
 @Composable
-private fun PageHeader(title: String, onBack: (() -> Unit)? = null, backLabel: String = "‹") {
+private fun PageHeader(
+    title: String,
+    onBack: (() -> Unit)? = null,
+    backLabel: String = "‹",
+    showAlbumActions: Boolean = false,
+    onSortClick: () -> Unit = {},
+    onGridClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -760,10 +792,17 @@ private fun PageHeader(title: String, onBack: (() -> Unit)? = null, backLabel: S
         }
         Text(
             text = title,
+            modifier = Modifier.weight(1f),
             fontSize = 30.sp,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 0.5.sp,
             color = MainText
         )
+        if (showAlbumActions) {
+            AlbumHeaderActionButtons(
+                onSortClick = onSortClick,
+                onGridClick = onGridClick
+            )
+        }
     }
 }
