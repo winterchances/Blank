@@ -3,10 +3,8 @@ package com.blank.gallery.ui.screens
 import com.blank.gallery.ui.components.EmptyState
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.MutedText
-import com.blank.gallery.ui.theme.GlassWhite
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,12 +59,7 @@ internal fun OrganizeContent(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "智能整理",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MainText
-            )
+            SectionHeading("智能整理")
             smartItems.chunked(2).forEach { rowItems ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -88,12 +81,7 @@ internal fun OrganizeContent(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "自己整理",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = MainText
-            )
+            SectionHeading("自己整理")
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -149,15 +137,14 @@ private fun OrganizeCategoryTile(
         modifier = modifier
             .shadow(
                 elevation = 4.dp,
-                shape = RoundedCornerShape(18.dp),
-                ambientColor = Color.Black.copy(alpha = 0.02f),
-                spotColor = Color.Black.copy(alpha = 0.02f)
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = Color.Black.copy(alpha = 0.03f),
+                spotColor = Color.Black.copy(alpha = 0.03f)
             )
-            .clip(RoundedCornerShape(18.dp))
-            .background(GlassWhite)
-            .border(1.dp, Color.Black.copy(alpha = 0.045f), RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 16.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
