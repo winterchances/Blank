@@ -114,7 +114,12 @@ class MediaLibraryRepository(context: Context) {
         onProgress: suspend (Int) -> Unit = {}
     ): Int {
         val now = System.currentTimeMillis()
+        val scanStartedAtSeconds = now / 1000L
         val previousScanAt = preferences.getLong(KEY_LAST_SCAN_AT, 0L)
+        val previousScanCutoffSeconds = preferences.getLong(
+            KEY_LAST_SCAN_CUTOFF_SECONDS,
+            previousScanAt / 1000L
+        )
         val previousFullScanAt = preferences.getLong(KEY_LAST_FULL_SCAN_AT, 0L)
         val captureTimeIndexVersion = preferences.getInt(KEY_MEDIA_INDEX_VERSION, 0)
         val previousScope = preferences.getString(KEY_LAST_SCAN_SCOPE, null)
@@ -135,7 +140,7 @@ class MediaLibraryRepository(context: Context) {
         val modifiedSinceSeconds = if (requiresFullScan) {
             null
         } else {
-            (previousScanAt / 1000L - SCAN_OVERLAP_SECONDS).coerceAtLeast(0L)
+            (previousScanCutoffSeconds - SCAN_OVERLAP_SECONDS).coerceAtLeast(0L)
         }
 
         val scanToken = UUID.randomUUID().toString()
@@ -157,6 +162,10 @@ class MediaLibraryRepository(context: Context) {
         val completedAt = System.currentTimeMillis()
         val editor = preferences.edit()
             .putLong(KEY_LAST_SCAN_AT, completedAt)
+            // Use the scan start as the next incremental lower bound. Changes
+            // made while this scan is running are then picked up next time,
+            // even if their sort position was already passed by the cursor.
+            .putLong(KEY_LAST_SCAN_CUTOFF_SECONDS, scanStartedAtSeconds)
             .putString(KEY_LAST_SCAN_SCOPE, permissionScope)
         if (requiresFullScan) {
             editor.putLong(KEY_LAST_FULL_SCAN_AT, completedAt)
@@ -281,6 +290,7 @@ class MediaLibraryRepository(context: Context) {
 
     private companion object {
         const val KEY_LAST_SCAN_AT = "last_scan_at"
+        const val KEY_LAST_SCAN_CUTOFF_SECONDS = "last_scan_cutoff_seconds"
         const val KEY_LAST_FULL_SCAN_AT = "last_full_scan_at"
         const val KEY_LAST_SCAN_SCOPE = "last_scan_scope"
         const val KEY_MEDIA_INDEX_VERSION = "media_index_version"
