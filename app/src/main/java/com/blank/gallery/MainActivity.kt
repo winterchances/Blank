@@ -217,7 +217,7 @@ private fun BlankApp() {
         }
     }
 
-    fun finishLegacyDeleteFlow() {
+    fun finishLegacyDeleteFlow(message: String? = null) {
         val deletedIds = legacyDeletedIds
         scope.launch {
             repository.hideFromLibraryForIds(deletedIds.toList())
@@ -228,6 +228,10 @@ private fun BlankApp() {
             finishLegacyDelete = null
             continueLegacyDelete = null
             isDeletionInProgress = false
+            if (message != null) {
+                scanMessage = message
+                selfOrganizeMessage = message
+            }
         }
     }
 
@@ -273,7 +277,8 @@ private fun BlankApp() {
                         IntentSenderRequest.Builder(attempt.intentSender).build()
                     )
                 }
-                MediaDeletionManager.LegacyDeleteResult.Failed -> finishLegacyDeleteFlow()
+                MediaDeletionManager.LegacyDeleteResult.Failed ->
+                    finishLegacyDeleteFlow("部分项目无法移至回收站，未处理的项目仍保留在列表中")
             }
         }
     }
@@ -313,7 +318,9 @@ private fun BlankApp() {
             // may require its own RecoverableSecurityException consent prompt.
             legacyDeleteQueue = eligible
             legacyDeletedIds = emptySet()
-            finishLegacyDelete = { finishLegacyDeleteFlow() }
+            finishLegacyDelete = {
+                finishLegacyDeleteFlow("系统未完成删除，未处理的项目仍保留在列表中")
+            }
             processNextLegacyDelete()
         }
     }
