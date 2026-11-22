@@ -96,7 +96,8 @@ class BurstPhotoAnalyzer(
                                 perceptualHash = hash,
                                 perceptualHashAlgorithmVersion = MediaAnalysisCache.PERCEPTUAL_HASH_ALGORITHM_VERSION,
                                 analyzedAtMillis = System.currentTimeMillis()
-                            )
+                            ),
+                            expectedContentUri = asset.contentUri
                         )
                     }
 
