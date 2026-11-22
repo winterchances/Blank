@@ -30,6 +30,21 @@ data class SelfOrganizeSummary(
 @Dao
 interface MediaAssetDao {
     @Query("""
+        SELECT COUNT(*) FROM media_assets
+        INNER JOIN (
+            SELECT sizeBytes
+            FROM media_assets
+            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0
+            GROUP BY sizeBytes
+            HAVING COUNT(*) > 1
+        ) AS candidate_sizes ON candidate_sizes.sizeBytes = media_assets.sizeBytes
+        WHERE media_assets.isVisible = 1
+          AND media_assets.isProtected = 0
+          AND media_assets.sizeBytes > 0
+    """)
+    suspend fun countDuplicateCandidates(): Int
+
+    @Query("""
         SELECT media_assets.* FROM media_assets
         INNER JOIN (
             SELECT sizeBytes
@@ -42,8 +57,9 @@ interface MediaAssetDao {
           AND media_assets.isProtected = 0
           AND media_assets.sizeBytes > 0
         ORDER BY media_assets.sizeBytes DESC, media_assets.id ASC
+        LIMIT :limit OFFSET :offset
     """)
-    suspend fun getDuplicateCandidates(): List<MediaAsset>
+    suspend fun getDuplicateCandidates(limit: Int, offset: Int): List<MediaAsset>
 
     @Query("SELECT * FROM media_analysis_cache WHERE mediaAssetId = :mediaAssetId LIMIT 1")
     suspend fun getMediaAnalysisCache(mediaAssetId: Long): MediaAnalysisCache?
