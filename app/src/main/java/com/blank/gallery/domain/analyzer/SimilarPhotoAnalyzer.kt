@@ -3,7 +3,6 @@ package com.blank.gallery.domain.analyzer
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -95,32 +94,70 @@ class SimilarPhotoAnalyzer(
         entries: List<Pair<MediaAsset, String>>,
         threshold: Int
     ): List<SimilarPhotoGroup> {
-        val remaining = entries.sortedWith(
+        val sorted = entries.sortedWith(
             compareByDescending<Pair<MediaAsset, String>> { it.first.dateTakenSeconds }
                 .thenByDescending { it.first.dateAddedSeconds }
                 .thenBy { it.first.id }
-        ).toMutableList()
-        val groups = mutableListOf<SimilarPhotoGroup>()
+        )
+        val rootHolder = arrayOfNulls<HashTreeNode>(1)
+        val groups = mutableListOf<MutableList<MediaAsset>>()
 
-        while (remaining.isNotEmpty()) {
-            val representative = remaining.removeAt(0)
-            val representativeBits = representative.second.toULong(16)
-            val members = mutableListOf(representative.first)
-            val iterator = remaining.iterator()
-            while (iterator.hasNext()) {
-                val candidate = iterator.next()
-                val distance = (representativeBits xor candidate.second.toULong(16)).countOneBits()
-                if (distance <= threshold) {
-                    members += candidate.first
-                    iterator.remove()
+        fun findMatches(
+            node: HashTreeNode?,
+            target: ULong,
+            matches: MutableList<Pair<Int, HashTreeNode>>
+        ) {
+            if (node == null) return
+            val distance = (node.hash xor target).countOneBits()
+            if (distance <= threshold) matches += distance to node
+            val minimum = max(0, distance - threshold)
+            val maximum = distance + threshold
+            node.children.forEach { (edgeDistance, child) ->
+                if (edgeDistance in minimum..maximum) {
+                    findMatches(child, target, matches)
                 }
             }
-            if (members.size >= 2) {
-                groups += SimilarPhotoGroup(representative.first.id, members)
+        }
+
+        fun insertRepresentative(node: HashTreeNode?, target: ULong, groupIndex: Int): HashTreeNode {
+            if (node == null) return HashTreeNode(target, groupIndex)
+            val distance = (node.hash xor target).countOneBits()
+            val child = node.children[distance]
+            node.children[distance] = insertRepresentative(child, target, groupIndex)
+            return node
+        }
+
+        for ((asset, hash) in sorted) {
+            val bits = hash.toULong(16)
+            val matches = mutableListOf<Pair<Int, HashTreeNode>>()
+            findMatches(rootHolder[0], bits, matches)
+            val nearest = matches.minByOrNull { it.first }?.second
+            if (nearest != null) {
+                groups[nearest.groupIndex] += asset
+            } else {
+                val groupIndex = groups.size
+                groups += mutableListOf(asset)
+                rootHolder[0] = insertRepresentative(rootHolder[0], bits, groupIndex)
             }
         }
-        return groups.sortedByDescending { group -> group.items.sumOf { it.sizeBytes } }
+
+        return groups.mapIndexedNotNull { index, members ->
+            if (members.size < 2) {
+                null
+            } else {
+                SimilarPhotoGroup(
+                    representativeId = members.first().id,
+                    items = members
+                )
+            }
+        }.sortedByDescending { group -> group.items.sumOf { it.sizeBytes } }
     }
+
+    private class HashTreeNode(
+        val hash: ULong,
+        val groupIndex: Int,
+        val children: MutableMap<Int, HashTreeNode> = mutableMapOf()
+    )
 
     private suspend fun calculatePerceptualHash(contentUri: String): String? {
         coroutineContext.ensureActive()
