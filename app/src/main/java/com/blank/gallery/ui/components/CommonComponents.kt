@@ -6,7 +6,6 @@ import com.blank.gallery.ui.theme.ThemeMint
 import com.blank.gallery.ui.theme.GlassWhite
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,15 +41,14 @@ internal fun FeatureTile(
         modifier = modifier
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .shadow(
-                elevation = 5.dp,
-                shape = RoundedCornerShape(18.dp),
-                ambientColor = Color.Black.copy(alpha = 0.025f),
-                spotColor = Color.Black.copy(alpha = 0.025f)
+                elevation = 4.dp,
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = Color.Black.copy(alpha = 0.03f),
+                spotColor = Color.Black.copy(alpha = 0.03f)
             )
-            .clip(RoundedCornerShape(18.dp))
-            .background(GlassWhite)
-            .border(1.dp, Color.Black.copy(alpha = 0.045f), RoundedCornerShape(18.dp))
-            .padding(horizontal = 15.dp, vertical = if (tall) 20.dp else 15.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MainText)
@@ -64,30 +62,15 @@ internal fun EmptyState(
     modifier: Modifier = Modifier,
     compact: Boolean = false
 ) {
-    Column(
+    Text(
+        text = message,
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = if (compact) 8.dp else 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .size(if (compact) 42.dp else 54.dp)
-                .clip(CircleShape)
-                .background(ThemeMint.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("⌁", color = ThemeMint, fontSize = if (compact) 24.sp else 30.sp)
-        }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = message,
-            color = MutedText,
-            fontSize = 13.sp,
-            textAlign = TextAlign.Center,
-            lineHeight = 19.sp
-        )
-    }
+            .padding(vertical = if (compact) 8.dp else 20.dp),
+        color = MutedText,
+        fontSize = 14.sp,
+        textAlign = TextAlign.Center,
+        lineHeight = 19.sp
+    )
 }
 
