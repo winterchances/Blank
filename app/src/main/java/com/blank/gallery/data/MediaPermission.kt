@@ -41,6 +41,10 @@ object MediaPermission {
         else -> has(context, Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
+    /** True only when both the image and video libraries are fully readable. */
+    fun hasFullLibraryAccess(context: Context): Boolean =
+        hasFullImageAccess(context) && hasFullVideoAccess(context)
+
     fun canReadImages(context: Context): Boolean =
         hasFullImageAccess(context) || hasSelectedMediaAccess(context)
 
