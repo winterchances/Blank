@@ -126,7 +126,41 @@ interface MediaAssetDao {
     suspend fun getMediaAnalysisCache(mediaAssetId: Long): MediaAnalysisCache?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun saveMediaAnalysisCache(cache: MediaAnalysisCache)
+    suspend fun upsertMediaAnalysisCacheRow(cache: MediaAnalysisCache)
+
+    /**
+     * Merge independently computed hashes atomically. Different analyzers may
+     * run at the same time, so replacing the whole row can otherwise discard
+     * a hash written by another analyzer.
+     */
+    @Transaction
+    suspend fun saveMediaAnalysisCache(cache: MediaAnalysisCache) {
+        val existing = getMediaAnalysisCache(cache.mediaAssetId)
+        val sameSource = existing != null &&
+            existing.sourceSizeBytes == cache.sourceSizeBytes &&
+            existing.sourceDateModifiedSeconds == cache.sourceDateModifiedSeconds
+
+        upsertMediaAnalysisCacheRow(
+            cache.copy(
+                sha256 = cache.sha256 ?: existing?.takeIf { sameSource }?.sha256,
+                perceptualHash = cache.perceptualHash
+                    ?: existing?.takeIf { sameSource }?.perceptualHash,
+                hashAlgorithmVersion = if (cache.sha256 != null) {
+                    cache.hashAlgorithmVersion
+                } else {
+                    existing?.takeIf { sameSource }?.hashAlgorithmVersion
+                        ?: cache.hashAlgorithmVersion
+                },
+                perceptualHashAlgorithmVersion = if (cache.perceptualHash != null) {
+                    cache.perceptualHashAlgorithmVersion
+                } else {
+                    existing?.takeIf { sameSource }?.perceptualHashAlgorithmVersion
+                        ?: cache.perceptualHashAlgorithmVersion
+                },
+                analyzedAtMillis = maxOf(cache.analyzedAtMillis, existing?.analyzedAtMillis ?: 0L)
+            )
+        )
+    }
     @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
     fun observeAll(): Flow<List<MediaAsset>>
 
