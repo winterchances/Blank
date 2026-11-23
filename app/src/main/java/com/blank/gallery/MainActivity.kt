@@ -668,8 +668,6 @@ private fun BlankApp() {
                         .align(Alignment.BottomCenter)
                         .blur(if (deleteConfirmationVisible || selfOrganizeDeleteConfirmationVisible) 5.dp else 0.dp)
                         .padding(
-                            start = 16.dp,
-                            end = 16.dp,
                             bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         ),
                     transitionSpec = {
@@ -681,6 +679,7 @@ private fun BlankApp() {
                     if (selectionMode) {
                         val allFavorite = selectedMedia.values.all { it.isFavorite }
                         val allProtected = selectedMedia.values.all { it.isProtected }
+                        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                         AlbumBatchActionBar(
                             favoriteLabel = if (allFavorite) "取消收藏" else "收藏",
                             protectLabel = if (allProtected) "取消保护" else "保护",
@@ -706,6 +705,7 @@ private fun BlankApp() {
                             deleteEnabled = selectedMedia.values.any { !it.isProtected } && !isDeletionInProgress,
                             onCancel = { selectedMedia = emptyMap() }
                         )
+                        }
                     } else if (organizeSubPage == null) {
                         BottomNavigation(
                             currentPage = currentPage,
