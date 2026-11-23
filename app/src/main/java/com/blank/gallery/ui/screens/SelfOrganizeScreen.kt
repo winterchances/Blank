@@ -129,7 +129,7 @@ internal fun SelfOrganizeScreen(
                 message = "请先允许留白访问照片和视频，才能开始整理",
                 modifier = Modifier.weight(1f)
             )
-            ActionSurface("授权照片访问", onClick = onRequestAccess)
+            ActionSurface("授权照片和视频访问", onClick = onRequestAccess)
         } else if (isScanning || isLoading) {
             EmptyState(
                 message = if (isScanning) "正在读取照片，请稍候" else "正在更新整理进度",
@@ -138,9 +138,9 @@ internal fun SelfOrganizeScreen(
         } else if (asset == null) {
             EmptyState(
                 message = if (summary.totalCount == 0) {
-                    "暂时没有可整理的照片"
+                    "暂时没有可整理的媒体"
                 } else {
-                    "这些照片已经整理完了"
+                    "这些媒体已经整理完了"
                 },
                 modifier = Modifier.weight(1f)
             )
