@@ -32,7 +32,7 @@ internal fun FeatureTile(
         modifier = modifier
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .shadow(
-                elevation = 4.dp,
+                elevation = 6.dp,
                 shape = RoundedCornerShape(16.dp),
                 ambientColor = Color.Black.copy(alpha = 0.03f),
                 spotColor = Color.Black.copy(alpha = 0.03f)
