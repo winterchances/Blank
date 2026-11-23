@@ -640,8 +640,6 @@ private fun BlankApp() {
                                 mediaType = albumMediaType,
                                 onMediaTypeChange = { selectedMedia = emptyMap(); albumMediaType = it },
                                 searchQuery = albumSearchQuery,
-                                selectedFolderPath = selectedFolderPath,
-                                onOpenFolderDrawer = { scope.launch { albumDrawerState.open() } },
                                 months = albumMonths,
                                 selectedMonthKey = selectedMonthKey,
                                 onMonthSelect = { selectedMedia = emptyMap(); selectedMonthKey = it },
