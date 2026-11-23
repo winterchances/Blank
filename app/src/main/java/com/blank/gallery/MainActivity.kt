@@ -562,6 +562,7 @@ private fun BlankApp() {
                         },
                         backLabel = if (selectionMode) "×" else "‹",
                         showAlbumActions = currentPage == MainPage.ALBUMS && !selectionMode,
+                        onFolderClick = { scope.launch { albumDrawerState.open() } },
                         onSortClick = { albumOptionsSheet = AlbumOptionsSheetType.SORT },
                         onGridClick = { albumOptionsSheet = AlbumOptionsSheetType.GRID }
                     )
@@ -782,6 +783,7 @@ private fun PageHeader(
     onBack: (() -> Unit)? = null,
     backLabel: String = "‹",
     showAlbumActions: Boolean = false,
+    onFolderClick: () -> Unit = {},
     onSortClick: () -> Unit = {},
     onGridClick: () -> Unit = {}
 ) {
@@ -812,6 +814,7 @@ private fun PageHeader(
         )
         if (showAlbumActions) {
             AlbumHeaderActionButtons(
+                onFolderClick = onFolderClick,
                 onSortClick = onSortClick,
                 onGridClick = onGridClick
             )
