@@ -35,6 +35,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.core.app.ActivityCompat
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -373,13 +374,20 @@ private fun BlankApp() {
     val requestAccessOrScan: () -> Unit = {
         if (MediaPermission.hasFullLibraryAccess(context)) {
             runScan()
-        } else if (permissionDenied) {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", context.packageName, null)
-            }
-            context.startActivity(intent)
         } else {
-            permissionLauncher.launch(MediaPermission.requiredPermissions())
+            val activity = context as? Activity
+            val canRequestAgain = activity != null &&
+                MediaPermission.requiredPermissions().any { permission ->
+                    ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
+                }
+            if (permissionDenied && !canRequestAgain) {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+                context.startActivity(intent)
+            } else {
+                permissionLauncher.launch(MediaPermission.requiredPermissions())
+            }
         }
     }
 
@@ -457,21 +465,24 @@ private fun BlankApp() {
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+    val currentHasMediaAccess by androidx.compose.runtime.rememberUpdatedState(hasMediaAccess)
+    val currentIsScanning by androidx.compose.runtime.rememberUpdatedState(isScanning)
+    val currentRunScan by androidx.compose.runtime.rememberUpdatedState(runScan)
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 val accessNow = MediaPermission.hasAnyMediaAccess(context)
-                if (accessNow != hasMediaAccess) {
+                if (accessNow != currentHasMediaAccess) {
                     hasMediaAccess = accessNow
                     if (accessNow) {
                         permissionDenied = false
-                        runScan()
+                        currentRunScan()
                     } else {
                         selectedMedia = emptyMap()
                         scope.launch { repository.hideAllFromCurrentLibrary() }
                     }
-                } else if (accessNow && !isScanning) {
-                    runScan()
+                } else if (accessNow && !currentIsScanning) {
+                    currentRunScan()
                 }
             }
         }
