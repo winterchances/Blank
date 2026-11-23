@@ -187,16 +187,6 @@ internal fun SelfOrganizeScreen(
                             .background(Color.White)
                     )
                 }
-                if (asset.mediaType == 2) {
-                    Text(
-                        "视频",
-                        modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
-                            .clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.55f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = Color.White,
-                        fontSize = 11.sp
-                    )
-                }
                 AnimatedContent(
                     targetState = asset,
                     transitionSpec = {
@@ -209,11 +199,31 @@ internal fun SelfOrganizeScreen(
                     },
                     label = "self-organize-photo"
                 ) { currentAsset ->
-                    AsyncImage(
-                        model = currentAsset.contentUri,
-                        contentDescription = currentAsset.displayName,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize().padding(bottom = 12.dp)
+                    if (currentAsset.mediaType == 2) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().padding(bottom = 12.dp)
+                                .background(Color.Black.copy(alpha = 0.035f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("视频", color = MutedText, fontSize = 14.sp)
+                        }
+                    } else {
+                        AsyncImage(
+                            model = currentAsset.contentUri,
+                            contentDescription = currentAsset.displayName,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize().padding(bottom = 12.dp)
+                        )
+                    }
+                }
+                if (asset.mediaType == 2) {
+                    Text(
+                        "视频",
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
+                            .clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.55f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = Color.White,
+                        fontSize = 11.sp
                     )
                 }
             }
