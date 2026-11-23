@@ -18,12 +18,20 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -42,6 +50,7 @@ import com.blank.gallery.ui.theme.ThemeMint
 @Composable
 internal fun SelfOrganizeScreen(
     asset: MediaAsset?,
+    nextAsset: MediaAsset? = null,
     summary: SelfOrganizeSummary,
     canUndo: Boolean,
     isLoading: Boolean,
@@ -55,6 +64,7 @@ internal fun SelfOrganizeScreen(
     onUndo: () -> Unit,
     onOpenPendingDelete: () -> Unit
 ) {
+    var swipeDirection by remember { mutableStateOf(1) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -151,8 +161,8 @@ internal fun SelfOrganizeScreen(
                             },
                             onDragEnd = {
                                 when {
-                                    dragDistance < -swipeThreshold -> onKeep()
-                                    dragDistance > swipeThreshold -> onPendingDelete()
+                                    dragDistance < -swipeThreshold -> { swipeDirection = 1; onPendingDelete() }
+                                    dragDistance > swipeThreshold -> { swipeDirection = -1; onKeep() }
                                 }
                                 dragDistance = 0f
                             },
@@ -161,10 +171,31 @@ internal fun SelfOrganizeScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
+                nextAsset?.let { preview ->
+                    AsyncImage(
+                        model = preview.contentUri,
+                        contentDescription = preview.displayName,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                            .padding(horizontal = 8.dp)
+                            .graphicsLayer {
+                                scaleX = 0.96f
+                                scaleY = 0.94f
+                                translationY = 18.dp.toPx()
+                            }
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color.White)
+                    )
+                }
                 AnimatedContent(
                     targetState = asset,
                     transitionSpec = {
-                        fadeIn(tween(200)) togetherWith fadeOut(tween(200))
+                        (slideInVertically(
+                            animationSpec = tween(320, easing = FastOutSlowInEasing)
+                        ) { if (swipeDirection > 0) it else -it } + fadeIn(tween(220))) togetherWith
+                            (slideOutVertically(
+                                animationSpec = tween(280, easing = FastOutSlowInEasing)
+                            ) { if (swipeDirection > 0) -it else it } + fadeOut(tween(180)))
                     },
                     label = "self-organize-photo"
                 ) { currentAsset ->
@@ -172,7 +203,7 @@ internal fun SelfOrganizeScreen(
                         model = currentAsset.contentUri,
                         contentDescription = currentAsset.displayName,
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().padding(bottom = 12.dp)
                     )
                 }
             }
@@ -184,7 +215,7 @@ internal fun SelfOrganizeScreen(
                 maxLines = 1
             )
             Text(
-                "上滑保留 · 下滑加入待删除",
+                "上滑删除 · 下滑保留",
                 color = MutedText,
                 fontSize = 11.sp
             )
@@ -192,8 +223,8 @@ internal fun SelfOrganizeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                ActionSurface("保留", Modifier.weight(1f), onClick = onKeep)
-                ActionSurface("待删除", Modifier.weight(1f), onClick = onPendingDelete)
+                ActionSurface("保留", Modifier.weight(1f), onClick = { swipeDirection = -1; onKeep() })
+                ActionSurface("待删除", Modifier.weight(1f), onClick = { swipeDirection = 1; onPendingDelete() })
                 ActionSurface("跳过", Modifier.weight(1f), onClick = onSkip)
             }
         }
