@@ -83,8 +83,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.launch
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,7 +95,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun BlankApp() {
     val context = LocalContext.current
-    val hazeState = remember { HazeState() }
     val albumDrawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
     var isAlbumSearchVisible by remember { mutableStateOf(false) }
     var albumOptionsSheet by remember { mutableStateOf<AlbumOptionsSheetType?>(null) }
@@ -539,7 +536,6 @@ private fun BlankApp() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .hazeSource(hazeState)
                         .padding(
                             top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
                             bottom = (if (organizeSubPage == null) 104.dp else 24.dp) +
@@ -715,7 +711,6 @@ private fun BlankApp() {
                     } else if (organizeSubPage == null) {
                         BottomNavigation(
                             currentPage = currentPage,
-                            hazeState = hazeState,
                             onSelect = { selectedMedia = emptyMap(); currentPage = it },
                             onSearchClick = { isAlbumSearchVisible = true },
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
