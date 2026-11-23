@@ -1,6 +1,7 @@
 package com.blank.gallery
 
 import com.blank.gallery.data.MediaAsset
+import com.blank.gallery.data.HomeOrganizeSummary
 import com.blank.gallery.data.MediaDeletionManager
 import com.blank.gallery.data.MediaLibraryRepository
 import com.blank.gallery.data.MediaPermission
@@ -145,7 +146,9 @@ private fun BlankApp() {
 
     val photoCount by repository.photoCount.collectAsState(initial = 0)
     val videoCount by repository.videoCount.collectAsState(initial = 0)
-    val totalBytes by repository.totalBytes.collectAsState(initial = 0L)
+    val photoBytes by repository.photoBytes.collectAsState(initial = 0L)
+    val videoBytes by repository.videoBytes.collectAsState(initial = 0L)
+    val homeOrganizeSummary by repository.homeOrganizeSummary.collectAsState(initial = HomeOrganizeSummary())
     val lastScanAt by repository.lastScanAt.collectAsState()
     val albumFolders by repository.folders.collectAsState(initial = emptyList())
     val albumMonths by repository.months.collectAsState(initial = emptyList())
@@ -707,7 +710,16 @@ private fun BlankApp() {
                             MainPage.HOME -> HomeContent(
                                 photoCount = photoCount,
                                 videoCount = videoCount,
-                                totalBytes = totalBytes,
+                                photoBytes = photoBytes,
+                                videoBytes = videoBytes,
+                                organizeSummary = homeOrganizeSummary,
+                                analysisCounts = mapOf(
+                                    OrganizeSubPage.DUPLICATES to if (OrganizeSubPage.DUPLICATES in smartAnalyzedPages) smartResults[OrganizeSubPage.DUPLICATES].orEmpty().size else null,
+                                    OrganizeSubPage.SIMILAR to if (OrganizeSubPage.SIMILAR in smartAnalyzedPages) smartResults[OrganizeSubPage.SIMILAR].orEmpty().size else null,
+                                    OrganizeSubPage.BURSTS to if (OrganizeSubPage.BURSTS in smartAnalyzedPages) smartResults[OrganizeSubPage.BURSTS].orEmpty().size else null,
+                                    OrganizeSubPage.SCREENSHOTS to if (OrganizeSubPage.SCREENSHOTS in smartAnalyzedPages) smartResults[OrganizeSubPage.SCREENSHOTS].orEmpty().size else null,
+                                    OrganizeSubPage.LARGE_FILES to if (OrganizeSubPage.LARGE_FILES in smartAnalyzedPages) smartResults[OrganizeSubPage.LARGE_FILES].orEmpty().size else null
+                                ),
                                 lastScanAt = lastScanAt,
                                 hasMediaAccess = hasMediaAccess,
                                 hasFullMediaAccess = MediaPermission.hasFullLibraryAccess(context),
@@ -715,9 +727,12 @@ private fun BlankApp() {
                                 isScanning = isScanning,
                                 scannedItems = scannedItems,
                                 scanMessage = scanMessage,
-                                onScanClick = requestAccessOrScan,
-                                onOpenSmart = { currentPage = MainPage.ORGANIZE },
-                                onOpenSelf = { currentPage = MainPage.ORGANIZE }
+                                hazeState = hazeState,
+                                onOpenAnalysis = { page ->
+                                    selectedMedia = emptyMap()
+                                    currentPage = MainPage.ORGANIZE
+                                    organizeSubPage = page
+                                }
                             )
                             MainPage.ALBUMS -> AlbumsContent(
                                 media = pagedMedia,
@@ -804,7 +819,7 @@ private fun BlankApp() {
                         BottomNavigation(
                             currentPage = currentPage,
                             onSelect = { selectedMedia = emptyMap(); currentPage = it },
-                            onSearchClick = { isAlbumSearchVisible = true },
+                            onScanClick = requestAccessOrScan,
                             hazeState = hazeState,
                             modifier = Modifier.fillMaxWidth()
                         )

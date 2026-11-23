@@ -96,15 +96,14 @@ private val BlankFavoritesIcon: ImageVector = ImageVector.Builder("BlankFavorite
     }
 }.build()
 
-private val BlankSearchIcon: ImageVector = ImageVector.Builder("BlankSearch", 24.dp, 24.dp, 24f, 24f).apply {
+private val BlankScanIcon: ImageVector = ImageVector.Builder("BlankScan", 24.dp, 24.dp, 24f, 24f).apply {
     path(fill = null, stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round, strokeLineJoin = StrokeJoin.Round) {
-        moveTo(11f, 3f)
-        curveTo(15.42f, 3f, 19f, 6.58f, 19f, 11f)
-        curveTo(19f, 15.42f, 15.42f, 19f, 11f, 19f)
-        curveTo(6.58f, 19f, 3f, 15.42f, 3f, 11f)
-        curveTo(3f, 6.58f, 6.58f, 3f, 11f, 3f)
-        close()
-        moveTo(21f, 21f); lineTo(16.65f, 16.65f)
+        moveTo(8f, 3f); lineTo(5.5f, 3f); quadTo(3f, 3f, 3f, 5.5f); lineTo(3f, 8f)
+        moveTo(16f, 3f); lineTo(18.5f, 3f); quadTo(21f, 3f, 21f, 5.5f); lineTo(21f, 8f)
+        moveTo(21f, 16f); lineTo(21f, 18.5f); quadTo(21f, 21f, 18.5f, 21f); lineTo(16f, 21f)
+        moveTo(8f, 21f); lineTo(5.5f, 21f); quadTo(3f, 21f, 3f, 18.5f); lineTo(3f, 16f)
+        moveTo(7f, 10f); lineTo(17f, 10f)
+        moveTo(7f, 14f); lineTo(17f, 14f)
     }
 }.build()
 
@@ -112,7 +111,7 @@ private val BlankSearchIcon: ImageVector = ImageVector.Builder("BlankSearch", 24
 internal fun BottomNavigation(
     currentPage: MainPage,
     onSelect: (MainPage) -> Unit,
-    onSearchClick: () -> Unit,
+    onScanClick: () -> Unit,
     hazeState: HazeState,
     modifier: Modifier = Modifier
 ) {
@@ -182,10 +181,10 @@ internal fun BottomNavigation(
                 spotColor = Color.Black.copy(alpha = 0.10f)
             )
             .blankGlassSurface(hazeState, CircleShape)
-            .clickable(onClick = onSearchClick),
+            .clickable(onClick = onScanClick),
         contentAlignment = Alignment.Center
     ) {
-        Icon(BlankSearchIcon, "搜索", Modifier.size(21.dp), tint = MainText)
+        Icon(BlankScanIcon, "扫描", Modifier.size(21.dp), tint = MainText)
     }
     }
 }

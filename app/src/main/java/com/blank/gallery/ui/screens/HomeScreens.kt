@@ -2,12 +2,14 @@ package com.blank.gallery.ui.screens
 
 import com.blank.gallery.data.MediaAsset
 import com.blank.gallery.data.MediaMonth
+import com.blank.gallery.data.HomeOrganizeSummary
 import com.blank.gallery.ui.components.EmptyState
 import com.blank.gallery.ui.components.FeatureTile
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.MutedText
 import com.blank.gallery.ui.theme.ThemeMint
 import com.blank.gallery.ui.theme.GlassWhite
+import com.blank.gallery.ui.theme.PageBackground
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +17,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +28,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -44,6 +49,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import android.os.Environment
+import android.os.StatFs
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.hazeEffect
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
@@ -55,7 +66,10 @@ import java.util.Locale
 internal fun HomeContent(
     photoCount: Int,
     videoCount: Int,
-    totalBytes: Long,
+    photoBytes: Long,
+    videoBytes: Long,
+    organizeSummary: HomeOrganizeSummary,
+    analysisCounts: Map<OrganizeSubPage, Int?>,
     lastScanAt: Long?,
     hasMediaAccess: Boolean,
     hasFullMediaAccess: Boolean,
@@ -63,88 +77,248 @@ internal fun HomeContent(
     isScanning: Boolean,
     scannedItems: Int,
     scanMessage: String?,
-    onScanClick: () -> Unit,
-    onOpenSmart: () -> Unit,
-    onOpenSelf: () -> Unit
+    hazeState: HazeState,
+    onOpenAnalysis: (OrganizeSubPage) -> Unit
 ) {
+    val context = LocalContext.current
+    val storage = runCatching {
+        val stat = StatFs(Environment.getDataDirectory().absolutePath)
+        stat.blockSizeLong * stat.blockCountLong to stat.availableBytes
+    }.getOrDefault(0L to 0L)
+    val deviceTotalBytes = storage.first.coerceAtLeast(0L)
+    val deviceAvailableBytes = storage.second.coerceIn(0L, deviceTotalBytes)
+    val deviceUsedBytes = (deviceTotalBytes - deviceAvailableBytes).coerceAtLeast(0L)
+    val photoSegment = photoBytes.coerceAtLeast(0L).coerceAtMost(deviceUsedBytes)
+    val videoSegment = videoBytes.coerceAtLeast(0L).coerceAtMost((deviceUsedBytes - photoSegment).coerceAtLeast(0L))
+    val otherSegment = (deviceUsedBytes - photoSegment - videoSegment).coerceAtLeast(0L)
+    val progress = if (organizeSummary.totalCount > 0) {
+        (organizeSummary.completedCount.toFloat() / organizeSummary.totalCount).coerceIn(0f, 1f)
+    } else 0f
+    val progressPercent = (progress * 100f).toInt()
+    val analysisItems = listOf(
+        OrganizeSubPage.DUPLICATES to "重复照片",
+        OrganizeSubPage.SIMILAR to "相似照片",
+        OrganizeSubPage.BURSTS to "连拍照片",
+        OrganizeSubPage.SCREENSHOTS to "截图",
+        OrganizeSubPage.LARGE_FILES to "大文件"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
+            .padding(bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(GlassWhite)
-                .padding(horizontal = 15.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OverviewMetric("照片", photoCount.toString(), Modifier.weight(1f))
-            OverviewMetric("视频", videoCount.toString(), Modifier.weight(1f))
-            OverviewMetric("占用空间", formatStorage(totalBytes), Modifier.weight(1f))
+        HomeGlassCard(hazeState) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("整理进度", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
+                Text("$progressPercent%", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(CircleShape)
+                    .background(ThemeMint.copy(alpha = 0.14f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .height(8.dp)
+                        .clip(CircleShape)
+                        .background(ThemeMint)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("已整理 ${organizeSummary.completedCount} 项", fontSize = 12.sp, color = MutedText)
+                Text("待整理 ${organizeSummary.remainingCount} 项", fontSize = 12.sp, color = MutedText)
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Color.Black.copy(alpha = 0.05f)))
+            Text("智能整理", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MainText)
+            analysisItems.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    rowItems.forEach { (page, title) ->
+                        HomeAnalysisItem(
+                            title = title,
+                            count = analysisCounts[page],
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOpenAnalysis(page) }
+                        )
+                    }
+                    if (rowItems.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
         }
-        Spacer(Modifier.height(10.dp))
+
+        HomeGlassCard(hazeState) {
+            Text("存储情况", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(formatStorage(deviceUsedBytes), fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                    Text("已使用 / ${formatStorage(deviceTotalBytes)}", fontSize = 11.sp, color = MutedText)
+                }
+                Text("剩余 ${formatStorage(deviceAvailableBytes)}", fontSize = 12.sp, color = MutedText)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.045f))
+            ) {
+                Row(Modifier.fillMaxSize()) {
+                    if (photoSegment > 0L) {
+                        Box(Modifier.weight(photoSegment.toFloat()).fillMaxHeight().background(ThemeMint))
+                    }
+                    if (videoSegment > 0L) {
+                        Box(Modifier.weight(videoSegment.toFloat()).fillMaxHeight().background(ThemeMint.copy(alpha = 0.58f)))
+                    }
+                    if (otherSegment > 0L) {
+                        Box(Modifier.weight(otherSegment.toFloat()).fillMaxHeight().background(Color(0xFFD7CBAF)))
+                    }
+                    if (deviceAvailableBytes > 0L) {
+                        Box(Modifier.weight(deviceAvailableBytes.toFloat()).fillMaxHeight().background(Color(0xFFE8ECEB)))
+                    }
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                HomeStorageRow(
+                    color = ThemeMint,
+                    label = "照片",
+                    detail = "$photoCount 张",
+                    value = formatStorage(photoBytes)
+                )
+                HomeStorageRow(
+                    color = ThemeMint.copy(alpha = 0.58f),
+                    label = "视频",
+                    detail = "$videoCount 个",
+                    value = formatStorage(videoBytes)
+                )
+                HomeStorageRow(
+                    color = Color(0xFFD7CBAF),
+                    label = "其他及系统占用",
+                    detail = "估算",
+                    value = formatStorage(otherSegment)
+                )
+            }
+            Text(
+                text = "媒体占用按当前已授权并扫描到的文件统计；其他为设备已用空间扣除照片和视频后的估算值。",
+                fontSize = 10.sp,
+                lineHeight = 14.sp,
+                color = MutedText
+            )
+        }
+
+        val scanStatus = when {
+            isScanning -> "正在扫描 · 已读取 $scannedItems 项"
+            scanMessage != null -> scanMessage
+            !hasMediaAccess && permissionDenied -> "请在系统设置中开启照片和视频访问权限"
+            !hasMediaAccess -> "尚未授权照片和视频访问"
+            !hasFullMediaAccess -> "当前为部分访问 · 统计范围受授权限制"
+            lastScanAt != null -> "最近扫描 · ${formatScanTime(lastScanAt)}"
+            else -> "尚未扫描"
+        }
         Text(
-            text = lastScanAt?.let { "最近扫描 · ${formatScanTime(it)}" } ?: "尚未扫描",
+            text = scanStatus,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
             fontSize = 11.sp,
             color = MutedText
         )
-        if (!hasMediaAccess) {
-            Text("照片和视频仅在本机读取，不会上传", fontSize = 12.sp, color = MutedText)
-        } else if (!hasFullMediaAccess) {
-            Text("目前只能读取已授权的部分照片和视频", fontSize = 12.sp, color = MutedText)
-        }
-        if (isScanning) {
-            Text("正在扫描 · 已读取 $scannedItems 项", fontSize = 12.sp, color = MutedText)
-        } else if (scanMessage != null) {
-            Text(scanMessage, fontSize = 12.sp, color = MutedText)
-        }
-        Text(
-            text = when {
-                isScanning -> "扫描中…"
-                !hasMediaAccess && permissionDenied -> "前往系统设置开启照片和视频访问权限"
-                !hasMediaAccess -> "允许访问照片和视频后，即可建立本机相册索引"
-                !hasFullMediaAccess -> "允许访问全部照片和视频"
-                photoCount + videoCount == 0 -> "扫描本机照片和视频"
-                else -> "检查更新"
-            },
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(ThemeMint.copy(alpha = 0.10f))
-                .clickable(enabled = !isScanning, onClick = onScanClick)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = MainText
-        )
-        SectionHeading("快捷整理")
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            QuickAction(
-                title = "智能整理",
-                onClick = onOpenSmart,
-                modifier = Modifier.weight(1f)
-            )
-            QuickAction(
-                title = "自己整理",
-                onClick = onOpenSelf,
-                modifier = Modifier.weight(1f)
-            )
-        }
     }
 }
 
 @Composable
-private fun OverviewMetric(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 12.sp, color = MutedText)
-        Spacer(Modifier.height(4.dp))
-        Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF111111), maxLines = 1)
+private fun HomeGlassCard(
+    hazeState: HazeState,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 8.dp,
+                shape = shape,
+                ambientColor = Color.Black.copy(alpha = 0.07f),
+                spotColor = Color.Black.copy(alpha = 0.05f)
+            )
+            .hazeEffect(
+                state = hazeState,
+                style = HazeStyle(
+                    backgroundColor = PageBackground,
+                    tints = emptyList(),
+                    blurRadius = 10.dp,
+                    noiseFactor = 0f
+                )
+            )
+            .clip(shape)
+            .background(GlassWhite)
+            .padding(horizontal = 16.dp, vertical = 15.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        content = content
+    )
+}
+
+@Composable
+private fun HomeAnalysisItem(
+    title: String,
+    count: Int?,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 7.dp, horizontal = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MainText)
+        Text(
+            text = count?.let { "$it 项" } ?: "待分析",
+            fontSize = 11.sp,
+            color = MutedText
+        )
+    }
+}
+
+@Composable
+private fun HomeStorageRow(
+    color: Color,
+    label: String,
+    detail: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(label, fontSize = 12.sp, color = MainText)
+                Text(detail, fontSize = 10.sp, color = MutedText)
+            }
+        }
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MainText)
     }
 }
 

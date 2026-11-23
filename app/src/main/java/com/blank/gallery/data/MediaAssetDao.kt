@@ -27,6 +27,14 @@ data class SelfOrganizeSummary(
     val skippedCount: Int = 0
 )
 
+data class HomeOrganizeSummary(
+    val totalCount: Int = 0,
+    val completedCount: Int = 0,
+    val remainingCount: Int = 0,
+    val keptCount: Int = 0,
+    val pendingDeleteCount: Int = 0
+)
+
 @Dao
 interface MediaAssetDao {
     @Query("SELECT COALESCE(MAX(id), 0) FROM media_assets")
@@ -283,6 +291,24 @@ interface MediaAssetDao {
     @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM media_assets WHERE isVisible = 1")
     fun observeTotalBytes(): Flow<Long>
 
+    @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
+    fun observePhotoBytes(): Flow<Long>
+
+    @Query("SELECT COALESCE(SUM(sizeBytes), 0) FROM media_assets WHERE isVisible = 1 AND mediaType = 2")
+    fun observeVideoBytes(): Flow<Long>
+
+    @Query("""
+        SELECT COUNT(*) AS totalCount,
+               COUNT(CASE WHEN selfOrganizeStatus IN (1, 2) OR isFavorite = 1 OR isProtected = 1 THEN 1 END) AS completedCount,
+               COUNT(CASE WHEN selfOrganizeStatus IN (0, 3) AND isFavorite = 0 AND isProtected = 0 AND isVisible = 1 THEN 1 END) AS remainingCount,
+               COUNT(CASE WHEN selfOrganizeStatus = 1 OR isFavorite = 1 OR isProtected = 1 THEN 1 END) AS keptCount,
+               COUNT(CASE WHEN selfOrganizeStatus = 2 THEN 1 END) AS pendingDeleteCount
+        FROM media_assets
+        WHERE mediaType IN (1, 2)
+          AND (isVisible = 1 OR selfOrganizeStatus = 2)
+    """)
+    fun observeHomeOrganizeSummary(): Flow<HomeOrganizeSummary>
+
     @Query("""
         SELECT * FROM media_assets
         WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
@@ -482,20 +508,20 @@ interface MediaAssetDao {
     @Update
     suspend fun update(item: MediaAsset)
 
-    @Query("UPDATE media_assets SET isFavorite = :favorite WHERE id = :id")
+    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isFavorite = 1 OR :favorite = 1 THEN 1 ELSE selfOrganizeStatus END, isFavorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: Long, favorite: Boolean)
 
-    @Query("UPDATE media_assets SET isProtected = :protectedValue WHERE id = :id")
+    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isProtected = 1 OR :protectedValue = 1 THEN 1 ELSE selfOrganizeStatus END, isProtected = :protectedValue WHERE id = :id")
     suspend fun setProtected(id: Long, protectedValue: Boolean)
 
-    @Query("UPDATE media_assets SET isFavorite = :favorite WHERE id IN (:ids)")
+    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isFavorite = 1 OR :favorite = 1 THEN 1 ELSE selfOrganizeStatus END, isFavorite = :favorite WHERE id IN (:ids)")
     suspend fun setFavoriteForIds(ids: List<Long>, favorite: Boolean)
 
-    @Query("UPDATE media_assets SET isProtected = :protectedValue WHERE id IN (:ids)")
+    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isProtected = 1 OR :protectedValue = 1 THEN 1 ELSE selfOrganizeStatus END, isProtected = :protectedValue WHERE id IN (:ids)")
     suspend fun setProtectedForIds(ids: List<Long>, protectedValue: Boolean)
 
-    /** Hide trashed items without deleting their local metadata or user state. */
-    @Query("UPDATE media_assets SET isVisible = 0 WHERE id IN (:ids)")
+    /** Hide trashed items while retaining their explicit delete decision for progress accounting. */
+    @Query("UPDATE media_assets SET isVisible = 0, selfOrganizeStatus = 2 WHERE id IN (:ids)")
     suspend fun hideFromLibraryForIds(ids: List<Long>)
 
     @Query("DELETE FROM self_organize_actions WHERE mediaAssetId IN (:ids)")
