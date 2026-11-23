@@ -1,6 +1,7 @@
 package com.blank.gallery.ui.screens
 
 import com.blank.gallery.ui.components.EmptyState
+import com.blank.gallery.ui.components.FeatureTile
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.MutedText
 
@@ -66,7 +67,7 @@ internal fun OrganizeContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     rowItems.forEach { (page, title, description) ->
-                        OrganizeCategoryTile(
+                        FeatureTile(
                             title = title,
                             description = description,
                             modifier = Modifier.weight(1f),
@@ -86,13 +87,13 @@ internal fun OrganizeContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OrganizeCategoryTile(
+                FeatureTile(
                     title = "按顺序整理",
                     description = "按照照片时间顺序，逐张浏览",
                     modifier = Modifier.weight(1f),
                     onClick = { onOpenSelfMode(OrganizeSubPage.SELF_ORDERED) }
                 )
-                OrganizeCategoryTile(
+                FeatureTile(
                     title = "随机整理",
                     description = "随机选择一张照片作为起点",
                     modifier = Modifier.weight(1f),
@@ -125,45 +126,3 @@ internal fun OrganizeSubPageContent(page: OrganizeSubPage) {
         )
     }
 }
-
-@Composable
-private fun OrganizeCategoryTile(
-    title: String,
-    description: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = modifier
-            .shadow(
-                elevation = 4.dp,
-                shape = RoundedCornerShape(16.dp),
-                ambientColor = Color.Black.copy(alpha = 0.03f),
-                spotColor = Color.Black.copy(alpha = 0.03f)
-            )
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = title,
-                modifier = Modifier.weight(1f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MainText
-            )
-            Text("›", fontSize = 20.sp, color = MutedText)
-        }
-        Text(
-            text = description,
-            fontSize = 12.sp,
-            lineHeight = 17.sp,
-            color = MutedText
-        )
-    }
-}
-
-
