@@ -6,7 +6,6 @@ import com.blank.gallery.ui.theme.GlassWhite
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeJoin
@@ -40,9 +38,6 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.hazeEffect
 
 internal enum class MainPage(val title: String, val icon: NavIconType) {
     HOME("首页", NavIconType.HOME),
@@ -110,7 +105,6 @@ private val BlankSearchIcon: ImageVector = ImageVector.Builder("BlankSearch", 24
 @Composable
 internal fun BottomNavigation(
     currentPage: MainPage,
-    hazeState: HazeState,
     onSelect: (MainPage) -> Unit,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -123,25 +117,9 @@ internal fun BottomNavigation(
     BoxWithConstraints(
         Modifier
             .weight(1f)
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(28.dp),
-                ambientColor = Color.Black.copy(alpha = 0.06f),
-                spotColor = Color.Black.copy(alpha = 0.06f)
-            )
             .height(56.dp)
-            .hazeEffect(
-                state = hazeState,
-                style = HazeStyle(
-                    backgroundColor = Color(0xFFF5F5F7),
-                    tints = emptyList(),
-                    blurRadius = 20.dp,
-                    noiseFactor = 0f
-                )
-            )
             .clip(RoundedCornerShape(28.dp))
             .background(GlassWhite)
-            .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(28.dp))
             .padding(4.dp)
     ) {
         val slot = maxWidth / 4
@@ -153,7 +131,7 @@ internal fun BottomNavigation(
         )
         Box(
             Modifier.offset(x = offset)
-                .width(slot - 2.dp)
+                .width(slot)
                 .fillMaxHeight()
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.06f))
@@ -186,7 +164,6 @@ internal fun BottomNavigation(
         shape = CircleShape,
         color = GlassWhite,
         shadowElevation = 8.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.05f))
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(BlankSearchIcon, "搜索", Modifier.size(21.dp), tint = MainText)
