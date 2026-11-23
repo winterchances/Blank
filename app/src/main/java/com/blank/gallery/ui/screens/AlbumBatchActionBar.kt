@@ -1,6 +1,6 @@
 package com.blank.gallery.ui.screens
 
-import com.blank.gallery.ui.theme.GlassWhite
+import com.blank.gallery.ui.theme.blankGlassSurface
 import com.blank.gallery.ui.theme.MainText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
 
 @Composable
 internal fun AlbumBatchActionBar(
@@ -33,6 +34,7 @@ internal fun AlbumBatchActionBar(
     onDelete: () -> Unit,
     deleteEnabled: Boolean,
     onCancel: () -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -40,15 +42,13 @@ internal fun AlbumBatchActionBar(
             .fillMaxWidth()
             .height(56.dp)
             .shadow(
-                elevation = 8.dp,
+                elevation = 12.dp,
                 shape = RoundedCornerShape(28.dp),
-                ambientColor = Color.Black.copy(alpha = 0.06f),
-                spotColor = Color.Black.copy(alpha = 0.06f)
+                ambientColor = Color.Black.copy(alpha = 0.18f),
+                spotColor = Color.Black.copy(alpha = 0.28f)
             )
-            .clip(RoundedCornerShape(28.dp))
-            .background(GlassWhite)
-            .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(28.dp))
-            .padding(4.dp),
+            .blankGlassSurface(hazeState, RoundedCornerShape(28.dp))
+            .padding(5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
