@@ -1,7 +1,7 @@
 package com.blank.gallery.ui.navigation
 
 import com.blank.gallery.ui.theme.MainText
-import com.blank.gallery.ui.theme.GlassWhite
+import com.blank.gallery.ui.theme.blankGlassSurface
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeJoin
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
 
 internal enum class MainPage(val title: String, val icon: NavIconType) {
     HOME("首页", NavIconType.HOME),
@@ -107,17 +109,23 @@ internal fun BottomNavigation(
     currentPage: MainPage,
     onSelect: (MainPage) -> Unit,
     onSearchClick: () -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 62.dp)
+            .padding(start = 16.dp, end = 78.dp)
             .height(56.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(GlassWhite)
-            .padding(4.dp)
+            .shadow(
+                elevation = 12.dp,
+                shape = RoundedCornerShape(28.dp),
+                ambientColor = Color.Black.copy(alpha = 0.18f),
+                spotColor = Color.Black.copy(alpha = 0.28f)
+            )
+            .blankGlassSurface(hazeState, RoundedCornerShape(28.dp))
+            .padding(5.dp)
     ) {
         val slot = maxWidth / 4
         val target = slot * MainPage.values().indexOf(currentPage)
@@ -145,7 +153,7 @@ internal fun BottomNavigation(
                     verticalArrangement = Arrangement.Center
                 ) {
                     NavGlyph(page.icon, tint = MainText)
-                    Spacer(Modifier.height(0.dp))
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         text = page.title,
                         fontSize = 10.sp,
@@ -156,15 +164,22 @@ internal fun BottomNavigation(
             }
         }
     }
-    androidx.compose.material3.Surface(
-        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).size(56.dp).clickable(onClick = onSearchClick),
-        shape = CircleShape,
-        color = GlassWhite,
-        shadowElevation = 8.dp,
+    Box(
+        modifier = Modifier
+            .align(Alignment.CenterEnd)
+            .padding(end = 16.dp)
+            .size(56.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = CircleShape,
+                ambientColor = Color.Black.copy(alpha = 0.10f),
+                spotColor = Color.Black.copy(alpha = 0.10f)
+            )
+            .blankGlassSurface(hazeState, CircleShape)
+            .clickable(onClick = onSearchClick),
+        contentAlignment = Alignment.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(BlankSearchIcon, "搜索", Modifier.size(21.dp), tint = MainText)
-        }
+        Icon(BlankSearchIcon, "搜索", Modifier.size(21.dp), tint = MainText)
     }
     }
 }
