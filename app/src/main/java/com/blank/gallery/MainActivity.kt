@@ -270,9 +270,9 @@ private fun BlankApp() {
         }
     }
 
-    LaunchedEffect(organizeSubPage) {
+    LaunchedEffect(organizeSubPage, lastScanAt) {
         val page = organizeSubPage
-        if (page != null && smartTypeFor(page) != null && page !in smartAnalyzedPages) runSmartAnalysis(page)
+        if (lastScanAt != null && page != null && smartTypeFor(page) != null && page !in smartAnalyzedPages) runSmartAnalysis(page)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -675,6 +675,7 @@ private fun BlankApp() {
                                 page = page,
                                 assets = smartResults[page].orEmpty(),
                                 hasAnalyzed = page in smartAnalyzedPages,
+                                hasScanned = lastScanAt != null,
                                 isRunning = state is SmartAnalysisTaskState.Running || state is SmartAnalysisTaskState.Cancelling,
                                 progressText = when (state) {
                                     is SmartAnalysisTaskState.Running -> "已分析 ${state.completed} / ${state.total}"
