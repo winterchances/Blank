@@ -530,7 +530,8 @@ private fun BlankApp() {
                         selectedMedia = emptyMap()
                         selectedFolderPath = path
                         scope.launch { albumDrawerState.close() }
-                    }
+                    },
+                    hazeState = hazeState
                 )
             }
         ) {
