@@ -139,6 +139,7 @@ private fun BlankApp() {
     var scannedItems by remember { mutableStateOf(0) }
     var scanMessage by remember { mutableStateOf<String?>(null) }
     var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
+    var selfOrganizeNextPhoto by remember { mutableStateOf<MediaAsset?>(null) }
     var isSelfOrganizeLoading by remember { mutableStateOf(false) }
     var selfOrganizeMessage by remember { mutableStateOf<String?>(null) }
     var isShowingSelfPendingDelete by remember { mutableStateOf(false) }
@@ -173,7 +174,7 @@ private fun BlankApp() {
     }
     val pagedMedia = mediaFlow.collectAsLazyPagingItems()
     val scope = rememberCoroutineScope()
-    val hasPhotoAccess = MediaPermission.canReadImages(context)
+    val hasPhotoAccess = hasMediaAccess
     val activeSelfOrganizeMode = when (organizeSubPage) {
         OrganizeSubPage.SELF_RANDOM -> SelfOrganizeMode.RANDOM
         OrganizeSubPage.SELF_ORDERED -> SelfOrganizeMode.ORDERED
@@ -503,6 +504,14 @@ private fun BlankApp() {
         }
     }
 
+    LaunchedEffect(activeSelfOrganizeMode, hasPhotoAccess, isScanning, selfOrganizePhoto?.id) {
+        val mode = activeSelfOrganizeMode
+        val current = selfOrganizePhoto
+        selfOrganizeNextPhoto = if (mode != null && current != null && hasPhotoAccess && !isScanning) {
+            selfOrganizeManager.peekNextPhoto(mode, current.id)
+        } else null
+    }
+
     fun decideSelfOrganize(decision: SelfOrganizeDecision) {
         val current = selfOrganizePhoto ?: return
         val mode = activeSelfOrganizeMode ?: return
@@ -672,6 +681,7 @@ private fun BlankApp() {
                         } else if (activeSelfOrganizeMode != null) {
                             SelfOrganizeScreen(
                                 asset = selfOrganizePhoto,
+                                nextAsset = selfOrganizeNextPhoto,
                                 summary = selfOrganizeSummary,
                                 canUndo = canUndoSelfOrganize,
                                 isLoading = isSelfOrganizeLoading,
