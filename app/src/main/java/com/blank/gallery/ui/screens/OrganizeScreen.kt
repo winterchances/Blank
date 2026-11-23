@@ -56,12 +56,12 @@ internal fun OrganizeContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .padding(horizontal = 20.dp, vertical = 2.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column {
             SectionHeading("智能整理")
-            smartItems.chunked(2).forEach { rowItems ->
+            smartItems.chunked(2).forEachIndexed { index, rowItems ->
+                if (index > 0) Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -81,7 +81,7 @@ internal fun OrganizeContent(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column {
             SectionHeading("自己整理")
             Row(
                 modifier = Modifier.fillMaxWidth(),
