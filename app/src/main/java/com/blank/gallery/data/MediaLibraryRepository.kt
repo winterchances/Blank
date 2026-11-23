@@ -118,6 +118,7 @@ class MediaLibraryRepository(context: Context) {
         includeImages: Boolean,
         includeVideos: Boolean,
         permissionScope: String,
+        forceFullScan: Boolean = false,
         onProgress: suspend (Int) -> Unit = {}
     ): Int = scanMutex.withLock {
         if (MediaPermission.accessScope(appContext) != permissionScope) {
@@ -136,7 +137,8 @@ class MediaLibraryRepository(context: Context) {
         val previousScope = preferences.getString(KEY_LAST_SCAN_SCOPE, null)
 
         val requiresFullScan =
-            permissionScope.contains(":selected") ||
+            forceFullScan ||
+                permissionScope.contains(":selected") ||
                 previousScanAt == 0L ||
                 previousScope != permissionScope ||
                 previousFullScanAt == 0L ||
