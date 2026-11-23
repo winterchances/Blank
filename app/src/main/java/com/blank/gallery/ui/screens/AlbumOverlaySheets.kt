@@ -243,16 +243,10 @@ private val AlbumGridVector: ImageVector = ImageVector.Builder(
 
 @Composable
 internal fun AlbumHeaderActionButtons(
-    onFolderClick: () -> Unit,
-    onSortClick: () -> Unit,
-    onGridClick: () -> Unit,
+    onViewSortClick: () -> Unit,
     hazeState: HazeState
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        AlbumHeaderAction(AlbumFolderVector, "文件夹", onFolderClick, hazeState)
-        AlbumHeaderAction(AlbumSortVector, "排序", onSortClick, hazeState)
-        AlbumHeaderAction(AlbumGridVector, "网格布局", onGridClick, hazeState)
-    }
+    AlbumHeaderAction(AlbumGridVector, "视图与排序", onViewSortClick, hazeState)
 }
 
 @Composable
