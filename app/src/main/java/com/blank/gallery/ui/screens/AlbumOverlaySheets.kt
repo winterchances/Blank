@@ -57,12 +57,17 @@ internal fun AlbumSearchSheet(
         scrimColor = Color.Black.copy(alpha = 0.4f)
     ) {
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp)
         ) {
-            Text("搜索照片或视频", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText)
+            Text(
+                "搜索照片或视频",
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MainText
+            )
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White).padding(horizontal = 15.dp, vertical = 14.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White).padding(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BasicTextField(
@@ -80,11 +85,6 @@ internal fun AlbumSearchSheet(
                     Text("清除", modifier = Modifier.clickable { onQueryChange("") }, color = MutedText, fontSize = 12.sp)
                 }
             }
-            Text(
-                if (query.isBlank()) "输入关键词即可筛选相册内容" else "搜索条件已应用，关闭后查看筛选结果",
-                fontSize = 12.sp,
-                color = MutedText
-            )
         }
     }
 }
