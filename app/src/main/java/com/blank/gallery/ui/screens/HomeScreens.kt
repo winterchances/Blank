@@ -121,7 +121,6 @@ internal fun HomeContent(
             fontWeight = FontWeight.Medium,
             color = MainText
         )
-        Spacer(Modifier.height(25.dp))
         SectionHeading("快捷整理")
         Row(
             modifier = Modifier.fillMaxWidth(),
