@@ -36,20 +36,13 @@ internal fun SmartAnalysisScreen(
     page: OrganizeSubPage,
     assets: List<MediaAsset>,
     hasAnalyzed: Boolean,
+    hasScanned: Boolean,
     isRunning: Boolean,
     progressText: String?,
     errorText: String?,
     onStart: () -> Unit,
     onCancel: () -> Unit
 ) {
-    val title = when (page) {
-        OrganizeSubPage.DUPLICATES -> "重复照片"
-        OrganizeSubPage.SIMILAR -> "相似照片"
-        OrganizeSubPage.BURSTS -> "连拍"
-        OrganizeSubPage.SCREENSHOTS -> "截图"
-        OrganizeSubPage.LARGE_FILES -> "大文件"
-        else -> ""
-    }
     val description = when (page) {
         OrganizeSubPage.DUPLICATES -> "通过文件内容校验，找出完全相同的照片"
         OrganizeSubPage.SIMILAR -> "分析画面特征，整理内容相近的照片"
@@ -80,7 +73,7 @@ internal fun SmartAnalysisScreen(
             }
             Button(
                 onClick = if (isRunning) onCancel else onStart,
-                enabled = true,
+                enabled = isRunning || hasScanned,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ThemeMint,
                     contentColor = Color.White
@@ -90,12 +83,13 @@ internal fun SmartAnalysisScreen(
                 Text(if (isRunning) "取消" else if (hasAnalyzed) "重新分析" else "开始分析")
             }
         }
+        if (!hasScanned) Text("请先回到首页完成媒体扫描", color = MutedText, fontSize = 12.sp)
         errorText?.let { Text(it, color = MutedText, fontSize = 12.sp) }
         when {
             isRunning && assets.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text("正在分析本机媒体，请稍候", color = MutedText, fontSize = 13.sp)
             }
-            hasAnalyzed && assets.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            hasAnalyzed && assets.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text("没有发现符合条件的内容", color = MutedText, fontSize = 13.sp)
             }
             assets.isNotEmpty() -> LazyVerticalGrid(
