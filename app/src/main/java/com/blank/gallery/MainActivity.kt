@@ -31,7 +31,7 @@ import com.blank.gallery.ui.screens.SelfOrganizePendingDeleteScreen
 import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.ThemeMint
-import com.blank.gallery.ui.theme.GlassWhite
+import com.blank.gallery.ui.theme.blankGlassSurface
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
@@ -974,8 +974,7 @@ private fun PageHeader(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .size(38.dp)
-                        .clip(CircleShape)
-                        .background(GlassWhite)
+                        .blankGlassSurface(hazeState, CircleShape)
                         .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center
                 ) {
