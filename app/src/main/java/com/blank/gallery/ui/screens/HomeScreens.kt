@@ -10,7 +10,6 @@ import com.blank.gallery.ui.theme.ThemeMint
 import com.blank.gallery.ui.theme.GlassWhite
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -417,12 +416,11 @@ private fun SectionCard(
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(20.dp),
-                ambientColor = Color.Black.copy(alpha = 0.03f),
-                spotColor = Color.Black.copy(alpha = 0.03f)
+                ambientColor = Color.Black.copy(alpha = 0.07f),
+                spotColor = Color.Black.copy(alpha = 0.05f)
             )
             .clip(RoundedCornerShape(20.dp))
             .background(GlassWhite)
-            .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(20.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -439,7 +437,7 @@ private fun QuickAction(
 ) {
     Row(
         modifier = modifier
-            .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.03f), spotColor = Color.Black.copy(alpha = 0.03f))
+            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.03f), spotColor = Color.Black.copy(alpha = 0.03f))
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
             .clickable(onClick = onClick)
