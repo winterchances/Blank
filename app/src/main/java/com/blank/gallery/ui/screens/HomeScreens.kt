@@ -76,23 +76,14 @@ internal fun HomeContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(
-                    8.dp,
-                    RoundedCornerShape(20.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.03f),
-                    spotColor = Color.Black.copy(alpha = 0.03f)
-                )
                 .clip(RoundedCornerShape(20.dp))
                 .background(GlassWhite)
-                .border(1.dp, Color.Black.copy(alpha = 0.05f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 10.dp, vertical = 15.dp),
+                .padding(horizontal = 15.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             OverviewMetric("照片", photoCount.toString(), Modifier.weight(1f))
-            Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = 0.05f)))
             OverviewMetric("视频", videoCount.toString(), Modifier.weight(1f))
-            Box(Modifier.width(1.dp).height(30.dp).background(Color.Black.copy(alpha = 0.05f)))
             OverviewMetric("占用空间", formatStorage(totalBytes), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
