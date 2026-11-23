@@ -141,6 +141,34 @@ private fun FolderDrawerItem(label: String, selected: Boolean, onClick: () -> Un
 }
 
 
+private val AlbumFolderVector: ImageVector = ImageVector.Builder(
+    name = "AlbumFolder",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f
+).apply {
+    path(
+        fill = null,
+        stroke = SolidColor(Color(0xFF333333)),
+        strokeLineWidth = 2.2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ) {
+        moveTo(20.59f, 13.41f)
+        lineTo(13.42f, 20.58f)
+        quadTo(12.25f, 21.75f, 11.01f, 20.58f)
+        lineTo(2f, 12f)
+        lineTo(2f, 2f)
+        lineTo(12f, 2f)
+        lineTo(20.59f, 10.59f)
+        quadTo(21.76f, 11.76f, 20.59f, 13.41f)
+        close()
+        moveTo(7f, 7f)
+        lineTo(7.01f, 7f)
+    }
+}.build()
+
 private val AlbumSortVector: ImageVector = ImageVector.Builder(
     name = "AlbumSort",
     defaultWidth = 24.dp,
@@ -202,10 +230,12 @@ private val AlbumGridVector: ImageVector = ImageVector.Builder(
 
 @Composable
 internal fun AlbumHeaderActionButtons(
+    onFolderClick: () -> Unit,
     onSortClick: () -> Unit,
     onGridClick: () -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        AlbumHeaderAction(AlbumFolderVector, "文件夹", onFolderClick)
         AlbumHeaderAction(AlbumSortVector, "排序", onSortClick)
         AlbumHeaderAction(AlbumGridVector, "网格布局", onGridClick)
     }
