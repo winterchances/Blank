@@ -85,7 +85,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.ui.input.pointer.consume
 import kotlin.math.abs
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
