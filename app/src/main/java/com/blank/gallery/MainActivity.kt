@@ -784,7 +784,8 @@ private fun PageHeader(
     showAlbumActions: Boolean = false,
     onFolderClick: () -> Unit = {},
     onSortClick: () -> Unit = {},
-    onGridClick: () -> Unit = {}
+    onGridClick: () -> Unit = {},
+    hazeState: HazeState
 ) {
     Row(
         modifier = Modifier
@@ -815,7 +816,8 @@ private fun PageHeader(
             AlbumHeaderActionButtons(
                 onFolderClick = onFolderClick,
                 onSortClick = onSortClick,
-                onGridClick = onGridClick
+                onGridClick = onGridClick,
+                hazeState = hazeState
             )
         }
     }
