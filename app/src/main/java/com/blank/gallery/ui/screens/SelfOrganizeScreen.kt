@@ -139,7 +139,6 @@ internal fun SelfOrganizeScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color.Black.copy(alpha = 0.03f), spotColor = Color.Black.copy(alpha = 0.03f))
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.Black.copy(alpha = 0.035f))
                     .pointerInput(asset.id) {
@@ -212,7 +211,7 @@ private fun ActionSurface(
     Box(
         modifier = modifier
             .shadow(
-                4.dp,
+                1.dp,
                 RoundedCornerShape(16.dp),
                 ambientColor = Color.Black.copy(alpha = 0.03f),
                 spotColor = Color.Black.copy(alpha = 0.03f)
@@ -223,13 +222,13 @@ private fun ActionSurface(
                 enabled = enabled,
                 onClick = onClick
             )
-            .padding(horizontal = 14.dp, vertical = 15.dp),
+            .padding(17.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             label,
             color = if (enabled) MainText else MutedText,
-            fontSize = 14.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center
         )
