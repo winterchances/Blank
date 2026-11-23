@@ -27,6 +27,8 @@ import com.blank.gallery.ui.screens.SelfOrganizePendingDeleteScreen
 import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.ThemeMint
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 import android.app.Activity
 import android.content.Intent
@@ -95,6 +97,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun BlankApp() {
     val context = LocalContext.current
+    val hazeState = remember { HazeState() }
     val albumDrawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
     var isAlbumSearchVisible by remember { mutableStateOf(false) }
     var albumOptionsSheet by remember { mutableStateOf<AlbumOptionsSheetType?>(null) }
@@ -542,6 +545,7 @@ private fun BlankApp() {
                                 WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                         )
                         .blur(if (deleteConfirmationVisible || selfOrganizeDeleteConfirmationVisible) 5.dp else 0.dp)
+                        .hazeSource(hazeState)
                 ) {
                     val selectionMode = currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty()
                     PageHeader(
@@ -703,7 +707,8 @@ private fun BlankApp() {
                             },
                             onDelete = { deleteConfirmationVisible = true },
                             deleteEnabled = selectedMedia.values.any { !it.isProtected } && !isDeletionInProgress,
-                            onCancel = { selectedMedia = emptyMap() }
+                            onCancel = { selectedMedia = emptyMap() },
+                            hazeState = hazeState
                         )
                         }
                     } else if (organizeSubPage == null) {
@@ -711,6 +716,7 @@ private fun BlankApp() {
                             currentPage = currentPage,
                             onSelect = { selectedMedia = emptyMap(); currentPage = it },
                             onSearchClick = { isAlbumSearchVisible = true },
+                            hazeState = hazeState,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
