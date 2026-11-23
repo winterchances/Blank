@@ -124,7 +124,7 @@ private fun BlankApp() {
     val favorites by repository.favorites.collectAsState(initial = emptyList())
     val protectedMedia by repository.protectedMedia.collectAsState(initial = emptyList())
     val smartAnalysisStates by repository.smartAnalysisStates.collectAsState()
-    var smartResults by remember { mutableStateOf<Map<OrganizeSubPage, List<MediaAsset>>>(emptyMap()) }
+    var smartResults by remember { mutableStateOf<Map<OrganizeSubPage, List<List<MediaAsset>>>>(emptyMap()) }
     var smartAnalyzedPages by remember { mutableStateOf<Set<OrganizeSubPage>>(emptySet()) }
     var smartErrors by remember { mutableStateOf<Map<OrganizeSubPage, String>>(emptyMap()) }
 
@@ -256,19 +256,34 @@ private fun BlankApp() {
     fun runSmartAnalysis(page: OrganizeSubPage) {
         scope.launch {
             try {
-                val assets = when (page) {
-                    OrganizeSubPage.DUPLICATES -> repository.analyzeDuplicateMedia().groups.flatMap { it.items }
-                    OrganizeSubPage.SIMILAR -> repository.analyzeSimilarPhotos().groups.flatMap { it.items }
-                    OrganizeSubPage.BURSTS -> repository.analyzeBurstPhotos().groups.flatMap { it.items }
-                    OrganizeSubPage.SCREENSHOTS -> repository.analyzeScreenshots().matches.map { it.asset }
-                    OrganizeSubPage.LARGE_FILES -> repository.analyzeLargeMedia().items
+                val groups = when (page) {
+                    OrganizeSubPage.DUPLICATES -> repository.analyzeDuplicateMedia().groups.map { it.items }
+                    OrganizeSubPage.SIMILAR -> repository.analyzeSimilarPhotos().groups.map { it.items }
+                    OrganizeSubPage.BURSTS -> repository.analyzeBurstPhotos().groups.map { it.items }
+                    OrganizeSubPage.SCREENSHOTS -> repository.analyzeScreenshots().matches.map { listOf(it.asset) }
+                    OrganizeSubPage.LARGE_FILES -> repository.analyzeLargeMedia().items.map { listOf(it) }
                     else -> emptyList()
-                }
-                smartResults = smartResults + (page to assets.distinctBy { it.id })
+                }.map { group -> group.distinctBy { it.id } }.filter { it.isNotEmpty() }
+                smartResults = smartResults + (page to groups)
                 smartAnalyzedPages = smartAnalyzedPages + page
                 smartErrors = smartErrors - page
             } catch (error: Exception) {
                 smartErrors = smartErrors + (page to (error.message ?: "分析失败，请稍后重试"))
+            }
+        }
+    }
+
+    fun decideSmartAsset(asset: MediaAsset, status: Int) {
+        scope.launch {
+            try {
+                repository.setSelfOrganizeStatus(asset.id, status)
+                smartResults = smartResults.mapValues { (_, groups) ->
+                    groups.mapNotNull { group ->
+                        group.filterNot { it.id == asset.id }.takeIf { it.isNotEmpty() }
+                    }
+                }
+            } catch (_: Exception) {
+                smartErrors = smartErrors + (organizeSubPage to "保存整理决定失败，请重试")
             }
         }
     }
@@ -676,7 +691,7 @@ private fun BlankApp() {
                             val state = type?.let { smartAnalysisStates[it] }
                             SmartAnalysisScreen(
                                 page = page,
-                                assets = smartResults[page].orEmpty(),
+                                groups = smartResults[page].orEmpty(),
                                 hasAnalyzed = page in smartAnalyzedPages,
                                 hasScanned = lastScanAt != null,
                                 isRunning = state is SmartAnalysisTaskState.Running || state is SmartAnalysisTaskState.Cancelling,
@@ -689,7 +704,9 @@ private fun BlankApp() {
                                 onStart = { runSmartAnalysis(page) },
                                 onCancel = {
                                     type?.let { analysisType -> scope.launch { repository.cancelSmartAnalysis(analysisType) } }
-                                }
+                                },
+                                onKeep = { asset -> decideSmartAsset(asset, 1) },
+                                onPendingDelete = { asset -> decideSmartAsset(asset, 2) }
                             )
                         }
                     } else {
@@ -714,11 +731,11 @@ private fun BlankApp() {
                                 videoBytes = videoBytes,
                                 organizeSummary = homeOrganizeSummary,
                                 analysisCounts = mapOf(
-                                    OrganizeSubPage.DUPLICATES to if (OrganizeSubPage.DUPLICATES in smartAnalyzedPages) smartResults[OrganizeSubPage.DUPLICATES].orEmpty().size else null,
-                                    OrganizeSubPage.SIMILAR to if (OrganizeSubPage.SIMILAR in smartAnalyzedPages) smartResults[OrganizeSubPage.SIMILAR].orEmpty().size else null,
-                                    OrganizeSubPage.BURSTS to if (OrganizeSubPage.BURSTS in smartAnalyzedPages) smartResults[OrganizeSubPage.BURSTS].orEmpty().size else null,
-                                    OrganizeSubPage.SCREENSHOTS to if (OrganizeSubPage.SCREENSHOTS in smartAnalyzedPages) smartResults[OrganizeSubPage.SCREENSHOTS].orEmpty().size else null,
-                                    OrganizeSubPage.LARGE_FILES to if (OrganizeSubPage.LARGE_FILES in smartAnalyzedPages) smartResults[OrganizeSubPage.LARGE_FILES].orEmpty().size else null
+                                    OrganizeSubPage.DUPLICATES to if (OrganizeSubPage.DUPLICATES in smartAnalyzedPages) smartResults[OrganizeSubPage.DUPLICATES].orEmpty().sumOf { it.size } else null,
+                                    OrganizeSubPage.SIMILAR to if (OrganizeSubPage.SIMILAR in smartAnalyzedPages) smartResults[OrganizeSubPage.SIMILAR].orEmpty().sumOf { it.size } else null,
+                                    OrganizeSubPage.BURSTS to if (OrganizeSubPage.BURSTS in smartAnalyzedPages) smartResults[OrganizeSubPage.BURSTS].orEmpty().sumOf { it.size } else null,
+                                    OrganizeSubPage.SCREENSHOTS to if (OrganizeSubPage.SCREENSHOTS in smartAnalyzedPages) smartResults[OrganizeSubPage.SCREENSHOTS].orEmpty().sumOf { it.size } else null,
+                                    OrganizeSubPage.LARGE_FILES to if (OrganizeSubPage.LARGE_FILES in smartAnalyzedPages) smartResults[OrganizeSubPage.LARGE_FILES].orEmpty().sumOf { it.size } else null
                                 ),
                                 lastScanAt = lastScanAt,
                                 hasMediaAccess = hasMediaAccess,
