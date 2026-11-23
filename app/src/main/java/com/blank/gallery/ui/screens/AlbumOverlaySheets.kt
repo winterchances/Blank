@@ -103,14 +103,18 @@ internal fun AlbumFolderDrawer(
     ) {
         Column(Modifier.fillMaxHeight().padding(horizontal = 20.dp)) {
             Text("文件夹", modifier = Modifier.padding(top = 34.dp, bottom = 18.dp), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MainText)
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            LazyColumn {
                 item(key = "all-folders") {
                     FolderDrawerItem("全部文件夹", selectedFolderPath == null) { onFolderSelect(null) }
+                }
+                item(key = "folder-divider") {
+                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
                 items(folders, key = { it.relativePath }) { folder ->
                     FolderDrawerItem(folder.relativePath.trimEnd('/'), selectedFolderPath == folder.relativePath) {
                         onFolderSelect(folder.relativePath)
                     }
+                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
             }
             Spacer(Modifier.height(24.dp))
