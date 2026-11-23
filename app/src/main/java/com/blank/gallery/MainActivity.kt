@@ -158,7 +158,7 @@ private fun BlankApp() {
     }
 
 
-    val runScan: () -> Unit = {
+    val runScan: (forceFullScan: Boolean) -> Unit = { forceFullScan ->
         if (!isScanning) {
             isScanning = true
             scannedItems = 0
@@ -168,7 +168,8 @@ private fun BlankApp() {
                     val total = repository.scanVisibleMedia(
                         includeImages = MediaPermission.canReadImages(context),
                         includeVideos = MediaPermission.canReadVideos(context),
-                        permissionScope = MediaPermission.accessScope(context)
+                        permissionScope = MediaPermission.accessScope(context),
+                        forceFullScan = forceFullScan
                     ) { count ->
                         scannedItems = count
                     }
@@ -226,7 +227,7 @@ private fun BlankApp() {
         hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
         if (hasMediaAccess) {
             permissionDenied = false
-            runScan()
+            runScan(true)
         } else {
             permissionDenied = true
             scanMessage = "尚未获得照片访问权限"
@@ -373,7 +374,7 @@ private fun BlankApp() {
 
     val requestAccessOrScan: () -> Unit = {
         if (MediaPermission.hasFullLibraryAccess(context)) {
-            runScan()
+            runScan(true)
         } else {
             val activity = context as? Activity
             val canRequestAgain = activity != null &&
@@ -408,7 +409,7 @@ private fun BlankApp() {
                 .apply()
             permissionLauncher.launch(MediaPermission.requiredPermissions())
         } else if (hasMediaAccess) {
-            runScan()
+            runScan(false)
         } else {
             repository.hideAllFromCurrentLibrary()
         }
@@ -476,13 +477,13 @@ private fun BlankApp() {
                     hasMediaAccess = accessNow
                     if (accessNow) {
                         permissionDenied = false
-                        currentRunScan()
+                        currentRunScan(false)
                     } else {
                         selectedMedia = emptyMap()
                         scope.launch { repository.hideAllFromCurrentLibrary() }
                     }
                 } else if (accessNow && !currentIsScanning) {
-                    currentRunScan()
+                    currentRunScan(false)
                 }
             }
         }
