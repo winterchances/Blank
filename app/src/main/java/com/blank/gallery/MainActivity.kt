@@ -499,23 +499,21 @@ private fun BlankApp() {
             selfOrganizeMessage = null
             if (!hasPhotoAccess || isScanning) {
                 selfOrganizePhoto = null
+                selfOrganizeNextPhoto = null
                 isSelfOrganizeLoading = false
             } else {
                 isSelfOrganizeLoading = true
-                selfOrganizePhoto = selfOrganizeManager.nextPhoto(activeSelfOrganizeMode)
+                val next = selfOrganizeManager.nextPhoto(activeSelfOrganizeMode)
+                selfOrganizePhoto = next
+                selfOrganizeNextPhoto = next?.let {
+                    selfOrganizeManager.peekNextPhoto(activeSelfOrganizeMode, it.id)
+                }
                 isSelfOrganizeLoading = false
             }
         } else {
             selfOrganizePhoto = null
+            selfOrganizeNextPhoto = null
         }
-    }
-
-    LaunchedEffect(activeSelfOrganizeMode, hasPhotoAccess, isScanning, selfOrganizePhoto?.id) {
-        val mode = activeSelfOrganizeMode
-        val current = selfOrganizePhoto
-        selfOrganizeNextPhoto = if (mode != null && current != null && hasPhotoAccess && !isScanning) {
-            selfOrganizeManager.peekNextPhoto(mode, current.id)
-        } else null
     }
 
     fun decideSelfOrganize(decision: SelfOrganizeDecision) {
@@ -527,7 +525,11 @@ private fun BlankApp() {
         scope.launch {
             try {
                 selfOrganizeManager.applyDecision(current.id, decision)
-                selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
+                val next = selfOrganizeManager.nextPhoto(mode)
+                selfOrganizePhoto = next
+                selfOrganizeNextPhoto = next?.let {
+                    selfOrganizeManager.peekNextPhoto(mode, it.id)
+                }
             } catch (_: Exception) {
                 selfOrganizeMessage = "整理状态保存失败，请重试"
             } finally {
@@ -543,7 +545,12 @@ private fun BlankApp() {
         isSelfOrganizeLoading = true
         scope.launch {
             try {
-                selfOrganizePhoto = selfOrganizeManager.undo() ?: selfOrganizeManager.nextPhoto(mode)
+                val restored = selfOrganizeManager.undo()
+                val next = restored ?: selfOrganizeManager.nextPhoto(mode)
+                selfOrganizePhoto = next
+                selfOrganizeNextPhoto = next?.let {
+                    selfOrganizeManager.peekNextPhoto(mode, it.id)
+                }
             } catch (_: Exception) {
                 selfOrganizeMessage = "撤销失败，请稍后重试"
             } finally {
