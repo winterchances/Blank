@@ -196,8 +196,8 @@ internal fun AlbumsContent(
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 15.dp, bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(25.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AlbumMediaTypeTab("全部", mediaType == null) { onMediaTypeChange(null) }
@@ -206,16 +206,9 @@ internal fun AlbumsContent(
         }
 
         LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 2.dp, bottom = 25.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            item(key = "folder-filter") {
-                AlbumFilterChip(
-                    label = selectedFolderPath?.substringAfterLast('/')?.ifBlank { "文件夹" } ?: "文件夹",
-                    selected = selectedFolderPath != null
-                ) { onOpenFolderDrawer() }
-            }
             if (months.isNotEmpty()) {
                 item(key = "all-months") {
                     AlbumFilterChip("全部月份", selectedMonthKey == null) { onMonthSelect(null) }
@@ -250,9 +243,10 @@ internal fun AlbumsContent(
             columns = GridCells.Fixed(gridColumns),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                .padding(horizontal = 20.dp)
+                .padding(top = 5.dp),
+            verticalArrangement = Arrangement.spacedBy(if (gridColumns == 4) 8.dp else 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (gridColumns == 4) 8.dp else 10.dp)
         ) {
             items(
                 count = media.itemCount,
@@ -389,7 +383,7 @@ private fun AlbumFilterChip(
         modifier = Modifier.clickable(onClick = onClick),
         shape = CircleShape,
         color = if (selected) ThemeMint else Color.White,
-        shadowElevation = if (selected) 2.dp else 1.dp
+        shadowElevation = if (selected) 3.dp else 1.dp
     ) {
         Text(
             text = label,
