@@ -126,7 +126,7 @@ private fun SheetAction(
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
             .clickable(onClick = onClick)
-            .padding(18.dp),
+            .height(52.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
