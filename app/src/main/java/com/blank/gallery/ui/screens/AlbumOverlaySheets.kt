@@ -98,12 +98,16 @@ internal fun AlbumSearchSheet(
 internal fun AlbumFolderDrawer(
     folders: List<MediaFolder>,
     selectedFolderPath: String?,
-    onFolderSelect: (String?) -> Unit
+    onFolderSelect: (String?) -> Unit,
+    hazeState: HazeState
 ) {
     ModalDrawerSheet(
-        modifier = Modifier.width(300.dp).fillMaxHeight(),
+        modifier = Modifier
+            .width(300.dp)
+            .fillMaxHeight()
+            .blankGlassSurface(hazeState, RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp)),
         drawerShape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp),
-        drawerContainerColor = PageBackground,
+        drawerContainerColor = Color.Transparent,
         drawerTonalElevation = 0.dp
     ) {
         Column(Modifier.fillMaxHeight().padding(horizontal = 20.dp)) {
@@ -132,8 +136,8 @@ private fun FolderDrawerItem(label: String, selected: Boolean, onClick: () -> Un
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
-        color = if (selected) GlassWhite else Color.Transparent,
-        shadowElevation = if (selected) 1.dp else 0.dp
+        color = if (selected) MainText.copy(alpha = 0.06f) else Color.Transparent,
+        shadowElevation = 0.dp
     ) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
