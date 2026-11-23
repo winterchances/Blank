@@ -126,7 +126,7 @@ internal fun SelfOrganizeScreen(
 
         if (!hasPhotoAccess) {
             EmptyState(
-                message = "请先允许留白访问照片，才能开始整理",
+                message = "请先允许留白访问照片和视频，才能开始整理",
                 modifier = Modifier.weight(1f)
             )
             ActionSurface("授权照片访问", onClick = onRequestAccess)
@@ -172,20 +172,34 @@ internal fun SelfOrganizeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 nextAsset?.let { preview ->
-                    AsyncImage(
-                        model = preview.contentUri,
-                        contentDescription = preview.displayName,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                            .padding(horizontal = 8.dp)
-                            .graphicsLayer {
-                                scaleX = 0.96f
-                                scaleY = 0.94f
-                                translationY = 18.dp.toPx()
-                            }
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White)
-                    )
+                    if (preview.mediaType == 2) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
+                                .graphicsLayer {
+                                    scaleX = 0.96f
+                                    scaleY = 0.94f
+                                    translationY = 18.dp.toPx()
+                                }
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) { Text("视频", color = MutedText, fontSize = 12.sp) }
+                    } else {
+                        AsyncImage(
+                            model = preview.contentUri,
+                            contentDescription = preview.displayName,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                                .padding(horizontal = 8.dp)
+                                .graphicsLayer {
+                                    scaleX = 0.96f
+                                    scaleY = 0.94f
+                                    translationY = 18.dp.toPx()
+                                }
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color.White)
+                        )
+                    }
                 }
                 AnimatedContent(
                     targetState = asset,
