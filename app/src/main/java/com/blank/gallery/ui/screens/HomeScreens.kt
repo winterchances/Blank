@@ -319,7 +319,7 @@ internal fun AlbumsContent(
 @Composable
 internal fun SectionHeading(text: String) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp),
+        Modifier.fillMaxWidth().padding(top = 25.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(Modifier.width(4.dp).height(16.dp).clip(CircleShape).background(ThemeMint))
