@@ -211,7 +211,7 @@ private fun ActionSurface(
     Box(
         modifier = modifier
             .shadow(
-                1.dp,
+                4.dp,
                 RoundedCornerShape(16.dp),
                 ambientColor = Color.Black.copy(alpha = 0.03f),
                 spotColor = Color.Black.copy(alpha = 0.03f)
