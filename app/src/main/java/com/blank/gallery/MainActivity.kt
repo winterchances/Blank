@@ -638,6 +638,7 @@ private fun BlankApp() {
                             )
                             MainPage.ALBUMS -> AlbumsContent(
                                 media = pagedMedia,
+                                gridColumns = albumGridColumns,
                                 hasMediaAccess = hasMediaAccess,
                                 mediaType = albumMediaType,
                                 onMediaTypeChange = { selectedMedia = emptyMap(); albumMediaType = it },
