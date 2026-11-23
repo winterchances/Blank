@@ -31,6 +31,7 @@ import com.blank.gallery.ui.screens.SelfOrganizePendingDeleteScreen
 import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.ThemeMint
+import com.blank.gallery.ui.theme.GlassWhite
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
@@ -57,6 +58,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -90,6 +93,7 @@ import kotlin.math.abs
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -652,6 +656,7 @@ private fun BlankApp() {
                             else -> null
                         },
                         backLabel = if (selectionMode) "×" else "‹",
+                        compactCentered = organizeSubPage != null,
                         showAlbumActions = currentPage == MainPage.ALBUMS && !selectionMode,
                         onViewSortClick = { albumOptionsSheet = AlbumOptionsSheetType.VIEW_SORT },
                         hazeState = hazeState
@@ -943,40 +948,76 @@ private fun PageHeader(
     title: String,
     onBack: (() -> Unit)? = null,
     backLabel: String = "‹",
+    compactCentered: Boolean = false,
     showAlbumActions: Boolean = false,
     onViewSortClick: () -> Unit = {},
     hazeState: HazeState
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 36.dp, bottom = 15.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (onBack != null) {
+    if (compactCentered) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 36.dp, bottom = 15.dp)
+                .height(40.dp)
+        ) {
+            if (onBack != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(GlassWhite)
+                        .clickable(onClick = onBack),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = backLabel,
+                        fontSize = 25.sp,
+                        lineHeight = 25.sp,
+                        color = MainText
+                    )
+                }
+            }
             Text(
-                text = backLabel,
-                modifier = Modifier
-                    .padding(end = 10.dp)
-                    .clickable(onClick = onBack),
-                fontSize = 34.sp,
-                lineHeight = 34.sp,
+                text = title,
+                modifier = Modifier.align(Alignment.Center),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = MainText
             )
         }
-        Text(
-            text = title,
-            modifier = Modifier.weight(1f),
-            fontSize = 30.sp,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 0.5.sp,
-            color = MainText
-        )
-        if (showAlbumActions) {
-            AlbumHeaderActionButtons(
-                onViewSortClick = onViewSortClick,
-                hazeState = hazeState
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 36.dp, bottom = 15.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (onBack != null) {
+                Text(
+                    text = backLabel,
+                    modifier = Modifier
+                        .padding(end = 10.dp)
+                        .clickable(onClick = onBack),
+                    fontSize = 34.sp,
+                    lineHeight = 34.sp,
+                    color = MainText
+                )
+            }
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                fontSize = 30.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 0.5.sp,
+                color = MainText
             )
+            if (showAlbumActions) {
+                AlbumHeaderActionButtons(
+                    onViewSortClick = onViewSortClick,
+                    hazeState = hazeState
+                )
+            }
         }
     }
 }
