@@ -5,6 +5,7 @@ import com.blank.gallery.ui.theme.MainText
 import com.blank.gallery.ui.theme.MutedText
 import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.GlassWhite
+import com.blank.gallery.ui.theme.blankGlassSurface
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -43,6 +45,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -238,12 +241,13 @@ private val AlbumGridVector: ImageVector = ImageVector.Builder(
 internal fun AlbumHeaderActionButtons(
     onFolderClick: () -> Unit,
     onSortClick: () -> Unit,
-    onGridClick: () -> Unit
+    onGridClick: () -> Unit,
+    hazeState: HazeState
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        AlbumHeaderAction(AlbumFolderVector, "文件夹", onFolderClick)
-        AlbumHeaderAction(AlbumSortVector, "排序", onSortClick)
-        AlbumHeaderAction(AlbumGridVector, "网格布局", onGridClick)
+        AlbumHeaderAction(AlbumFolderVector, "文件夹", onFolderClick, hazeState)
+        AlbumHeaderAction(AlbumSortVector, "排序", onSortClick, hazeState)
+        AlbumHeaderAction(AlbumGridVector, "网格布局", onGridClick, hazeState)
     }
 }
 
@@ -251,21 +255,27 @@ internal fun AlbumHeaderActionButtons(
 private fun AlbumHeaderAction(
     icon: ImageVector,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    hazeState: HazeState
 ) {
-    Surface(
-        modifier = Modifier.size(36.dp).clickable(onClick = onClick),
-        shape = androidx.compose.foundation.shape.CircleShape,
-        color = Color.White,
-        shadowElevation = 1.dp
-    ) {
-        androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
-            androidx.compose.foundation.Image(
-                imageVector = icon,
-                contentDescription = description,
-                modifier = Modifier.size(20.dp)
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier
+            .size(36.dp)
+            .shadow(
+                2.dp,
+                androidx.compose.foundation.shape.CircleShape,
+                ambientColor = Color.Black.copy(alpha = 0.03f),
+                spotColor = Color.Black.copy(alpha = 0.03f)
             )
-        }
+            .blankGlassSurface(hazeState, androidx.compose.foundation.shape.CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.Image(
+            imageVector = icon,
+            contentDescription = description,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 
