@@ -157,7 +157,7 @@ internal fun BottomNavigation(
         }
     }
     androidx.compose.material3.Surface(
-        modifier = Modifier.size(56.dp).clickable(onClick = onSearchClick),
+        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).size(56.dp).clickable(onClick = onSearchClick),
         shape = CircleShape,
         color = GlassWhite,
         shadowElevation = 8.dp,
