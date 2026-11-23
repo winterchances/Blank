@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,7 +55,7 @@ internal fun FavoritesContent(
         }
 
         if (assets.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text(
                     if (selectedTab == 0) "还没有收藏的照片" else "还没有受保护的照片",
                     color = MutedText,
@@ -131,9 +131,10 @@ private fun CollectionTab(
             Modifier
                 .clip(RoundedCornerShape(2.dp))
                 .background(if (selected) ThemeMint else Color.Transparent)
-                .fillMaxWidth()
                 .padding(horizontal = 4.dp)
+                .then(Modifier)
                 .padding(vertical = 1.dp)
+                .fillMaxWidth()
         )
     }
 }
