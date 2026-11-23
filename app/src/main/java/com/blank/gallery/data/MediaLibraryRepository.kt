@@ -78,6 +78,8 @@ class MediaLibraryRepository(context: Context) {
     }
     val folders = dao.observeFolders()
     val months = dao.observeMonths()
+    val favorites = dao.observeFavorites()
+    val protectedMedia = dao.observeProtectedMedia()
     val photoCount = dao.observePhotoCount()
     val videoCount = dao.observeVideoCount()
     val totalBytes = dao.observeTotalBytes()
