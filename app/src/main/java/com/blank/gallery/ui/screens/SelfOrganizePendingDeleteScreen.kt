@@ -117,15 +117,15 @@ internal fun SelfOrganizePendingDeleteScreen(
                     .fillMaxWidth()
                     .padding(top = 12.dp, bottom = 4.dp)
                     .shadow(
-                        4.dp,
-                        RoundedCornerShape(18.dp),
+                        1.dp,
+                        RoundedCornerShape(16.dp),
                         ambientColor = Color.Black.copy(alpha = 0.02f),
                         spotColor = Color.Black.copy(alpha = 0.02f)
                     )
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(GlassWhite)
                     .clickable(enabled = !isLoading, onClick = onConfirmDelete)
-                    .padding(vertical = 15.dp),
+                    .padding(17.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
