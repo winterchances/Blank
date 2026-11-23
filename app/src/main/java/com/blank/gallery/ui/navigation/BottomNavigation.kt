@@ -109,14 +109,11 @@ internal fun BottomNavigation(
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Box(modifier = modifier.fillMaxWidth()) {
     BoxWithConstraints(
         Modifier
-            .weight(1f)
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 62.dp)
             .height(56.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(GlassWhite)
