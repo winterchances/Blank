@@ -317,6 +317,9 @@ class MediaLibraryRepository(context: Context) {
     suspend fun nextSelfOrganizePhoto(random: Boolean): MediaAsset? =
         if (random) dao.getNextRandomSelfOrganizePhoto() else dao.getNextOrderedSelfOrganizePhoto()
 
+    suspend fun peekNextSelfOrganizePhoto(random: Boolean, currentId: Long): MediaAsset? =
+        if (random) dao.getNextRandomSelfOrganizePreview(currentId) else dao.getNextOrderedSelfOrganizePreview(currentId)
+
     suspend fun applySelfOrganizeDecision(id: Long, status: Int) {
         dao.applySelfOrganizeDecision(id, status)
     }
