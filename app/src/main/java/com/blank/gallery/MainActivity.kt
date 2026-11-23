@@ -283,7 +283,7 @@ private fun BlankApp() {
                     }
                 }
             } catch (_: Exception) {
-                smartErrors = smartErrors + (organizeSubPage to "保存整理决定失败，请重试")
+                organizeSubPage?.let { page -> smartErrors = smartErrors + (page to "保存整理决定失败，请重试") }
             }
         }
     }
