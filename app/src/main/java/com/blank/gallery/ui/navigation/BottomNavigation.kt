@@ -7,6 +7,10 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -131,7 +135,7 @@ internal fun BottomNavigation(
         val target = slot * MainPage.values().indexOf(currentPage)
         val offset by animateDpAsState(
             target,
-            tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)),
             label = "nav-indicator"
         )
         Box(
@@ -148,7 +152,7 @@ internal fun BottomNavigation(
                         .weight(1f)
                         .height(48.dp)
                         .clip(CircleShape)
-                        .clickable { onSelect(page) },
+                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(page) },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -157,8 +161,10 @@ internal fun BottomNavigation(
                     Text(
                         text = page.title,
                         fontSize = 10.sp,
+                        lineHeight = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = MainText
+                        color = MainText,
+                        style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
                     )
                 }
             }
