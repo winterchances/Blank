@@ -311,7 +311,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0
           AND selfOrganizeStatus IN (0, 3)
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  selfOrganizeSkipOrder ASC,
@@ -323,7 +323,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0
           AND selfOrganizeStatus IN (0, 3)
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  CASE WHEN selfOrganizeStatus = 3 THEN selfOrganizeSkipOrder END ASC,
@@ -339,7 +339,7 @@ interface MediaAssetDao {
                COUNT(CASE WHEN selfOrganizeStatus = 2 THEN 1 END) AS pendingDeleteCount,
                COUNT(CASE WHEN selfOrganizeStatus = 3 THEN 1 END) AS skippedCount
         FROM media_assets
-        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0
     """)
     fun observeSelfOrganizeSummary(): Flow<SelfOrganizeSummary>
 
@@ -358,7 +358,7 @@ interface MediaAssetDao {
     @Transaction
     suspend fun cancelSelfOrganizePendingDelete(id: Long) {
         val asset = findById(id) ?: return
-        if (!asset.isVisible || asset.mediaType != 1 || asset.isProtected || asset.selfOrganizeStatus != 2) return
+        if (!asset.isVisible || asset.mediaType !in 1..2 || asset.isProtected || asset.selfOrganizeStatus != 2) return
         val action = getLastSelfOrganizeActionForAsset(id)
         if (action != null) {
             restoreSelfOrganizeState(id, action.previousStatus, action.previousSkipOrder)
@@ -368,7 +368,7 @@ interface MediaAssetDao {
         }
     }
 
-    @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND selfOrganizeStatus = 2")
+    @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0 AND mediaType IN (1, 2) AND selfOrganizeStatus = 2")
     suspend fun getVisibleUnprotectedPendingSelfOrganizePhotos(ids: List<Long>): List<MediaAsset>
 
     @Query("SELECT * FROM media_assets WHERE id = :id LIMIT 1")
@@ -399,7 +399,7 @@ interface MediaAssetDao {
     suspend fun applySelfOrganizeDecision(id: Long, status: Int) {
         if (status !in 1..3) return
         val current = findById(id) ?: return
-        if (!current.isVisible || current.mediaType != 1 || current.isProtected ||
+        if (!current.isVisible || current.mediaType !in 1..2 || current.isProtected ||
             current.selfOrganizeStatus !in listOf(0, 3)
         ) return
         insertSelfOrganizeAction(
