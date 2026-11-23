@@ -78,16 +78,25 @@ internal fun SelfOrganizePendingDeleteScreen(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        AsyncImage(
-                            model = asset.contentUri,
-                            contentDescription = asset.displayName,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color.Black.copy(alpha = 0.035f))
-                        )
+                        if (asset.mediaType == 2) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color.Black.copy(alpha = 0.045f)),
+                                contentAlignment = Alignment.Center
+                            ) { Text("视频", color = MutedText, fontSize = 11.sp) }
+                        } else {
+                            AsyncImage(
+                                model = asset.contentUri,
+                                contentDescription = asset.displayName,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color.Black.copy(alpha = 0.035f))
+                            )
+                        }
                         Text(
                             asset.displayName,
                             color = MainText,
