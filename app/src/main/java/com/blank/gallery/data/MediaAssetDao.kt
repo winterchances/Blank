@@ -371,7 +371,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType = 1 AND isProtected = 0
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0
           AND selfOrganizeStatus = 2
         ORDER BY CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC,
                  id DESC
@@ -452,7 +452,7 @@ interface MediaAssetDao {
         return current?.copy(
             selfOrganizeStatus = action.previousStatus,
             selfOrganizeSkipOrder = action.previousSkipOrder
-        )?.takeIf { it.isVisible && it.mediaType == 1 && !it.isProtected }
+        )?.takeIf { it.isVisible && it.mediaType in 1..2 && !it.isProtected }
     }
 
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
