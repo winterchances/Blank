@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -65,7 +65,7 @@ internal fun FavoritesContent(
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(9.dp),
                 verticalArrangement = Arrangement.spacedBy(13.dp)
             ) {
@@ -131,10 +131,8 @@ private fun CollectionTab(
             Modifier
                 .clip(RoundedCornerShape(2.dp))
                 .background(if (selected) ThemeMint else Color.Transparent)
-                .padding(horizontal = 4.dp)
-                .then(Modifier)
-                .padding(vertical = 1.dp)
-                .fillMaxWidth()
+                .width(24.dp)
+                .height(2.dp)
         )
     }
 }
