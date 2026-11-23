@@ -53,6 +53,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,6 +81,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.consume
+import kotlin.math.abs
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.blur
@@ -596,6 +604,13 @@ private fun BlankApp() {
                         )
                         .blur(if (deleteConfirmationVisible || selfOrganizeDeleteConfirmationVisible) 5.dp else 0.dp)
                         .hazeSource(hazeState)
+                        .mainPageSwipe(
+                            currentPage = currentPage,
+                            enabled = organizeSubPage == null && selectedMedia.isEmpty() &&
+                                !albumDrawerState.isOpen && !deleteConfirmationVisible &&
+                                !selfOrganizeDeleteConfirmationVisible && !isAlbumSearchVisible,
+                            onPageChange = { currentPage = it }
+                        )
                 ) {
                     val selectionMode = currentPage == MainPage.ALBUMS && selectedMedia.isNotEmpty()
                     PageHeader(
@@ -851,6 +866,35 @@ private fun BlankApp() {
 }
 
 private enum class AlbumOptionsSheetType { VIEW_SORT }
+
+private fun Modifier.mainPageSwipe(
+    currentPage: MainPage,
+    enabled: Boolean,
+    onPageChange: (MainPage) -> Unit
+): Modifier = pointerInput(currentPage, enabled) {
+    if (!enabled) return@pointerInput
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        var total = Offset.Zero
+        val touchSlop = viewConfiguration.touchSlop
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+            if (!change.pressed) break
+            total += change.positionChange()
+            if (abs(total.x) > touchSlop && abs(total.x) > abs(total.y) * 1.2f) {
+                val pages = MainPage.values()
+                val index = pages.indexOf(currentPage)
+                val nextIndex = if (total.x < 0f) index + 1 else index - 1
+                if (nextIndex in pages.indices) onPageChange(pages[nextIndex])
+                change.consume()
+                break
+            }
+        }
+    }
+}
+
+
 
 @Composable
 private fun PageHeader(
