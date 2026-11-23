@@ -129,14 +129,25 @@ internal fun SmartAnalysisScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                AsyncImage(
-                                    model = asset.contentUri,
-                                    contentDescription = asset.displayName,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.width(76.dp).aspectRatio(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color.Black.copy(alpha = 0.035f))
-                                )
+                                if (asset.mediaType == 2) {
+                                    Box(
+                                        modifier = Modifier.width(76.dp).aspectRatio(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(Color.Black.copy(alpha = 0.045f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("视频", color = MutedText, fontSize = 11.sp)
+                                    }
+                                } else {
+                                    AsyncImage(
+                                        model = asset.contentUri,
+                                        contentDescription = asset.displayName,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.width(76.dp).aspectRatio(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(Color.Black.copy(alpha = 0.035f))
+                                    )
+                                }
                                 Column(
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(5.dp)
