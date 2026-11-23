@@ -565,7 +565,8 @@ private fun BlankApp() {
                         showAlbumActions = currentPage == MainPage.ALBUMS && !selectionMode,
                         onFolderClick = { scope.launch { albumDrawerState.open() } },
                         onSortClick = { albumOptionsSheet = AlbumOptionsSheetType.SORT },
-                        onGridClick = { albumOptionsSheet = AlbumOptionsSheetType.GRID }
+                        onGridClick = { albumOptionsSheet = AlbumOptionsSheetType.GRID },
+                        hazeState = hazeState
                     )
                     if (organizeSubPage != null) {
                         if (isShowingSelfPendingDelete) {
