@@ -17,7 +17,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -61,8 +60,6 @@ internal fun EmptyState(
             .padding(vertical = if (compact) 8.dp else 20.dp),
         color = MutedText,
         fontSize = 14.sp,
-        textAlign = TextAlign.Center,
-        lineHeight = 19.sp
     )
 }
 
