@@ -169,6 +169,8 @@ internal fun AlbumsContent(
     searchQuery: String,
     months: List<MediaMonth>,
     selectedMonthKey: String?,
+    selectedFolderPath: String?,
+    onOpenFolders: () -> Unit,
     onMonthSelect: (String?) -> Unit,
     selectedIds: Set<Long>,
     onToggleSelection: (MediaAsset) -> Unit
@@ -196,6 +198,9 @@ internal fun AlbumsContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 2.dp, bottom = 25.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            item(key = "folder-entry") {
+                AlbumFilterChip("文件夹", selectedFolderPath != null, onClick = onOpenFolders)
+            }
             if (months.isNotEmpty()) {
                 item(key = "all-months") {
                     AlbumFilterChip("全部月份", selectedMonthKey == null) { onMonthSelect(null) }
