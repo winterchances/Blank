@@ -8,6 +8,8 @@ import com.blank.gallery.data.SelfOrganizeSummary
 import com.blank.gallery.domain.SelfOrganizeDecision
 import com.blank.gallery.domain.SelfOrganizeManager
 import com.blank.gallery.domain.SelfOrganizeMode
+import com.blank.gallery.domain.SmartAnalysisType
+import com.blank.gallery.domain.SmartAnalysisTaskState
 import com.blank.gallery.ui.navigation.BottomNavigation
 import com.blank.gallery.ui.navigation.MainPage
 import com.blank.gallery.ui.screens.AlbumBatchActionBar
@@ -18,6 +20,7 @@ import com.blank.gallery.ui.screens.AlbumOptionsSheet
 import com.blank.gallery.ui.screens.AlbumSearchSheet
 import com.blank.gallery.ui.screens.AlbumsContent
 import com.blank.gallery.ui.screens.FavoritesContent
+import com.blank.gallery.ui.screens.SmartAnalysisScreen
 import com.blank.gallery.ui.screens.HomeContent
 import com.blank.gallery.ui.screens.OrganizeContent
 import com.blank.gallery.ui.screens.OrganizeSubPage
@@ -64,6 +67,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -94,6 +99,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BlankApp() {
     val context = LocalContext.current
@@ -107,6 +113,13 @@ private fun BlankApp() {
     val selfOrganizeSummary by selfOrganizeManager.summary.collectAsState(initial = SelfOrganizeSummary())
     val canUndoSelfOrganize by selfOrganizeManager.canUndo.collectAsState(initial = false)
     val selfOrganizePendingDelete by selfOrganizeManager.pendingDelete.collectAsState(initial = emptyList())
+    val favorites by repository.favorites.collectAsState(initial = emptyList())
+    val protectedMedia by repository.protectedMedia.collectAsState(initial = emptyList())
+    val smartAnalysisStates by repository.smartAnalysisStates.collectAsState()
+    var smartResults by remember { mutableStateOf<Map<OrganizeSubPage, List<MediaAsset>>>(emptyMap()) }
+    var smartAnalyzedPages by remember { mutableStateOf<Set<OrganizeSubPage>>(emptySet()) }
+    var smartErrors by remember { mutableStateOf<Map<OrganizeSubPage, String>>(emptyMap()) }
+
 
     var currentPage by remember { mutableStateOf(MainPage.HOME) }
     var organizeSubPage by remember { mutableStateOf<OrganizeSubPage?>(null) }
@@ -219,6 +232,40 @@ private fun BlankApp() {
         continueLegacyDelete = null
         if (result.resultCode == Activity.RESULT_OK) continuation?.invoke()
         else finishLegacyDelete?.invoke()
+    }
+
+    fun smartTypeFor(page: OrganizeSubPage): SmartAnalysisType? = when (page) {
+        OrganizeSubPage.DUPLICATES -> SmartAnalysisType.DUPLICATES
+        OrganizeSubPage.SIMILAR -> SmartAnalysisType.SIMILAR_PHOTOS
+        OrganizeSubPage.BURSTS -> SmartAnalysisType.BURST_PHOTOS
+        OrganizeSubPage.SCREENSHOTS -> SmartAnalysisType.SCREENSHOTS
+        OrganizeSubPage.LARGE_FILES -> SmartAnalysisType.LARGE_MEDIA
+        else -> null
+    }
+
+    fun runSmartAnalysis(page: OrganizeSubPage) {
+        scope.launch {
+            try {
+                val assets = when (page) {
+                    OrganizeSubPage.DUPLICATES -> repository.analyzeDuplicateMedia().groups.flatMap { it.items }
+                    OrganizeSubPage.SIMILAR -> repository.analyzeSimilarPhotos().groups.flatMap { it.items }
+                    OrganizeSubPage.BURSTS -> repository.analyzeBurstPhotos().groups.flatMap { it.items }
+                    OrganizeSubPage.SCREENSHOTS -> repository.analyzeScreenshots().matches.map { it.asset }
+                    OrganizeSubPage.LARGE_FILES -> repository.analyzeLargeMedia().items
+                    else -> emptyList()
+                }
+                smartResults = smartResults + (page to assets.distinctBy { it.id })
+                smartAnalyzedPages = smartAnalyzedPages + page
+                smartErrors = smartErrors - page
+            } catch (error: Exception) {
+                smartErrors = smartErrors + (page to (error.message ?: "分析失败，请稍后重试"))
+            }
+        }
+    }
+
+    LaunchedEffect(organizeSubPage) {
+        val page = organizeSubPage
+        if (page != null && smartTypeFor(page) != null && page !in smartAnalyzedPages) runSmartAnalysis(page)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -520,6 +567,7 @@ private fun BlankApp() {
             onSurface = MainText
         )
     ) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalRippleConfiguration provides null) {
         androidx.compose.material3.ModalNavigationDrawer(
             drawerState = albumDrawerState,
             gesturesEnabled = currentPage == MainPage.ALBUMS && albumFolders.isNotEmpty(),
@@ -564,9 +612,7 @@ private fun BlankApp() {
                         },
                         backLabel = if (selectionMode) "×" else "‹",
                         showAlbumActions = currentPage == MainPage.ALBUMS && !selectionMode,
-                        onFolderClick = { scope.launch { albumDrawerState.open() } },
-                        onSortClick = { albumOptionsSheet = AlbumOptionsSheetType.SORT },
-                        onGridClick = { albumOptionsSheet = AlbumOptionsSheetType.GRID },
+                        onViewSortClick = { albumOptionsSheet = AlbumOptionsSheetType.VIEW_SORT },
                         hazeState = hazeState
                     )
                     if (organizeSubPage != null) {
@@ -608,7 +654,25 @@ private fun BlankApp() {
                                 onOpenPendingDelete = { isShowingSelfPendingDelete = true }
                             )
                         } else {
-                            OrganizeSubPageContent(page = organizeSubPage!!)
+                            val page = organizeSubPage!!
+                            val type = smartTypeFor(page)
+                            val state = type?.let { smartAnalysisStates[it] }
+                            SmartAnalysisScreen(
+                                page = page,
+                                assets = smartResults[page].orEmpty(),
+                                hasAnalyzed = page in smartAnalyzedPages,
+                                isRunning = state is SmartAnalysisTaskState.Running || state is SmartAnalysisTaskState.Cancelling,
+                                progressText = when (state) {
+                                    is SmartAnalysisTaskState.Running -> "已分析 ${state.completed} / ${state.total}"
+                                    is SmartAnalysisTaskState.Completed -> "分析完成 · 共检查 ${state.completed} 项"
+                                    else -> null
+                                },
+                                errorText = smartErrors[page] ?: (state as? SmartAnalysisTaskState.Failed)?.message,
+                                onStart = { runSmartAnalysis(page) },
+                                onCancel = {
+                                    type?.let { analysisType -> scope.launch { repository.cancelSmartAnalysis(analysisType) } }
+                                }
+                            )
                         }
                     } else {
                         AnimatedContent(
@@ -649,6 +713,8 @@ private fun BlankApp() {
                                 searchQuery = albumSearchQuery,
                                 months = albumMonths,
                                 selectedMonthKey = selectedMonthKey,
+                                selectedFolderPath = selectedFolderPath,
+                                onOpenFolders = { scope.launch { albumDrawerState.open() } },
                                 onMonthSelect = { selectedMedia = emptyMap(); selectedMonthKey = it },
                                 selectedIds = selectedMedia.keys,
                                 onToggleSelection = { asset ->
@@ -663,7 +729,12 @@ private fun BlankApp() {
                                 onOpenCategory = { organizeSubPage = it },
                                 onOpenSelfMode = { organizeSubPage = it }
                             )
-                            MainPage.FAVORITES -> FavoritesContent()
+                            MainPage.FAVORITES -> FavoritesContent(
+                                favorites = favorites,
+                                protectedMedia = protectedMedia,
+                                onToggleFavorite = { asset -> scope.launch { repository.setFavorite(asset.id, false) } },
+                                onToggleProtected = { asset -> scope.launch { repository.setProtected(asset.id, false) } }
+                            )
                             }
                         }
                     }
@@ -728,17 +799,18 @@ private fun BlankApp() {
                 if (albumOptionsSheet != null) {
                     val sheetType = albumOptionsSheet!!
                     val options = when (sheetType) {
-                        AlbumOptionsSheetType.SORT -> listOf("按时间排序", "按文件大小排序")
-                        AlbumOptionsSheetType.GRID -> listOf("四宫格", "三宫格")
+                        AlbumOptionsSheetType.VIEW_SORT -> listOf("四宫格", "三宫格", "按时间排序", "按文件大小排序")
                     }
                     AlbumOptionsSheet(
-                        title = if (sheetType == AlbumOptionsSheetType.SORT) "排序方式" else "网格布局",
+                        title = "视图与排序",
                         options = options,
                         onSelect = { selected ->
                             selectedMedia = emptyMap()
-                            when (sheetType) {
-                                AlbumOptionsSheetType.SORT -> albumSortBySize = selected == "按文件大小排序"
-                                AlbumOptionsSheetType.GRID -> albumGridColumns = if (selected == "四宫格") 4 else 3
+                            when (selected) {
+                                "四宫格" -> albumGridColumns = 4
+                                "三宫格" -> albumGridColumns = 3
+                                "按时间排序" -> albumSortBySize = false
+                                "按文件大小排序" -> albumSortBySize = true
                             }
                             albumOptionsSheet = null
                         },
@@ -774,10 +846,11 @@ private fun BlankApp() {
             }
         }
         }
+        }
     }
 }
 
-private enum class AlbumOptionsSheetType { SORT, GRID }
+private enum class AlbumOptionsSheetType { VIEW_SORT }
 
 @Composable
 private fun PageHeader(
@@ -785,9 +858,7 @@ private fun PageHeader(
     onBack: (() -> Unit)? = null,
     backLabel: String = "‹",
     showAlbumActions: Boolean = false,
-    onFolderClick: () -> Unit = {},
-    onSortClick: () -> Unit = {},
-    onGridClick: () -> Unit = {},
+    onViewSortClick: () -> Unit = {},
     hazeState: HazeState
 ) {
     Row(
@@ -817,9 +888,7 @@ private fun PageHeader(
         )
         if (showAlbumActions) {
             AlbumHeaderActionButtons(
-                onFolderClick = onFolderClick,
-                onSortClick = onSortClick,
-                onGridClick = onGridClick,
+                onViewSortClick = onViewSortClick,
                 hazeState = hazeState
             )
         }
