@@ -123,7 +123,7 @@ internal fun BottomNavigation(
         val target = slot * MainPage.values().indexOf(currentPage)
         val offset by animateDpAsState(
             target,
-            tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(.25f, 1f, .5f, 1f)),
+            tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing),
             label = "nav-indicator"
         )
         Box(
