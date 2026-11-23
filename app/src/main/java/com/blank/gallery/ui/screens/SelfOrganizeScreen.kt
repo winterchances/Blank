@@ -77,7 +77,7 @@ internal fun SelfOrganizeScreen(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "剩余 ${summary.remainingCount} 张",
+                    "剩余 ${summary.remainingCount} 项",
                     color = MainText,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
@@ -185,6 +185,16 @@ internal fun SelfOrganizeScreen(
                             }
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color.White)
+                    )
+                }
+                if (asset.mediaType == 2) {
+                    Text(
+                        "视频",
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
+                            .clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.55f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = Color.White,
+                        fontSize = 11.sp
                     )
                 }
                 AnimatedContent(
