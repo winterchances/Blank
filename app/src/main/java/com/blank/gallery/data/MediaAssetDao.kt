@@ -268,6 +268,12 @@ interface MediaAssetDao {
     """)
     fun observeMonths(): Flow<List<MediaMonth>>
 
+    @Query("SELECT * FROM media_assets WHERE isVisible = 1 AND isFavorite = 1 ORDER BY dateAddedSeconds DESC, id DESC")
+    fun observeFavorites(): Flow<List<MediaAsset>>
+
+    @Query("SELECT * FROM media_assets WHERE isVisible = 1 AND isProtected = 1 ORDER BY dateAddedSeconds DESC, id DESC")
+    fun observeProtectedMedia(): Flow<List<MediaAsset>>
+
     @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND mediaType = 1")
     fun observePhotoCount(): Flow<Int>
 
