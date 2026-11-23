@@ -47,7 +47,7 @@ internal fun SelfOrganizePendingDeleteScreen(
             .padding(horizontal = 20.dp)
     ) {
         Text(
-            "这些照片只是删除候选，尚未从设备中删除。你可以逐张撤回，确认后才会交给系统处理。",
+            "这些媒体只是删除候选，尚未从设备中删除。你可以逐项撤回，确认后才会交给系统处理。",
             color = MutedText,
             fontSize = 13.sp,
             lineHeight = 19.sp,
@@ -64,7 +64,7 @@ internal fun SelfOrganizePendingDeleteScreen(
 
         if (assets.isEmpty()) {
             EmptyState(
-                message = "暂时没有待删除的照片",
+                message = "暂时没有待删除的媒体",
                 modifier = Modifier.weight(1f)
             )
         } else {
