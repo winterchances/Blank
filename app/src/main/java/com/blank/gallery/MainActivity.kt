@@ -713,7 +713,7 @@ private fun BlankApp() {
                             currentPage = currentPage,
                             onSelect = { selectedMedia = emptyMap(); currentPage = it },
                             onSearchClick = { isAlbumSearchVisible = true },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
