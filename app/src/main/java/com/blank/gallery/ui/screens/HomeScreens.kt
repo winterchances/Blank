@@ -178,8 +178,6 @@ internal fun AlbumsContent(
     mediaType: Int?,
     onMediaTypeChange: (Int?) -> Unit,
     searchQuery: String,
-    selectedFolderPath: String?,
-    onOpenFolderDrawer: () -> Unit,
     months: List<MediaMonth>,
     selectedMonthKey: String?,
     onMonthSelect: (String?) -> Unit,
@@ -358,7 +356,7 @@ private fun AlbumMediaTypeTab(
             text = label,
             color = if (selected) MainText else MutedText,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            fontSize = 15.sp
+            fontSize = 16.sp
         )
         if (selected) {
             Spacer(
