@@ -50,7 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import android.os.Environment
 import android.os.StatFs
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -82,7 +81,8 @@ internal fun HomeContent(
 ) {
     val context = LocalContext.current
     val storage = runCatching {
-        val stat = StatFs(Environment.getDataDirectory().absolutePath)
+        val storagePath = context.getExternalFilesDir(null)?.absolutePath ?: context.filesDir.absolutePath
+        val stat = StatFs(storagePath)
         stat.blockSizeLong * stat.blockCountLong to stat.availableBytes
     }.getOrDefault(0L to 0L)
     val deviceTotalBytes = storage.first.coerceAtLeast(0L)
