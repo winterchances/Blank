@@ -27,6 +27,8 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.map as flowMap
 import java.util.UUID
 
@@ -35,6 +37,7 @@ class MediaLibraryRepository(context: Context) {
     private val database = BlankDatabase.getInstance(appContext)
     private val scanner = MediaStoreScanner(context)
     private val dao = database.mediaAssetDao()
+    private val scanMutex = Mutex()
     private val duplicateMediaAnalyzer = DuplicateMediaAnalyzer(context, dao)
     private val similarPhotoAnalyzer = SimilarPhotoAnalyzer(context, dao)
     private val burstPhotoAnalyzer = BurstPhotoAnalyzer(context, dao)
@@ -116,7 +119,7 @@ class MediaLibraryRepository(context: Context) {
         includeVideos: Boolean,
         permissionScope: String,
         onProgress: suspend (Int) -> Unit = {}
-    ): Int {
+    ): Int = scanMutex.withLock {
         if (MediaPermission.accessScope(appContext) != permissionScope) {
             dao.hideAllBeforePermissionScopedScan()
             throw SecurityException("Media access scope changed before scan")
@@ -207,7 +210,7 @@ class MediaLibraryRepository(context: Context) {
         }
         editor.apply()
         _lastScanAt.value = completedAt
-        return scannedCount
+        scannedCount
     }
 
     suspend fun analyzeDuplicateMedia(
