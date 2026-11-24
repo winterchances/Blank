@@ -323,16 +323,15 @@ class MediaLibraryRepository(context: Context) {
     suspend fun peekNextSelfOrganizePhotos(random: Boolean, currentId: Long): List<MediaAsset> =
         if (random) dao.getNextRandomSelfOrganizePreviews(currentId) else dao.getNextOrderedSelfOrganizePreviews(currentId)
 
-    suspend fun applySelfOrganizeDecision(id: Long, status: Int) {
+    suspend fun applySelfOrganizeDecision(id: Long, status: Int): Boolean =
         dao.applySelfOrganizeDecision(id, status)
-    }
 
     suspend fun undoLastSelfOrganizeDecision(): MediaAsset? =
         dao.undoLastSelfOrganizeDecision()
 
-    suspend fun setSelfOrganizeStatus(id: Long, status: Int) {
-        dao.setSelfOrganizeStatus(id, status)
-    }
+    /** Apply a guarded, undoable decision for smart-analysis results as well. */
+    suspend fun setSelfOrganizeStatus(id: Long, status: Int): Boolean =
+        dao.applySelfOrganizeDecision(id, status)
 
     suspend fun cancelSelfOrganizePendingDelete(id: Long) {
         dao.cancelSelfOrganizePendingDelete(id)
