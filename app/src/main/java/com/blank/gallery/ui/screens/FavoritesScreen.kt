@@ -122,18 +122,22 @@ private fun CollectionTab(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        Text(
-            title,
-            color = if (selected) MainText else MutedText,
-            fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
-        )
-        Text(
-            count.toString(),
-            color = MutedText,
-            fontSize = 10.sp,
-            modifier = Modifier.padding(top = 1.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                title,
+                color = if (selected) MainText else MutedText,
+                fontSize = 14.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+            )
+            Text(
+                count.toString(),
+                color = MutedText,
+                fontSize = 10.sp
+            )
+        }
         Box(
             Modifier
                 .clip(RoundedCornerShape(2.dp))
