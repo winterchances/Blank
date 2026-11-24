@@ -285,10 +285,17 @@ private fun BlankApp() {
     fun decideSmartAsset(asset: MediaAsset, status: Int) {
         scope.launch {
             try {
-                repository.setSelfOrganizeStatus(asset.id, status)
+                val applied = repository.setSelfOrganizeStatus(asset.id, status)
                 smartResults = smartResults.mapValues { (_, groups) ->
                     groups.mapNotNull { group ->
                         group.filterNot { it.id == asset.id }.takeIf { it.isNotEmpty() }
+                    }
+                }
+                organizeSubPage?.let { page ->
+                    smartErrors = if (applied) {
+                        smartErrors - page
+                    } else {
+                        smartErrors + (page to "这张照片的状态已变化，已跳过该操作")
                     }
                 }
             } catch (_: Exception) {
