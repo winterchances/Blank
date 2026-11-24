@@ -512,7 +512,6 @@ private fun BlankApp() {
             }
         } else {
             selfOrganizePhoto = null
-            selfOrganizeNextPhoto = null
             selfOrganizePreviewPhotos = emptyList()
         }
     }
@@ -549,9 +548,6 @@ private fun BlankApp() {
                 val restored = selfOrganizeManager.undo()
                 val next = restored ?: selfOrganizeManager.nextPhoto(mode)
                 selfOrganizePhoto = next
-                selfOrganizeNextPhoto = next?.let {
-                    selfOrganizeManager.peekNextPhoto(mode, it.id)
-                }
                 selfOrganizePreviewPhotos = next?.let {
                     selfOrganizeManager.peekNextPhotos(mode, it.id)
                 }.orEmpty()
