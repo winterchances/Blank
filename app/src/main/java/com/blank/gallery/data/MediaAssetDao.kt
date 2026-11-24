@@ -608,7 +608,7 @@ interface MediaAssetDao {
     @Query("""
         UPDATE media_assets SET
             selfOrganizeStatus = CASE WHEN :protectedValue = 1 OR isFavorite = 1 THEN 1 ELSE selfOrganizeStatus END,
-            selfOrganizeSkipOrder = CASE WHEN :protectedValue = 1 OR isFavorite = 1 THEN 1 ELSE selfOrganizeSkipOrder END,
+            selfOrganizeSkipOrder = CASE WHEN :protectedValue = 1 OR isFavorite = 1 THEN 0 ELSE selfOrganizeSkipOrder END,
             isProtected = :protectedValue
         WHERE id IN (:ids)
     """)
