@@ -172,7 +172,9 @@ internal fun SelfOrganizeScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                previewAssets.take(3).asReversed().forEachIndexed { stackIndex, preview ->
+                val visiblePreviewCount = previewAssets.take(3).size
+                previewAssets.take(3).asReversed().forEachIndexed { layerIndex, preview ->
+                    val stackIndex = layerIndex + (3 - visiblePreviewCount)
                     val rotations = listOf(-3.2f, 2.4f, -1.3f)
                     val horizontalOffsets = listOf((-13).dp, 11.dp, (-4).dp)
                     val verticalOffsets = listOf((-5).dp, 8.dp, 20.dp)
