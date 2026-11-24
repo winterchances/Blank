@@ -525,7 +525,8 @@ private fun BlankApp() {
         scope.launch {
             try {
                 selfOrganizeManager.applyDecision(current.id, decision)
-                val next = selfOrganizeManager.nextPhoto(mode)
+                val next = selfOrganizePreviewPhotos.firstOrNull()
+                    ?: selfOrganizeManager.nextPhoto(mode)
                 selfOrganizePhoto = next
                 selfOrganizePreviewPhotos = next?.let {
                     selfOrganizeManager.peekNextPhotos(mode, it.id)
