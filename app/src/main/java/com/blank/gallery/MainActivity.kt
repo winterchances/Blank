@@ -145,7 +145,6 @@ private fun BlankApp() {
     var scannedItems by remember { mutableStateOf(0) }
     var scanMessage by remember { mutableStateOf<String?>(null) }
     var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
-    var selfOrganizeNextPhoto by remember { mutableStateOf<MediaAsset?>(null) }
     var selfOrganizePreviewPhotos by remember { mutableStateOf<List<MediaAsset>>(emptyList()) }
     var isSelfOrganizeLoading by remember { mutableStateOf(false) }
     var selfOrganizeMessage by remember { mutableStateOf<String?>(null) }
@@ -500,16 +499,12 @@ private fun BlankApp() {
             selfOrganizeMessage = null
             if (!hasPhotoAccess || isScanning) {
                 selfOrganizePhoto = null
-                selfOrganizeNextPhoto = null
                 selfOrganizePreviewPhotos = emptyList()
                 isSelfOrganizeLoading = false
             } else {
                 isSelfOrganizeLoading = true
                 val next = selfOrganizeManager.nextPhoto(activeSelfOrganizeMode)
                 selfOrganizePhoto = next
-                selfOrganizeNextPhoto = next?.let {
-                    selfOrganizeManager.peekNextPhoto(activeSelfOrganizeMode, it.id)
-                }
                 selfOrganizePreviewPhotos = next?.let {
                     selfOrganizeManager.peekNextPhotos(activeSelfOrganizeMode, it.id)
                 }.orEmpty()
@@ -533,9 +528,6 @@ private fun BlankApp() {
                 selfOrganizeManager.applyDecision(current.id, decision)
                 val next = selfOrganizeManager.nextPhoto(mode)
                 selfOrganizePhoto = next
-                selfOrganizeNextPhoto = next?.let {
-                    selfOrganizeManager.peekNextPhoto(mode, it.id)
-                }
                 selfOrganizePreviewPhotos = next?.let {
                     selfOrganizeManager.peekNextPhotos(mode, it.id)
                 }.orEmpty()
@@ -707,7 +699,6 @@ private fun BlankApp() {
                         } else if (activeSelfOrganizeMode != null) {
                             SelfOrganizeScreen(
                                 asset = selfOrganizePhoto,
-                                nextAsset = selfOrganizeNextPhoto,
                                 previewAssets = selfOrganizePreviewPhotos,
                                 summary = selfOrganizeSummary,
                                 canUndo = canUndoSelfOrganize,
