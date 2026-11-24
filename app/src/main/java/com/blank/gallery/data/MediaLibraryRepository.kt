@@ -77,6 +77,7 @@ class MediaLibraryRepository(context: Context) {
         }
     }
     val folders = dao.observeFolders()
+    val protectedFolderPaths = dao.observeProtectedFolderPaths()
     val months = dao.observeMonths()
     val favorites = dao.observeFavorites()
     val protectedMedia = dao.observeProtectedMedia()
@@ -299,6 +300,16 @@ class MediaLibraryRepository(context: Context) {
 
     suspend fun setProtected(id: Long, protected: Boolean) {
         dao.setProtected(id, protected)
+    }
+
+    suspend fun setFolderProtected(relativePath: String, protected: Boolean) {
+        val normalizedPath = relativePath.trimEnd('/') + "/"
+        if (normalizedPath == "/") return
+        if (protected) {
+            dao.addProtectedFolder(ProtectedFolder(normalizedPath))
+        } else {
+            dao.removeProtectedFolder(normalizedPath)
+        }
     }
 
     suspend fun setFavoriteForIds(ids: List<Long>, favorite: Boolean) {
