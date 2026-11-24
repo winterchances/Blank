@@ -285,7 +285,7 @@ private fun BlankApp() {
     fun decideSmartAsset(asset: MediaAsset, status: Int) {
         scope.launch {
             try {
-                val applied = repository.setSelfOrganizeStatus(asset.id, status)
+                val applied = repository.applySmartSelfOrganizeDecision(asset, status)
                 smartResults = smartResults.mapValues { (_, groups) ->
                     groups.mapNotNull { group ->
                         group.filterNot { it.id == asset.id }.takeIf { it.isNotEmpty() }
