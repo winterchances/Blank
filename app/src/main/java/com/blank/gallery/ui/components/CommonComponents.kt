@@ -40,10 +40,10 @@ internal fun FeatureTile(
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
             .padding(horizontal = 12.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MainText)
-        Text(description, fontSize = 13.sp, lineHeight = 19.sp, color = MutedText)
+        Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MainText)
+        Text(description, fontSize = 12.sp, lineHeight = 18.sp, color = MutedText)
     }
 }
 
