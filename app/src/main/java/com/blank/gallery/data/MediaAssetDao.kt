@@ -463,6 +463,16 @@ interface MediaAssetDao {
     }
 
     @Transaction
+    suspend fun applySmartSelfOrganizeDecision(asset: MediaAsset, status: Int): Boolean {
+        val current = findById(asset.id) ?: return false
+        if (current.contentUri != asset.contentUri ||
+            current.sizeBytes != asset.sizeBytes ||
+            current.dateModifiedSeconds != asset.dateModifiedSeconds
+        ) return false
+        return applySelfOrganizeDecision(asset.id, status)
+    }
+
+    @Transaction
     suspend fun undoLastSelfOrganizeDecision(): MediaAsset? {
         val action = getLastSelfOrganizeAction() ?: return null
         val current = findById(action.mediaAssetId)
@@ -635,6 +645,4 @@ interface MediaAssetDao {
         deleteSelfOrganizeActionsForIds(ids)
     }
 
-    @Query("UPDATE media_assets SET selfOrganizeStatus = :status, selfOrganizeSkipOrder = 0 WHERE id = :id")
-    suspend fun setSelfOrganizeStatus(id: Long, status: Int)
 }
