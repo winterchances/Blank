@@ -398,7 +398,8 @@ interface MediaAssetDao {
                COUNT(CASE WHEN selfOrganizeStatus = 2 THEN 1 END) AS pendingDeleteCount,
                COUNT(CASE WHEN selfOrganizeStatus = 3 THEN 1 END) AS skippedCount
         FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0
+          AND (selfOrganizeStatus = 2 OR NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath))
     """)
     fun observeSelfOrganizeSummary(): Flow<SelfOrganizeSummary>
 
