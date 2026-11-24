@@ -146,6 +146,7 @@ private fun BlankApp() {
     var scanMessage by remember { mutableStateOf<String?>(null) }
     var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
     var selfOrganizeNextPhoto by remember { mutableStateOf<MediaAsset?>(null) }
+    var selfOrganizePreviewPhotos by remember { mutableStateOf<List<MediaAsset>>(emptyList()) }
     var isSelfOrganizeLoading by remember { mutableStateOf(false) }
     var selfOrganizeMessage by remember { mutableStateOf<String?>(null) }
     var isShowingSelfPendingDelete by remember { mutableStateOf(false) }
@@ -500,6 +501,7 @@ private fun BlankApp() {
             if (!hasPhotoAccess || isScanning) {
                 selfOrganizePhoto = null
                 selfOrganizeNextPhoto = null
+                selfOrganizePreviewPhotos = emptyList()
                 isSelfOrganizeLoading = false
             } else {
                 isSelfOrganizeLoading = true
@@ -508,11 +510,15 @@ private fun BlankApp() {
                 selfOrganizeNextPhoto = next?.let {
                     selfOrganizeManager.peekNextPhoto(activeSelfOrganizeMode, it.id)
                 }
+                selfOrganizePreviewPhotos = next?.let {
+                    selfOrganizeManager.peekNextPhotos(activeSelfOrganizeMode, it.id)
+                }.orEmpty()
                 isSelfOrganizeLoading = false
             }
         } else {
             selfOrganizePhoto = null
             selfOrganizeNextPhoto = null
+            selfOrganizePreviewPhotos = emptyList()
         }
     }
 
@@ -530,6 +536,9 @@ private fun BlankApp() {
                 selfOrganizeNextPhoto = next?.let {
                     selfOrganizeManager.peekNextPhoto(mode, it.id)
                 }
+                selfOrganizePreviewPhotos = next?.let {
+                    selfOrganizeManager.peekNextPhotos(mode, it.id)
+                }.orEmpty()
             } catch (_: Exception) {
                 selfOrganizeMessage = "整理状态保存失败，请重试"
             } finally {
@@ -551,6 +560,9 @@ private fun BlankApp() {
                 selfOrganizeNextPhoto = next?.let {
                     selfOrganizeManager.peekNextPhoto(mode, it.id)
                 }
+                selfOrganizePreviewPhotos = next?.let {
+                    selfOrganizeManager.peekNextPhotos(mode, it.id)
+                }.orEmpty()
             } catch (_: Exception) {
                 selfOrganizeMessage = "撤销失败，请稍后重试"
             } finally {
@@ -696,6 +708,7 @@ private fun BlankApp() {
                             SelfOrganizeScreen(
                                 asset = selfOrganizePhoto,
                                 nextAsset = selfOrganizeNextPhoto,
+                                previewAssets = selfOrganizePreviewPhotos,
                                 summary = selfOrganizeSummary,
                                 canUndo = canUndoSelfOrganize,
                                 isLoading = isSelfOrganizeLoading,
