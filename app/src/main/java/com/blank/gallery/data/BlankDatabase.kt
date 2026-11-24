@@ -8,8 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [MediaAsset::class, SelfOrganizeActionRecord::class, MediaAnalysisCache::class],
-    version = 9,
+    entities = [MediaAsset::class, SelfOrganizeActionRecord::class, MediaAnalysisCache::class, ProtectedFolder::class],
+    version = 10,
     exportSchema = false
 )
 abstract class BlankDatabase : RoomDatabase() {
@@ -117,6 +117,18 @@ abstract class BlankDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS protected_folders (
+                        relativePath TEXT NOT NULL PRIMARY KEY
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCE: BlankDatabase? = null
 
@@ -127,7 +139,7 @@ abstract class BlankDatabase : RoomDatabase() {
                     BlankDatabase::class.java,
                     "blank-local.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                     .build()
                     .also { INSTANCE = it }
             }
