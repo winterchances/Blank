@@ -329,9 +329,9 @@ class MediaLibraryRepository(context: Context) {
     suspend fun undoLastSelfOrganizeDecision(): MediaAsset? =
         dao.undoLastSelfOrganizeDecision()
 
-    /** Apply a guarded, undoable decision for smart-analysis results as well. */
-    suspend fun setSelfOrganizeStatus(id: Long, status: Int): Boolean =
-        dao.applySelfOrganizeDecision(id, status)
+    /** Apply a smart-analysis decision only if the analyzed media is still current. */
+    suspend fun applySmartSelfOrganizeDecision(asset: MediaAsset, status: Int): Boolean =
+        dao.applySmartSelfOrganizeDecision(asset, status)
 
     suspend fun cancelSelfOrganizePendingDelete(id: Long) {
         dao.cancelSelfOrganizePendingDelete(id)
