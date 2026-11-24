@@ -136,9 +136,10 @@ internal fun AlbumFolderDrawer(
                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
                 items(folders, key = { it.relativePath }) { folder ->
-                    val exactProtected = protectedFolderPaths.contains(folder.relativePath)
+                    val normalizedFolderPath = folder.relativePath.trimEnd('/') + "/"
+                    val exactProtected = protectedFolderPaths.contains(normalizedFolderPath)
                     val protectedByParent = protectedFolderPaths.any { protectedPath ->
-                        protectedPath != folder.relativePath && folder.relativePath.startsWith(protectedPath)
+                        protectedPath != normalizedFolderPath && normalizedFolderPath.startsWith(protectedPath)
                     }
                     FolderDrawerItem(
                         label = folder.relativePath.trimEnd('/'),
