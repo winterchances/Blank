@@ -17,7 +17,6 @@ import com.blank.gallery.ui.screens.AlbumBatchActionBar
 import com.blank.gallery.ui.screens.AlbumDeleteConfirmationSheet
 import com.blank.gallery.ui.screens.AlbumFolderDrawer
 import com.blank.gallery.ui.screens.AlbumHeaderActionButtons
-import com.blank.gallery.ui.screens.AlbumOptionsSheet
 import com.blank.gallery.ui.screens.AlbumSearchSheet
 import com.blank.gallery.ui.screens.AlbumsContent
 import com.blank.gallery.ui.screens.FavoritesContent
