@@ -111,13 +111,16 @@ internal fun AlbumSearchSheet(
 internal fun AlbumFolderDrawer(
     folders: List<MediaFolder>,
     selectedFolderPath: String?,
+    protectedFolderPaths: List<String>,
     onFolderSelect: (String?) -> Unit,
+    onToggleFolderProtection: (String, Boolean) -> Unit,
     hazeState: HazeState
 ) {
     ModalDrawerSheet(
         modifier = Modifier
             .width(300.dp)
             .fillMaxHeight()
+            .padding(vertical = 24.dp)
             .blankGlassSurface(hazeState, RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp)),
         drawerShape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp),
         drawerContainerColor = Color.Transparent,
@@ -127,15 +130,23 @@ internal fun AlbumFolderDrawer(
             Text("文件夹", modifier = Modifier.padding(top = 34.dp, bottom = 18.dp), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MainText)
             LazyColumn {
                 item(key = "all-folders") {
-                    FolderDrawerItem("全部文件夹", selectedFolderPath == null) { onFolderSelect(null) }
+                    FolderDrawerItem("全部文件夹", selectedFolderPath == null, false, {}, {})
                 }
                 item(key = "folder-divider") {
                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
                 items(folders, key = { it.relativePath }) { folder ->
-                    FolderDrawerItem(folder.relativePath.trimEnd('/'), selectedFolderPath == folder.relativePath) {
-                        onFolderSelect(folder.relativePath)
+                    val isProtected = protectedFolderPaths.any { protectedPath ->
+                        folder.relativePath == protectedPath ||
+                            folder.relativePath.startsWith(protectedPath)
                     }
+                    FolderDrawerItem(
+                        label = folder.relativePath.trimEnd('/'),
+                        selected = selectedFolderPath == folder.relativePath,
+                        isProtected = isProtected,
+                        onClick = { onFolderSelect(folder.relativePath) },
+                        onToggleProtected = { onToggleFolderProtection(folder.relativePath, !isProtected) }
+                    )
                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
             }
@@ -145,23 +156,38 @@ internal fun AlbumFolderDrawer(
 }
 
 @Composable
-private fun FolderDrawerItem(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun FolderDrawerItem(
+    label: String,
+    selected: Boolean,
+    isProtected: Boolean,
+    onClick: () -> Unit,
+    onToggleProtected: () -> Unit
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         color = if (selected) MainText.copy(alpha = 0.06f) else Color.Transparent,
         shadowElevation = 0.dp
     ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 label,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).clickable(onClick = onClick),
                 fontSize = 14.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = MainText,
                 maxLines = 2
             )
-            if (selected) Text("✓", fontSize = 14.sp, color = MainText)
+            Text(
+                text = if (isProtected) "已保护" else "不整理",
+                modifier = Modifier.padding(start = 10.dp).clickable(onClick = onToggleProtected),
+                fontSize = 11.sp,
+                color = if (isProtected) MainText else MutedText
+            )
+            if (selected) Text("✓", modifier = Modifier.padding(start = 8.dp), fontSize = 14.sp, color = MainText)
         }
     }
 }
