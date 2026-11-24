@@ -130,22 +130,28 @@ internal fun AlbumFolderDrawer(
             Text("文件夹", modifier = Modifier.padding(top = 34.dp, bottom = 18.dp), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MainText)
             LazyColumn {
                 item(key = "all-folders") {
-                    FolderDrawerItem("全部文件夹", selectedFolderPath == null, false, {}, {})
+                    FolderDrawerItem("全部文件夹", selectedFolderPath == null, " ", {}, null)
                 }
                 item(key = "folder-divider") {
                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
                 items(folders, key = { it.relativePath }) { folder ->
-                    val isProtected = protectedFolderPaths.any { protectedPath ->
-                        folder.relativePath == protectedPath ||
-                            folder.relativePath.startsWith(protectedPath)
+                    val exactProtected = protectedFolderPaths.contains(folder.relativePath)
+                    val protectedByParent = protectedFolderPaths.any { protectedPath ->
+                        protectedPath != folder.relativePath && folder.relativePath.startsWith(protectedPath)
                     }
                     FolderDrawerItem(
                         label = folder.relativePath.trimEnd('/'),
                         selected = selectedFolderPath == folder.relativePath,
-                        isProtected = isProtected,
+                        protectionLabel = when {
+                            protectedByParent -> "上级保护"
+                            exactProtected -> "已保护"
+                            else -> "不整理"
+                        },
                         onClick = { onFolderSelect(folder.relativePath) },
-                        onToggleProtected = { onToggleFolderProtection(folder.relativePath, !isProtected) }
+                        onToggleProtected = if (protectedByParent) null else {
+                            { onToggleFolderProtection(folder.relativePath, !exactProtected) }
+                        }
                     )
                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
@@ -159,9 +165,9 @@ internal fun AlbumFolderDrawer(
 private fun FolderDrawerItem(
     label: String,
     selected: Boolean,
-    isProtected: Boolean,
+    protectionLabel: String,
     onClick: () -> Unit,
-    onToggleProtected: () -> Unit
+    onToggleProtected: (() -> Unit)?
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -182,10 +188,12 @@ private fun FolderDrawerItem(
                 maxLines = 2
             )
             Text(
-                text = if (isProtected) "已保护" else "不整理",
-                modifier = Modifier.padding(start = 10.dp).clickable(onClick = onToggleProtected),
+                text = protectionLabel,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+                    .then(if (onToggleProtected != null) Modifier.clickable(onClick = onToggleProtected) else Modifier),
                 fontSize = 11.sp,
-                color = if (isProtected) MainText else MutedText
+                color = if (protectionLabel == "不整理") MutedText else MainText
             )
             if (selected) Text("✓", modifier = Modifier.padding(start = 8.dp), fontSize = 14.sp, color = MainText)
         }
