@@ -17,6 +17,7 @@ import com.blank.gallery.ui.screens.AlbumBatchActionBar
 import com.blank.gallery.ui.screens.AlbumDeleteConfirmationSheet
 import com.blank.gallery.ui.screens.AlbumFolderDrawer
 import com.blank.gallery.ui.screens.AlbumHeaderActionButtons
+import com.blank.gallery.ui.screens.AlbumViewSortDropdown
 import com.blank.gallery.ui.screens.AlbumSearchSheet
 import com.blank.gallery.ui.screens.AlbumsContent
 import com.blank.gallery.ui.screens.FavoritesContent
@@ -88,8 +89,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
