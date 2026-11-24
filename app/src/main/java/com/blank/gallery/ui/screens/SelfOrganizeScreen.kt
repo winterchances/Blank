@@ -172,8 +172,7 @@ internal fun SelfOrganizeScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                previewAssets.take(3).asReversed().forEachIndexed { layerIndex, preview ->
-                    val stackIndex = 2 - layerIndex
+                previewAssets.take(3).asReversed().forEachIndexed { stackIndex, preview ->
                     val rotations = listOf(-3.2f, 2.4f, -1.3f)
                     val horizontalOffsets = listOf((-13).dp, 11.dp, (-4).dp)
                     val verticalOffsets = listOf((-5).dp, 8.dp, 20.dp)
@@ -190,17 +189,27 @@ internal fun SelfOrganizeScreen(
                         }
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color.White)
-                    if (preview.mediaType == 2) {
-                        Box(stackModifier, contentAlignment = Alignment.Center) {
-                            Text("视频", color = MutedText, fontSize = 12.sp)
+                    AnimatedContent(
+                        targetState = preview,
+                        modifier = stackModifier,
+                        transitionSpec = {
+                            (slideInVertically(tween(260)) { it / 5 } + fadeIn(tween(220))) togetherWith
+                                (slideOutVertically(tween(220)) { -it / 5 } + fadeOut(tween(180)))
+                        },
+                        label = "self-organize-stack-$stackIndex"
+                    ) { shownPreview ->
+                        if (shownPreview.mediaType == 2) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("视频", color = MutedText, fontSize = 12.sp)
+                            }
+                        } else {
+                            AsyncImage(
+                                model = shownPreview.contentUri,
+                                contentDescription = shownPreview.displayName,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
-                    } else {
-                        AsyncImage(
-                            model = preview.contentUri,
-                            contentDescription = preview.displayName,
-                            contentScale = ContentScale.Fit,
-                            modifier = stackModifier
-                        )
                     }
                 }
                 AnimatedContent(
