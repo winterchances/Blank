@@ -40,6 +40,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.zIndex
@@ -254,9 +256,10 @@ private val AlbumGridVector: ImageVector = ImageVector.Builder(
 @Composable
 internal fun AlbumHeaderActionButtons(
     onViewSortClick: () -> Unit,
+    onViewSortAnchor: (Rect) -> Unit,
     hazeState: HazeState
 ) {
-    AlbumHeaderAction(AlbumGridVector, "视图与排序", onViewSortClick, hazeState)
+    AlbumHeaderAction(AlbumGridVector, "视图与排序", onViewSortClick, onViewSortAnchor, hazeState)
 }
 
 @Composable
@@ -264,6 +267,7 @@ private fun AlbumHeaderAction(
     icon: ImageVector,
     description: String,
     onClick: () -> Unit,
+    onAnchorPosition: (Rect) -> Unit,
     hazeState: HazeState
 ) {
     androidx.compose.foundation.layout.Box(
@@ -276,6 +280,7 @@ private fun AlbumHeaderAction(
                 spotColor = Color.Black.copy(alpha = 0.03f)
             )
             .blankGlassSurface(hazeState, androidx.compose.foundation.shape.CircleShape)
+            .onGloballyPositioned { onAnchorPosition(it.boundsInRoot()) }
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
