@@ -160,6 +160,7 @@ private fun BlankApp() {
     val homeOrganizeSummary by repository.homeOrganizeSummary.collectAsState(initial = HomeOrganizeSummary())
     val lastScanAt by repository.lastScanAt.collectAsState()
     val albumFolders by repository.folders.collectAsState(initial = emptyList())
+    val protectedFolderPaths by repository.protectedFolderPaths.collectAsState(initial = emptyList())
     val albumMonths by repository.months.collectAsState(initial = emptyList())
     var selectedMonthKey by remember { mutableStateOf<String?>(null) }
     var selectedFolderPath by remember { mutableStateOf<String?>(null) }
@@ -631,15 +632,22 @@ private fun BlankApp() {
         androidx.compose.runtime.CompositionLocalProvider(LocalRippleConfiguration provides null) {
         androidx.compose.material3.ModalNavigationDrawer(
             drawerState = albumDrawerState,
-            gesturesEnabled = currentPage == MainPage.ALBUMS && albumFolders.isNotEmpty(),
+            gesturesEnabled = false,
             drawerContent = {
                 AlbumFolderDrawer(
                     folders = albumFolders,
                     selectedFolderPath = selectedFolderPath,
+                    protectedFolderPaths = protectedFolderPaths,
                     onFolderSelect = { path ->
                         selectedMedia = emptyMap()
                         selectedFolderPath = path
                         scope.launch { albumDrawerState.close() }
+                    },
+                    onToggleFolderProtection = { path, protected ->
+                        scope.launch {
+                            repository.setFolderProtected(path, protected)
+                            pagedMedia.refresh()
+                        }
                     },
                     hazeState = hazeState
                 )
