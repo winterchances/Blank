@@ -258,6 +258,9 @@ interface MediaAssetDao {
     @Query("SELECT relativePath FROM protected_folders")
     fun observeProtectedFolderPaths(): Flow<List<String>>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM protected_folders WHERE :relativePath = relativePath OR :relativePath LIKE relativePath || '%')")
+    suspend fun isMediaInProtectedFolder(relativePath: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addProtectedFolder(folder: ProtectedFolder)
 
@@ -457,7 +460,8 @@ interface MediaAssetDao {
         val current = findById(id) ?: return false
         if (!current.isVisible || current.mediaType !in 1..2 ||
             current.isProtected || current.isFavorite ||
-            current.selfOrganizeStatus !in listOf(0, 3)
+            current.selfOrganizeStatus !in listOf(0, 3) ||
+            isMediaInProtectedFolder(current.relativePath)
         ) return false
         insertSelfOrganizeAction(
             SelfOrganizeActionRecord(
@@ -481,7 +485,8 @@ interface MediaAssetDao {
             current.dateModifiedSeconds != asset.dateModifiedSeconds ||
             !current.isVisible || current.mediaType !in 1..2 ||
             current.isProtected || current.isFavorite ||
-            current.selfOrganizeStatus !in listOf(0, 3)
+            current.selfOrganizeStatus !in listOf(0, 3) ||
+            isMediaInProtectedFolder(current.relativePath)
         ) return false
         insertSelfOrganizeAction(
             SelfOrganizeActionRecord(
