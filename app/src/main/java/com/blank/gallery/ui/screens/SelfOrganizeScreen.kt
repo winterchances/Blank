@@ -51,6 +51,7 @@ import com.blank.gallery.ui.theme.ThemeMint
 internal fun SelfOrganizeScreen(
     asset: MediaAsset?,
     nextAsset: MediaAsset? = null,
+    previewAssets: List<MediaAsset> = emptyList(),
     summary: SelfOrganizeSummary,
     canUndo: Boolean,
     isLoading: Boolean,
@@ -171,33 +172,34 @@ internal fun SelfOrganizeScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                nextAsset?.let { preview ->
+                previewAssets.take(3).asReversed().forEachIndexed { layerIndex, preview ->
+                    val stackIndex = 2 - layerIndex
+                    val rotations = listOf(-3.2f, 2.4f, -1.3f)
+                    val horizontalOffsets = listOf((-13).dp, 11.dp, (-4).dp)
+                    val verticalOffsets = listOf((-5).dp, 8.dp, 20.dp)
+                    val scales = listOf(0.94f, 0.97f, 0.99f)
+                    val stackModifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .graphicsLayer {
+                            rotationZ = rotations[stackIndex]
+                            translationX = horizontalOffsets[stackIndex].toPx()
+                            translationY = verticalOffsets[stackIndex].toPx()
+                            scaleX = scales[stackIndex]
+                            scaleY = scales[stackIndex]
+                        }
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White)
                     if (preview.mediaType == 2) {
-                        Box(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
-                                .graphicsLayer {
-                                    scaleX = 0.96f
-                                    scaleY = 0.94f
-                                    translationY = 18.dp.toPx()
-                                }
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White),
-                            contentAlignment = Alignment.Center
-                        ) { Text("视频", color = MutedText, fontSize = 12.sp) }
+                        Box(stackModifier, contentAlignment = Alignment.Center) {
+                            Text("视频", color = MutedText, fontSize = 12.sp)
+                        }
                     } else {
                         AsyncImage(
                             model = preview.contentUri,
                             contentDescription = preview.displayName,
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                                .padding(horizontal = 8.dp)
-                                .graphicsLayer {
-                                    scaleX = 0.96f
-                                    scaleY = 0.94f
-                                    translationY = 18.dp.toPx()
-                                }
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White)
+                            modifier = stackModifier
                         )
                     }
                 }
