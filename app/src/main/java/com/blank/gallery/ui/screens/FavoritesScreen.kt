@@ -48,7 +48,7 @@ internal fun FavoritesContent(
 
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(22.dp)
         ) {
             CollectionTab("我的收藏", selectedTab == 0, favorites.size) { selectedTab = 0 }
@@ -100,7 +100,7 @@ internal fun FavoritesContent(
                         Text(
                             asset.displayName,
                             color = MainText,
-                            fontSize = 11.sp,
+                            fontSize = 10.sp,
                             maxLines = 1
                         )
                     }
@@ -123,10 +123,16 @@ private fun CollectionTab(
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         Text(
-            "$title $count",
+            title,
             color = if (selected) MainText else MutedText,
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+        )
+        Text(
+            count.toString(),
+            color = MutedText,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(top = 1.dp)
         )
         Box(
             Modifier
