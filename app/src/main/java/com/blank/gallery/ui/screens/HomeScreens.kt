@@ -41,6 +41,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -358,6 +373,11 @@ internal fun AlbumsContent(
         return
     }
 
+    val previewAssets = media.itemSnapshotList.items
+        .filterIsInstance<AlbumGridItem.Media>()
+        .map { it.asset }
+    var previewStartId by remember { mutableStateOf<Long?>(null) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 15.dp, bottom = 10.dp),
@@ -451,7 +471,10 @@ internal fun AlbumsContent(
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(GlassWhite)
                                 .combinedClickable(
-                                    onClick = { if (selectedIds.isNotEmpty()) onToggleSelection(asset) },
+                                    onClick = {
+                                        if (selectedIds.isNotEmpty()) onToggleSelection(asset)
+                                        else previewStartId = asset.id
+                                    },
                                     onLongClick = { onToggleSelection(asset) }
                                 )
                         ) {
@@ -490,6 +513,132 @@ internal fun AlbumsContent(
                     null -> Spacer(Modifier.aspectRatio(1f))
                 }
             }
+        }
+    }
+
+    previewStartId?.let { startId ->
+        AlbumMediaPreviewDialog(
+            assets = previewAssets,
+            initialAssetId = startId,
+            onDismiss = { previewStartId = null }
+        )
+    }
+}
+
+@Composable
+private fun AlbumMediaPreviewDialog(
+    assets: List<MediaAsset>,
+    initialAssetId: Long,
+    onDismiss: () -> Unit
+) {
+    if (assets.isEmpty()) return
+    val initialPage = assets.indexOfFirst { it.id == initialAssetId }.coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { assets.size })
+    val context = LocalContext.current
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                key = { page -> assets[page].id }
+            ) { page ->
+                val asset = assets[page]
+                var scale by remember(asset.id) { mutableStateOf(1f) }
+                var offset by remember(asset.id) { mutableStateOf(Offset.Zero) }
+                val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+                    scale = (scale * zoomChange).coerceIn(1f, 5f)
+                    offset = if (scale <= 1f) Offset.Zero else offset + panChange
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .transformable(state = transformState),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = asset.contentUri,
+                        contentDescription = asset.displayName,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                                translationX = offset.x
+                                translationY = offset.y
+                            }
+                    )
+                    if (asset.mediaType == 2) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(64.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.55f))
+                                .clickable {
+                                    runCatching {
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(Uri.parse(asset.contentUri), "video/*")
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("▶", color = Color.White, fontSize = 25.sp)
+                        }
+                    }
+                }
+            }
+
+            Text(
+                text = "‹",
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 12.dp)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable {
+                        if (pagerState.currentPage > 0) {
+                            // Pager animation is intentionally left to horizontal swiping.
+                        }
+                    },
+                color = Color.White,
+                fontSize = 28.sp
+            )
+            Text(
+                text = "×",
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 42.dp, end = 18.dp)
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(onClick = onDismiss),
+                color = Color.White,
+                fontSize = 26.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Text(
+                text = "${pagerState.currentPage + 1} / ${assets.size}",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 28.dp),
+                color = Color.White.copy(alpha = 0.8f),
+                fontSize = 12.sp
+            )
         }
     }
 }
