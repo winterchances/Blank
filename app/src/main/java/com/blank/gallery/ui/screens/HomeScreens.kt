@@ -118,20 +118,20 @@ internal fun HomeContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("整理进度", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
-                Text("$progressPercent%", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
+                Text("整理进度", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MainText)
+                Text("$progressPercent%", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = MainText)
             }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
+                    .height(7.dp)
                     .clip(CircleShape)
                     .background(ThemeMint.copy(alpha = 0.14f))
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(progress)
-                        .height(8.dp)
+                        .height(7.dp)
                         .clip(CircleShape)
                         .background(ThemeMint)
                 )
@@ -140,11 +140,11 @@ internal fun HomeContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("已整理 ${organizeSummary.completedCount} 项", fontSize = 12.sp, color = MutedText)
-                Text("待整理 ${organizeSummary.remainingCount} 项", fontSize = 12.sp, color = MutedText)
+                Text("已整理 ${organizeSummary.completedCount} 项", fontSize = 11.sp, color = MutedText)
+                Text("待整理 ${organizeSummary.remainingCount} 项", fontSize = 11.sp, color = MutedText)
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color.Black.copy(alpha = 0.05f)))
-            Text("智能整理", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MainText)
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Color.Black.copy(alpha = 0.035f)))
+            Text("智能整理", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MutedText)
             analysisItems.chunked(2).forEach { rowItems ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -164,17 +164,17 @@ internal fun HomeContent(
         }
 
         HomeGlassCard(hazeState) {
-            Text("存储情况", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MainText)
+            Text("存储情况", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MainText)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(formatStorage(deviceUsedBytes), fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = MainText)
-                    Text("已使用 / ${formatStorage(deviceTotalBytes)}", fontSize = 11.sp, color = MutedText)
+                    Text(formatStorage(deviceUsedBytes), fontSize = 23.sp, fontWeight = FontWeight.Bold, color = MainText)
+                    Text("已使用 / ${formatStorage(deviceTotalBytes)}", fontSize = 10.sp, color = MutedText)
                 }
-                Text("剩余 ${formatStorage(deviceAvailableBytes)}", fontSize = 12.sp, color = MutedText)
+                Text("剩余 ${formatStorage(deviceAvailableBytes)}", fontSize = 11.sp, color = MutedText)
             }
             Box(
                 modifier = Modifier
@@ -220,8 +220,8 @@ internal fun HomeContent(
             }
             Text(
                 text = "媒体占用按当前已授权并扫描到的文件统计；其他为设备已用空间扣除照片和视频后的估算值。",
-                fontSize = 10.sp,
-                lineHeight = 14.sp,
+                fontSize = 9.sp,
+                lineHeight = 13.sp,
                 color = MutedText
             )
         }
@@ -238,7 +238,7 @@ internal fun HomeContent(
         Text(
             text = scanStatus,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             color = MutedText
         )
     }
@@ -254,7 +254,7 @@ private fun HomeGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 8.dp,
+                elevation = 6.dp,
                 shape = shape,
                 ambientColor = Color.Black.copy(alpha = 0.07f),
                 spotColor = Color.Black.copy(alpha = 0.05f)
@@ -291,10 +291,10 @@ private fun HomeAnalysisItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MainText)
+        Text(title, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MainText)
         Text(
             text = count?.let { "$it 项" } ?: "待分析",
-            fontSize = 11.sp,
+            fontSize = 10.sp,
             color = MutedText
         )
     }
@@ -315,11 +315,11 @@ private fun HomeStorageRow(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(color))
             Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(label, fontSize = 12.sp, color = MainText)
-                Text(detail, fontSize = 10.sp, color = MutedText)
+                Text(label, fontSize = 11.sp, color = MainText)
+                Text(detail, fontSize = 9.sp, color = MutedText)
             }
         }
-        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = MainText)
+        Text(value, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MainText)
     }
 }
 
@@ -437,9 +437,9 @@ internal fun AlbumsContent(
                         Text(
                             text = entry.label,
                             modifier = Modifier.fillMaxWidth().padding(start = 2.dp, top = 10.dp, bottom = 5.dp),
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MainText
+                            color = MutedText
                         )
                     }
                     is AlbumGridItem.Media -> {
@@ -525,7 +525,7 @@ private fun AlbumMediaTypeTab(
             text = label,
             color = if (selected) MainText else MutedText,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            fontSize = 16.sp
+            fontSize = 15.sp
         )
         if (selected) {
             Spacer(
@@ -550,14 +550,14 @@ private fun AlbumFilterChip(
         modifier = Modifier.clickable(onClick = onClick),
         shape = CircleShape,
         color = if (selected) ThemeMint else Color.White,
-        shadowElevation = if (selected) 3.dp else 1.dp
+        shadowElevation = if (selected) 1.5.dp else 0.dp
     ) {
         Text(
             text = label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
             color = if (selected) Color.White else Color(0xFF666666),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
         )
     }
 }
