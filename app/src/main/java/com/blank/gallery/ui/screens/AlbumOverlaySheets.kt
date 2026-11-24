@@ -7,6 +7,12 @@ import com.blank.gallery.ui.theme.PageBackground
 import com.blank.gallery.ui.theme.GlassWhite
 import com.blank.gallery.ui.theme.blankGlassSurface
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,9 +39,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -277,46 +287,96 @@ private fun AlbumHeaderAction(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun AlbumOptionsSheet(
-    title: String,
-    options: List<String>,
-    onSelect: (String) -> Unit,
+internal fun AlbumViewSortDropdown(
+    visible: Boolean,
+    anchor: Rect?,
+    selectedGridColumns: Int,
+    sortBySize: Boolean,
+    hazeState: HazeState,
+    onSelectGrid: (Int) -> Unit,
+    onSelectSort: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = PageBackground,
-        shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-        scrimColor = Color.Black.copy(alpha = 0.4f)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 24.dp)
+    if (anchor == null) return
+    val density = LocalDensity.current
+    val menuWidth = 184.dp
+    val menuX = with(density) { anchor.right.toDp() - menuWidth }
+    val menuY = with(density) { anchor.bottom.toDp() + 8.dp }
+    val menuShape = RoundedCornerShape(18.dp)
+
+    Box(Modifier.fillMaxSize().zIndex(20f)) {
+        AnimatedVisibility(
+            visible = visible,
+            modifier = Modifier.fillMaxSize(),
+            enter = fadeIn(tween(320)),
+            exit = fadeOut(tween(durationMillis = 98, delayMillis = 182))
         ) {
-            Text(
-                title,
-                modifier = Modifier.padding(vertical = 16.dp),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MainText
+            Box(
+                Modifier.fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.06f))
+                    .clickable(onClick = onDismiss)
             )
-            options.forEach { option ->
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp).clickable { onSelect(option) },
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp
-                ) {
-                    Text(
-                        option,
-                        modifier = Modifier.padding(17.dp),
-                        fontSize = 15.sp,
-                        color = MainText
+        }
+
+        AnimatedVisibility(
+            visible = visible,
+            modifier = Modifier.offset(x = menuX, y = menuY).width(menuWidth),
+            enter = scaleIn(
+                animationSpec = tween(320),
+                transformOrigin = TransformOrigin(1f, 0f)
+            ) + fadeIn(tween(320)),
+            exit = scaleOut(
+                animationSpec = tween(280),
+                transformOrigin = TransformOrigin(1f, 0f)
+            ) + fadeOut(tween(durationMillis = 98, delayMillis = 182))
+        ) {
+            Column(
+                modifier = Modifier
+                    .shadow(
+                        elevation = 10.dp,
+                        shape = menuShape,
+                        ambientColor = Color.Black.copy(alpha = 0.045f),
+                        spotColor = Color.Black.copy(alpha = 0.055f)
                     )
-                }
+                    .blankGlassSurface(hazeState, menuShape, glassAlpha = 0.94f)
+                    .clip(menuShape)
+                    .padding(vertical = 6.dp)
+            ) {
+                DropdownOption("四宫格", selectedGridColumns == 4) { onSelectGrid(4) }
+                DropdownOption("三宫格", selectedGridColumns == 3) { onSelectGrid(3) }
+                Box(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+                        .height(0.5.dp).background(Color.Black.copy(alpha = 0.08f))
+                )
+                DropdownOption("按时间排序", !sortBySize) { onSelectSort(false) }
+                DropdownOption("按文件大小排序", sortBySize) { onSelectSort(true) }
             }
+        }
+    }
+}
+
+@Composable
+private fun DropdownOption(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(44.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label,
+            modifier = Modifier.weight(1f),
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = MainText
+        )
+        if (selected) {
+            Text("✓", fontSize = 14.sp, color = MainText)
         }
     }
 }
