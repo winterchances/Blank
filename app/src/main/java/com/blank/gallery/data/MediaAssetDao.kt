@@ -44,12 +44,12 @@ interface MediaAssetDao {
         INNER JOIN (
             SELECT sizeBytes
             FROM media_assets
-            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
             GROUP BY sizeBytes
             HAVING COUNT(*) > 1
         ) AS candidate_sizes ON candidate_sizes.sizeBytes = media_assets.sizeBytes
         WHERE media_assets.isVisible = 1
-          AND media_assets.isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+          AND media_assets.isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND media_assets.sizeBytes > 0
           AND media_assets.id <= :maxId
     """)
@@ -60,12 +60,12 @@ interface MediaAssetDao {
         INNER JOIN (
             SELECT sizeBytes
             FROM media_assets
-            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+            WHERE isVisible = 1 AND isProtected = 0 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
             GROUP BY sizeBytes
             HAVING COUNT(*) > 1
         ) AS candidate_sizes ON candidate_sizes.sizeBytes = media_assets.sizeBytes
         WHERE media_assets.isVisible = 1
-          AND media_assets.isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+          AND media_assets.isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND media_assets.sizeBytes > 0 AND media_assets.id <= :maxId
           AND (:hasCursor = 0 OR media_assets.sizeBytes < :lastSizeBytes
                OR (media_assets.sizeBytes = :lastSizeBytes AND media_assets.id > :lastId))
@@ -80,12 +80,12 @@ interface MediaAssetDao {
         hasCursor: Boolean
     ): List<MediaAsset>
 
-    @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')")
+    @Query("SELECT COUNT(*) FROM media_assets WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)")
     suspend fun countSimilarPhotoCandidates(maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND sizeBytes > 0 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND (:hasCursor = 0 OR
                CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis ELSE dateTakenSeconds * 1000 END < :lastCaptureTimeMillis
                OR (CASE WHEN dateTakenMillis > 0 THEN dateTakenMillis ELSE dateTakenSeconds * 1000 END = :lastCaptureTimeMillis
@@ -111,14 +111,14 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND sizeBytes > 0 AND dateTakenMillis > 0 AND id <= :maxId
     """)
     suspend fun countBurstPhotoCandidates(maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND sizeBytes > 0 AND dateTakenMillis > 0 AND id <= :maxId
           AND (:hasCursor = 0 OR dateTakenMillis > :lastDateTakenMillis
                OR (dateTakenMillis = :lastDateTakenMillis AND id > :lastId))
@@ -135,13 +135,13 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
     """)
     suspend fun countScreenshotCandidates(maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND isProtected = 0 AND mediaType = 1 AND id <= :maxId AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND (:hasCursor = 0 OR dateAddedSeconds < :lastDateAddedSeconds
                OR (dateAddedSeconds = :lastDateAddedSeconds AND id > :lastId))
         ORDER BY dateAddedSeconds DESC, id ASC
@@ -157,14 +157,14 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT COUNT(*) FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes AND id <= :maxId
     """)
     suspend fun countLargeMediaCandidates(minimumSizeBytes: Long, maxId: Long): Int
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND mediaType IN (1, 2) AND sizeBytes >= :minimumSizeBytes AND id <= :maxId
           AND (:hasCursor = 0 OR sizeBytes < :lastSizeBytes
                OR (sizeBytes = :lastSizeBytes AND dateAddedSeconds < :lastDateAddedSeconds)
@@ -182,7 +182,7 @@ interface MediaAssetDao {
         hasCursor: Boolean
     ): List<MediaAsset>
 
-    @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')")
+    @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)")
     suspend fun getVisibleUnprotectedMediaForIds(ids: List<Long>): List<MediaAsset>
 
     @Query("SELECT * FROM media_analysis_cache WHERE mediaAssetId = :mediaAssetId LIMIT 1")
@@ -258,7 +258,7 @@ interface MediaAssetDao {
     @Query("SELECT relativePath FROM protected_folders")
     fun observeProtectedFolderPaths(): Flow<List<String>>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM protected_folders WHERE :relativePath = relativePath OR :relativePath LIKE relativePath || '%')")
+    @Query("SELECT EXISTS(SELECT 1 FROM protected_folders WHERE :relativePath = relativePath OR substr(:relativePath, 1, length(relativePath)) = relativePath)")
     suspend fun isMediaInProtectedFolder(relativePath: String): Boolean
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -318,13 +318,13 @@ interface MediaAssetDao {
         FROM media_assets
         WHERE mediaType IN (1, 2)
           AND (isVisible = 1 OR selfOrganizeStatus = 2)
-          AND (selfOrganizeStatus = 2 OR NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%'))
+          AND (selfOrganizeStatus = 2 OR NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath))
     """)
     fun observeHomeOrganizeSummary(): Flow<HomeOrganizeSummary>
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND selfOrganizeStatus IN (0, 3)
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  selfOrganizeSkipOrder ASC,
@@ -336,7 +336,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND selfOrganizeStatus IN (0, 3)
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  CASE WHEN selfOrganizeStatus = 3 THEN selfOrganizeSkipOrder END ASC,
@@ -347,7 +347,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND selfOrganizeStatus IN (0, 3) AND id != :currentId
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  selfOrganizeSkipOrder ASC,
@@ -359,7 +359,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND selfOrganizeStatus IN (0, 3) AND id != :currentId
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  CASE WHEN selfOrganizeStatus = 3 THEN selfOrganizeSkipOrder END ASC,
@@ -370,7 +370,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND selfOrganizeStatus IN (0, 3) AND id != :currentId
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  selfOrganizeSkipOrder ASC,
@@ -382,7 +382,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT * FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
           AND selfOrganizeStatus IN (0, 3) AND id != :currentId
         ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
                  CASE WHEN selfOrganizeStatus = 3 THEN selfOrganizeSkipOrder END ASC,
@@ -398,7 +398,7 @@ interface MediaAssetDao {
                COUNT(CASE WHEN selfOrganizeStatus = 2 THEN 1 END) AS pendingDeleteCount,
                COUNT(CASE WHEN selfOrganizeStatus = 3 THEN 1 END) AS skippedCount
         FROM media_assets
-        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR media_assets.relativePath LIKE pf.relativePath || '%')
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0 AND NOT EXISTS (SELECT 1 FROM protected_folders pf WHERE media_assets.relativePath = pf.relativePath OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath)
     """)
     fun observeSelfOrganizeSummary(): Flow<SelfOrganizeSummary>
 
