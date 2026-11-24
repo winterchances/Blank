@@ -356,6 +356,29 @@ interface MediaAssetDao {
     suspend fun getNextRandomSelfOrganizePreview(currentId: Long): MediaAsset?
 
     @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0
+          AND selfOrganizeStatus IN (0, 3) AND id != :currentId
+        ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
+                 selfOrganizeSkipOrder ASC,
+                 CASE WHEN dateTakenSeconds > 0 THEN dateTakenSeconds ELSE dateAddedSeconds END DESC,
+                 id DESC
+        LIMIT 3
+    """)
+    suspend fun getNextOrderedSelfOrganizePreviews(currentId: Long): List<MediaAsset>
+
+    @Query("""
+        SELECT * FROM media_assets
+        WHERE isVisible = 1 AND mediaType IN (1, 2) AND isProtected = 0
+          AND selfOrganizeStatus IN (0, 3) AND id != :currentId
+        ORDER BY CASE WHEN selfOrganizeStatus = 0 THEN 0 ELSE 1 END,
+                 CASE WHEN selfOrganizeStatus = 3 THEN selfOrganizeSkipOrder END ASC,
+                 CASE WHEN selfOrganizeStatus = 0 THEN RANDOM() END
+        LIMIT 3
+    """)
+    suspend fun getNextRandomSelfOrganizePreviews(currentId: Long): List<MediaAsset>
+
+    @Query("""
         SELECT COUNT(*) AS totalCount,
                COUNT(CASE WHEN selfOrganizeStatus IN (0, 3) THEN 1 END) AS remainingCount,
                COUNT(CASE WHEN selfOrganizeStatus = 1 THEN 1 END) AS keptCount,
