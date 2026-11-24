@@ -88,6 +88,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
@@ -120,7 +123,8 @@ private fun BlankApp() {
     val hazeState = remember { HazeState() }
     val albumDrawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
     var isAlbumSearchVisible by remember { mutableStateOf(false) }
-    var albumOptionsSheet by remember { mutableStateOf<AlbumOptionsSheetType?>(null) }
+    var isAlbumOptionsDropdownVisible by remember { mutableStateOf(false) }
+    var albumOptionsAnchor by remember { mutableStateOf<Rect?>(null) }
     val repository = remember(context) { MediaLibraryRepository(context.applicationContext) }
     val deletionManager = remember(context) { MediaDeletionManager(context.applicationContext) }
     val selfOrganizeManager = remember(repository) { SelfOrganizeManager(repository) }
@@ -606,6 +610,10 @@ private fun BlankApp() {
         deleteConfirmationVisible = false
     }
 
+    BackHandler(enabled = isAlbumOptionsDropdownVisible) {
+        isAlbumOptionsDropdownVisible = false
+    }
+
     MaterialTheme(
         colorScheme = lightColorScheme(
             primary = ThemeMint,
@@ -668,7 +676,8 @@ private fun BlankApp() {
                         backLabel = if (selectionMode) "×" else "‹",
                         compactCentered = organizeSubPage != null,
                         showAlbumActions = currentPage == MainPage.ALBUMS && !selectionMode,
-                        onViewSortClick = { albumOptionsSheet = AlbumOptionsSheetType.VIEW_SORT },
+                        onViewSortClick = { isAlbumOptionsDropdownVisible = !isAlbumOptionsDropdownVisible },
+                        onViewSortAnchor = { albumOptionsAnchor = it },
                         hazeState = hazeState
                     )
                     if (organizeSubPage != null) {
@@ -868,27 +877,24 @@ private fun BlankApp() {
                     }
                 }
 
-                if (albumOptionsSheet != null) {
-                    val sheetType = albumOptionsSheet!!
-                    val options = when (sheetType) {
-                        AlbumOptionsSheetType.VIEW_SORT -> listOf("四宫格", "三宫格", "按时间排序", "按文件大小排序")
-                    }
-                    AlbumOptionsSheet(
-                        title = "视图与排序",
-                        options = options,
-                        onSelect = { selected ->
-                            selectedMedia = emptyMap()
-                            when (selected) {
-                                "四宫格" -> albumGridColumns = 4
-                                "三宫格" -> albumGridColumns = 3
-                                "按时间排序" -> albumSortBySize = false
-                                "按文件大小排序" -> albumSortBySize = true
-                            }
-                            albumOptionsSheet = null
-                        },
-                        onDismiss = { albumOptionsSheet = null }
-                    )
-                }
+                AlbumViewSortDropdown(
+                    visible = isAlbumOptionsDropdownVisible,
+                    anchor = albumOptionsAnchor,
+                    selectedGridColumns = albumGridColumns,
+                    sortBySize = albumSortBySize,
+                    hazeState = hazeState,
+                    onSelectGrid = { columns ->
+                        selectedMedia = emptyMap()
+                        albumGridColumns = columns
+                        isAlbumOptionsDropdownVisible = false
+                    },
+                    onSelectSort = { bySize ->
+                        selectedMedia = emptyMap()
+                        albumSortBySize = bySize
+                        isAlbumOptionsDropdownVisible = false
+                    },
+                    onDismiss = { isAlbumOptionsDropdownVisible = false }
+                )
 
                 if (isAlbumSearchVisible) {
                     AlbumSearchSheet(
@@ -921,8 +927,6 @@ private fun BlankApp() {
         }
     }
 }
-
-private enum class AlbumOptionsSheetType { VIEW_SORT }
 
 private fun Modifier.mainPageSwipe(
     currentPage: MainPage,
@@ -961,6 +965,7 @@ private fun PageHeader(
     compactCentered: Boolean = false,
     showAlbumActions: Boolean = false,
     onViewSortClick: () -> Unit = {},
+    onViewSortAnchor: (Rect) -> Unit = {},
     hazeState: HazeState
 ) {
     if (compactCentered) {
@@ -1024,6 +1029,7 @@ private fun PageHeader(
             if (showAlbumActions) {
                 AlbumHeaderActionButtons(
                     onViewSortClick = onViewSortClick,
+                    onViewSortAnchor = onViewSortAnchor,
                     hazeState = hazeState
                 )
             }
