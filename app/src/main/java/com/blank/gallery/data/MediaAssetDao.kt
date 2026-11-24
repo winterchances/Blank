@@ -442,12 +442,13 @@ interface MediaAssetDao {
     suspend fun updateSelfOrganizeState(id: Long, status: Int, skipOrder: Long)
 
     @Transaction
-    suspend fun applySelfOrganizeDecision(id: Long, status: Int) {
-        if (status !in 1..3) return
-        val current = findById(id) ?: return
-        if (!current.isVisible || current.mediaType !in 1..2 || current.isProtected ||
+    suspend fun applySelfOrganizeDecision(id: Long, status: Int): Boolean {
+        if (status !in 1..3) return false
+        val current = findById(id) ?: return false
+        if (!current.isVisible || current.mediaType !in 1..2 ||
+            current.isProtected || current.isFavorite ||
             current.selfOrganizeStatus !in listOf(0, 3)
-        ) return
+        ) return false
         insertSelfOrganizeAction(
             SelfOrganizeActionRecord(
                 mediaAssetId = id,
@@ -458,13 +459,17 @@ interface MediaAssetDao {
         )
         val skipOrder = if (status == 3) nextSelfOrganizeSkipOrder() else 0L
         updateSelfOrganizeState(id, status, skipOrder)
+        return true
     }
 
     @Transaction
     suspend fun undoLastSelfOrganizeDecision(): MediaAsset? {
         val action = getLastSelfOrganizeAction() ?: return null
         val current = findById(action.mediaAssetId)
-        if (current != null) {
+        val canRestore = current != null &&
+            !current.isFavorite && !current.isProtected &&
+            current.isVisible && current.mediaType in 1..2
+        if (canRestore) {
             restoreSelfOrganizeState(
                 id = action.mediaAssetId,
                 status = action.previousStatus,
@@ -472,10 +477,10 @@ interface MediaAssetDao {
             )
         }
         deleteSelfOrganizeAction(action.id)
-        return current?.copy(
+        return if (canRestore) current?.copy(
             selfOrganizeStatus = action.previousStatus,
             selfOrganizeSkipOrder = action.previousSkipOrder
-        )?.takeIf { it.isVisible && it.mediaType in 1..2 && !it.isProtected }
+        ) else null
     }
 
     @Query("SELECT * FROM media_assets WHERE mediaStoreId = :mediaStoreId LIMIT 1")
@@ -554,17 +559,67 @@ interface MediaAssetDao {
     @Update
     suspend fun update(item: MediaAsset)
 
-    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isFavorite = 1 OR :favorite = 1 THEN 1 ELSE selfOrganizeStatus END, isFavorite = :favorite WHERE id = :id")
-    suspend fun setFavorite(id: Long, favorite: Boolean)
+    @Query("""
+        UPDATE media_assets SET
+            selfOrganizeStatus = CASE WHEN :favorite = 1 OR isProtected = 1 THEN 1 ELSE selfOrganizeStatus END,
+            selfOrganizeSkipOrder = CASE WHEN :favorite = 1 OR isProtected = 1 THEN 0 ELSE selfOrganizeSkipOrder END,
+            isFavorite = :favorite
+        WHERE id = :id
+    """)
+    suspend fun updateFavoriteState(id: Long, favorite: Boolean)
 
-    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isProtected = 1 OR :protectedValue = 1 THEN 1 ELSE selfOrganizeStatus END, isProtected = :protectedValue WHERE id = :id")
-    suspend fun setProtected(id: Long, protectedValue: Boolean)
+    @Transaction
+    suspend fun setFavorite(id: Long, favorite: Boolean) {
+        updateFavoriteState(id, favorite)
+        deleteSelfOrganizeActionsForIds(listOf(id))
+    }
 
-    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isFavorite = 1 OR :favorite = 1 THEN 1 ELSE selfOrganizeStatus END, isFavorite = :favorite WHERE id IN (:ids)")
-    suspend fun setFavoriteForIds(ids: List<Long>, favorite: Boolean)
+    @Query("""
+        UPDATE media_assets SET
+            selfOrganizeStatus = CASE WHEN :protectedValue = 1 OR isFavorite = 1 THEN 1 ELSE selfOrganizeStatus END,
+            selfOrganizeSkipOrder = CASE WHEN :protectedValue = 1 OR isFavorite = 1 THEN 0 ELSE selfOrganizeSkipOrder END,
+            isProtected = :protectedValue
+        WHERE id = :id
+    """)
+    suspend fun updateProtectedState(id: Long, protectedValue: Boolean)
 
-    @Query("UPDATE media_assets SET selfOrganizeStatus = CASE WHEN selfOrganizeStatus = 2 THEN 2 WHEN isProtected = 1 OR :protectedValue = 1 THEN 1 ELSE selfOrganizeStatus END, isProtected = :protectedValue WHERE id IN (:ids)")
-    suspend fun setProtectedForIds(ids: List<Long>, protectedValue: Boolean)
+    @Transaction
+    suspend fun setProtected(id: Long, protectedValue: Boolean) {
+        updateProtectedState(id, protectedValue)
+        deleteSelfOrganizeActionsForIds(listOf(id))
+    }
+
+    @Query("""
+        UPDATE media_assets SET
+            selfOrganizeStatus = CASE WHEN :favorite = 1 OR isProtected = 1 THEN 1 ELSE selfOrganizeStatus END,
+            selfOrganizeSkipOrder = CASE WHEN :favorite = 1 OR isProtected = 1 THEN 0 ELSE selfOrganizeSkipOrder END,
+            isFavorite = :favorite
+        WHERE id IN (:ids)
+    """)
+    suspend fun updateFavoriteStateForIds(ids: List<Long>, favorite: Boolean)
+
+    @Transaction
+    suspend fun setFavoriteForIds(ids: List<Long>, favorite: Boolean) {
+        if (ids.isEmpty()) return
+        updateFavoriteStateForIds(ids, favorite)
+        deleteSelfOrganizeActionsForIds(ids)
+    }
+
+    @Query("""
+        UPDATE media_assets SET
+            selfOrganizeStatus = CASE WHEN :protectedValue = 1 OR isFavorite = 1 THEN 1 ELSE selfOrganizeStatus END,
+            selfOrganizeSkipOrder = CASE WHEN :protectedValue = 1 OR isFavorite = 1 THEN 1 ELSE selfOrganizeSkipOrder END,
+            isProtected = :protectedValue
+        WHERE id IN (:ids)
+    """)
+    suspend fun updateProtectedStateForIds(ids: List<Long>, protectedValue: Boolean)
+
+    @Transaction
+    suspend fun setProtectedForIds(ids: List<Long>, protectedValue: Boolean) {
+        if (ids.isEmpty()) return
+        updateProtectedStateForIds(ids, protectedValue)
+        deleteSelfOrganizeActionsForIds(ids)
+    }
 
     /** Hide trashed items while retaining their explicit delete decision for progress accounting. */
     @Query("UPDATE media_assets SET isVisible = 0, selfOrganizeStatus = 2 WHERE id IN (:ids)")
