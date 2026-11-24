@@ -646,6 +646,9 @@ private fun BlankApp() {
                     onToggleFolderProtection = { path, protected ->
                         scope.launch {
                             repository.setFolderProtected(path, protected)
+                            SmartAnalysisType.values().forEach { type ->
+                                repository.cancelSmartAnalysis(type)
+                            }
                             smartResults = emptyMap()
                             smartAnalyzedPages = emptySet()
                             smartErrors = emptyMap()
