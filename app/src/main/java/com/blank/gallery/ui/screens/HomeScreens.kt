@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.pager.HorizontalPager
@@ -562,6 +563,14 @@ private fun AlbumMediaPreviewDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .pointerInput(asset.id) {
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    scale = if (scale > 1f) 1f else 2.5f
+                                    if (scale <= 1f) offset = Offset.Zero
+                                }
+                            )
+                        }
                         .transformable(state = transformState),
                     contentAlignment = Alignment.Center
                 ) {
@@ -602,22 +611,6 @@ private fun AlbumMediaPreviewDialog(
                 }
             }
 
-            Text(
-                text = "‹",
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 12.dp)
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.35f))
-                    .clickable {
-                        if (pagerState.currentPage > 0) {
-                            // Pager animation is intentionally left to horizontal swiping.
-                        }
-                    },
-                color = Color.White,
-                fontSize = 28.sp
-            )
             Text(
                 text = "×",
                 modifier = Modifier
