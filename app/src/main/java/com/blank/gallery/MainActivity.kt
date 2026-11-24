@@ -651,9 +651,7 @@ private fun BlankApp() {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
-                            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                            bottom = (if (organizeSubPage == null) 104.dp else 24.dp) +
-                                WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
                         )
                         .blur(if (deleteConfirmationVisible || selfOrganizeDeleteConfirmationVisible) 5.dp else 0.dp)
                         .hazeSource(hazeState)
