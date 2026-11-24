@@ -464,12 +464,26 @@ interface MediaAssetDao {
 
     @Transaction
     suspend fun applySmartSelfOrganizeDecision(asset: MediaAsset, status: Int): Boolean {
+        if (status !in 1..3) return false
         val current = findById(asset.id) ?: return false
         if (current.contentUri != asset.contentUri ||
             current.sizeBytes != asset.sizeBytes ||
-            current.dateModifiedSeconds != asset.dateModifiedSeconds
+            current.dateModifiedSeconds != asset.dateModifiedSeconds ||
+            !current.isVisible || current.mediaType !in 1..2 ||
+            current.isProtected || current.isFavorite ||
+            current.selfOrganizeStatus !in listOf(0, 3)
         ) return false
-        return applySelfOrganizeDecision(asset.id, status)
+        insertSelfOrganizeAction(
+            SelfOrganizeActionRecord(
+                mediaAssetId = asset.id,
+                previousStatus = current.selfOrganizeStatus,
+                previousSkipOrder = current.selfOrganizeSkipOrder,
+                createdAtMillis = System.currentTimeMillis()
+            )
+        )
+        val skipOrder = if (status == 3) nextSelfOrganizeSkipOrder() else 0L
+        updateSelfOrganizeState(asset.id, status, skipOrder)
+        return true
     }
 
     @Transaction
