@@ -35,6 +35,9 @@ class SelfOrganizeManager(
     suspend fun peekNextPhoto(mode: SelfOrganizeMode, currentId: Long): MediaAsset? =
         repository.peekNextSelfOrganizePhoto(mode == SelfOrganizeMode.RANDOM, currentId)
 
+    suspend fun peekNextPhotos(mode: SelfOrganizeMode, currentId: Long): List<MediaAsset> =
+        repository.peekNextSelfOrganizePhotos(mode == SelfOrganizeMode.RANDOM, currentId)
+
     suspend fun applyDecision(assetId: Long, decision: SelfOrganizeDecision) {
         val status = when (decision) {
             SelfOrganizeDecision.KEEP -> SelfOrganizeStatus.KEPT
