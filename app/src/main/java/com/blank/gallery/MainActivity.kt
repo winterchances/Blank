@@ -199,7 +199,6 @@ private fun BlankApp() {
                 try {
                     val total = repository.scanVisibleMedia(
                         includeImages = MediaPermission.canReadImages(context),
-                        includeVideos = false,
                         permissionScope = MediaPermission.accessScope(context),
                         forceFullScan = forceFullScan
                     ) { count ->
