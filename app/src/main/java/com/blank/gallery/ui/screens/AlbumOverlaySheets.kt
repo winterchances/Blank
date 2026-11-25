@@ -78,7 +78,7 @@ internal fun AlbumSearchSheet(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp)
         ) {
             Text(
-                "搜索照片或视频",
+                "搜索照片",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -95,7 +95,7 @@ internal fun AlbumSearchSheet(
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(color = MainText, fontSize = 14.sp),
                     decorationBox = { inner ->
-                        if (query.isEmpty()) Text("输入照片或视频名称", color = MutedText, fontSize = 14.sp)
+                        if (query.isEmpty()) Text("输入照片名称", color = MutedText, fontSize = 14.sp)
                         inner()
                     }
                 )
