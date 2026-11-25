@@ -122,6 +122,7 @@ class MediaLibraryRepository(context: Context) {
      */
     suspend fun scanVisibleMedia(
         includeImages: Boolean,
+        includeVideos: Boolean,
         permissionScope: String,
         forceFullScan: Boolean = false,
         onProgress: suspend (Int) -> Unit = {}
@@ -166,7 +167,7 @@ class MediaLibraryRepository(context: Context) {
         try {
             scanner.scanVisibleMedia(
                 includeImages = includeImages,
-                includeVideos = false,
+                includeVideos = includeVideos,
                 modifiedSinceSeconds = modifiedSinceSeconds
             ) { batch ->
                 dao.syncScanned(batch, scanToken)
