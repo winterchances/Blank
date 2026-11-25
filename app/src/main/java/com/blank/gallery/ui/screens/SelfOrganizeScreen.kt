@@ -1,8 +1,8 @@
 package com.blank.gallery.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,14 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,6 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.abs
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -50,8 +50,6 @@ import com.blank.gallery.ui.theme.ThemeMint
 @Composable
 internal fun SelfOrganizeScreen(
     asset: MediaAsset?,
-    nextAsset: MediaAsset? = null,
-    previewAssets: List<MediaAsset> = emptyList(),
     summary: SelfOrganizeSummary,
     canUndo: Boolean,
     isLoading: Boolean,
@@ -146,102 +144,89 @@ internal fun SelfOrganizeScreen(
                 modifier = Modifier.weight(1f)
             )
         } else {
+            val photoOffset = remember { Animatable(0f) }
+            var lastSwipeDirection by remember { mutableStateOf(1f) }
+            var previousAssetId by remember { mutableStateOf<Long?>(null) }
+            val dragScope = rememberCoroutineScope()
+            val enterOffsetPx = with(LocalDensity.current) { 64.dp.toPx() }
+
+            LaunchedEffect(asset.id) {
+                if (previousAssetId != null) {
+                    photoOffset.snapTo(-lastSwipeDirection * enterOffsetPx)
+                    photoOffset.animateTo(
+                        targetValue = 0f,
+                        animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f)
+                    )
+                } else {
+                    photoOffset.snapTo(0f)
+                }
+                previousAssetId = asset.id
+            }
+
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.Black.copy(alpha = 0.035f))
+                    .graphicsLayer { translationY = photoOffset.value }
                     .pointerInput(asset.id) {
-                        var dragDistance = 0f
-                        val swipeThreshold = 80.dp.toPx()
-                        detectVerticalDragGestures(
-                            onVerticalDrag = { change, amount ->
-                                dragDistance += amount
+                        val velocityTracker = VelocityTracker()
+                        detectDragGestures(
+                            onDragStart = { velocityTracker.resetTracking() },
+                            onDrag = { change, dragAmount ->
+                                velocityTracker.addPosition(change.uptimeMillis, change.position)
                                 change.consume()
+                                photoOffset.snapTo(photoOffset.value + dragAmount.y)
                             },
                             onDragEnd = {
-                                when {
-                                    dragDistance < -swipeThreshold -> { swipeDirection = 1; onPendingDelete() }
-                                    dragDistance > swipeThreshold -> { swipeDirection = -1; onKeep() }
+                                val velocityY = velocityTracker.calculateVelocity().y
+                                val distanceY = photoOffset.value
+                                val distanceThreshold = size.height * 0.22f
+                                val shouldSwipe = abs(distanceY) >= distanceThreshold || abs(velocityY) >= 1000f
+
+                                if (shouldSwipe) {
+                                    val direction = when {
+                                        abs(distanceY) >= distanceThreshold -> if (distanceY < 0f) -1f else 1f
+                                        velocityY < 0f -> -1f
+                                        else -> 1f
+                                    }
+                                    lastSwipeDirection = direction
+                                    dragScope.launch {
+                                        photoOffset.animateTo(
+                                            targetValue = direction * size.height * 1.2f,
+                                            animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)
+                                        )
+                                        if (direction < 0f) onPendingDelete() else onKeep()
+                                    }
+                                } else {
+                                    dragScope.launch {
+                                        photoOffset.animateTo(
+                                            targetValue = 0f,
+                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
+                                        )
+                                    }
                                 }
-                                dragDistance = 0f
                             },
-                            onDragCancel = { dragDistance = 0f }
+                            onDragCancel = {
+                                dragScope.launch {
+                                    photoOffset.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
+                                    )
+                                }
+                            }
                         )
                     },
                 contentAlignment = Alignment.Center
             ) {
-                val visiblePreviewCount = previewAssets.take(3).size
-                previewAssets.take(3).asReversed().forEachIndexed { layerIndex, preview ->
-                    val stackIndex = layerIndex + (3 - visiblePreviewCount)
-                    val rotations = listOf(-3.2f, 2.4f, -1.3f)
-                    val horizontalOffsets = listOf((-13).dp, 11.dp, (-4).dp)
-                    val verticalOffsets = listOf((-5).dp, 8.dp, 20.dp)
-                    val scales = listOf(0.94f, 0.97f, 0.99f)
-                    val stackModifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                        .graphicsLayer {
-                            rotationZ = rotations[stackIndex]
-                            translationX = horizontalOffsets[stackIndex].toPx()
-                            translationY = verticalOffsets[stackIndex].toPx()
-                            scaleX = scales[stackIndex]
-                            scaleY = scales[stackIndex]
-                        }
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color.White)
-                    AnimatedContent(
-                        targetState = preview,
-                        modifier = stackModifier,
-                        transitionSpec = {
-                            (slideInVertically(tween(260)) { it / 5 } + fadeIn(tween(220))) togetherWith
-                                (slideOutVertically(tween(220)) { -it / 5 } + fadeOut(tween(180)))
-                        },
-                        label = "self-organize-stack-$stackIndex"
-                    ) { shownPreview ->
-                        if (shownPreview.mediaType == 2) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("视频", color = MutedText, fontSize = 12.sp)
-                            }
-                        } else {
-                            AsyncImage(
-                                model = shownPreview.contentUri,
-                                contentDescription = shownPreview.displayName,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
-                }
-                AnimatedContent(
-                    targetState = asset,
-                    transitionSpec = {
-                        (slideInVertically(
-                            animationSpec = tween(320, easing = FastOutSlowInEasing)
-                        ) { if (swipeDirection > 0) it else -it } + fadeIn(tween(220))) togetherWith
-                            (slideOutVertically(
-                                animationSpec = tween(280, easing = FastOutSlowInEasing)
-                            ) { if (swipeDirection > 0) -it else it } + fadeOut(tween(180)))
-                    },
-                    label = "self-organize-photo"
-                ) { currentAsset ->
-                    if (currentAsset.mediaType == 2) {
-                        Box(
-                            modifier = Modifier.fillMaxSize().padding(bottom = 12.dp)
-                                .background(Color.Black.copy(alpha = 0.035f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("视频", color = MutedText, fontSize = 14.sp)
-                        }
-                    } else {
-                        AsyncImage(
-                            model = currentAsset.contentUri,
-                            contentDescription = currentAsset.displayName,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize().padding(bottom = 12.dp)
-                        )
-                    }
+                if (asset.mediaType == 2) {
+                    Text("视频", color = MutedText, fontSize = 14.sp)
+                } else {
+                    AsyncImage(
+                        model = asset.contentUri,
+                        contentDescription = asset.displayName,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
                 if (asset.mediaType == 2) {
                     Text(
