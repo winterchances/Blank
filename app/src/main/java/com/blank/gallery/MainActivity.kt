@@ -163,7 +163,7 @@ private fun BlankApp() {
     val albumMonths by repository.months.collectAsState(initial = emptyList())
     var selectedMonthKey by remember { mutableStateOf<String?>(null) }
     var selectedFolderPath by remember { mutableStateOf<String?>(null) }
-    var albumMediaType by remember { mutableStateOf<Int?>(null) }
+    var albumMediaType by remember { mutableStateOf<Int?>(1) }
     var albumSearchQuery by remember { mutableStateOf("") }
     var albumGridColumns by remember { mutableStateOf(4) }
     var albumSortBySize by remember { mutableStateOf(false) }
@@ -199,7 +199,7 @@ private fun BlankApp() {
                 try {
                     val total = repository.scanVisibleMedia(
                         includeImages = MediaPermission.canReadImages(context),
-                        includeVideos = MediaPermission.canReadVideos(context),
+                        includeVideos = false,
                         permissionScope = MediaPermission.accessScope(context),
                         forceFullScan = forceFullScan
                     ) { count ->
@@ -392,7 +392,7 @@ private fun BlankApp() {
 
     fun startDeleteItems(items: List<MediaAsset>) {
         val eligible = items.filter {
-            it.isVisible && it.mediaType in 1..2 && !it.isProtected
+            it.isVisible && it.mediaType == 1 && !it.isProtected
         }
         if (eligible.isEmpty() || isDeletionInProgress) return
         isDeletionInProgress = true
@@ -581,6 +581,10 @@ private fun BlankApp() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    BackHandler(enabled = albumDrawerState.isOpen) {
+        scope.launch { albumDrawerState.close() }
+    }
+
     BackHandler(enabled = selectedMedia.isNotEmpty()) {
         selectedMedia = emptyMap()
     }
@@ -617,6 +621,7 @@ private fun BlankApp() {
         androidx.compose.runtime.CompositionLocalProvider(LocalRippleConfiguration provides null) {
         androidx.compose.material3.ModalNavigationDrawer(
             drawerState = albumDrawerState,
+            onDismissRequest = { scope.launch { albumDrawerState.close() } },
             gesturesEnabled = false,
             drawerContent = {
                 AlbumFolderDrawer(
