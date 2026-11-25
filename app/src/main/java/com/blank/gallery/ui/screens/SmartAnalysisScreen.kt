@@ -54,7 +54,7 @@ internal fun SmartAnalysisScreen(
         OrganizeSubPage.SIMILAR -> "分析画面特征，整理内容相近的照片"
         OrganizeSubPage.BURSTS -> "结合拍摄时间与画面相似度识别连拍"
         OrganizeSubPage.SCREENSHOTS -> "根据文件名和所在文件夹识别截图"
-        OrganizeSubPage.LARGE_FILES -> "找出占用空间较大的照片和视频"
+        OrganizeSubPage.LARGE_FILES -> "找出占用空间较大的照片"
         else -> ""
     }
     val itemCount = groups.sumOf { it.size }
@@ -90,11 +90,11 @@ internal fun SmartAnalysisScreen(
                 Text(if (isRunning) "取消" else if (hasAnalyzed) "重新分析" else "开始分析")
             }
         }
-        if (!hasScanned) Text("请先回到首页完成媒体扫描", color = MutedText, fontSize = 12.sp)
+        if (!hasScanned) Text("请先回到首页完成照片扫描", color = MutedText, fontSize = 12.sp)
         errorText?.let { Text(it, color = MutedText, fontSize = 12.sp) }
         when {
             isRunning && groups.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("正在分析本机媒体，请稍候", color = MutedText, fontSize = 13.sp)
+                Text("正在分析本机照片，请稍候", color = MutedText, fontSize = 13.sp)
             }
             hasAnalyzed && groups.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text("没有发现符合条件的内容", color = MutedText, fontSize = 13.sp)
@@ -129,25 +129,14 @@ internal fun SmartAnalysisScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (asset.mediaType == 2) {
-                                    Box(
-                                        modifier = Modifier.width(76.dp).aspectRatio(1f)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(Color.Black.copy(alpha = 0.045f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("视频", color = MutedText, fontSize = 11.sp)
-                                    }
-                                } else {
-                                    AsyncImage(
-                                        model = asset.contentUri,
-                                        contentDescription = asset.displayName,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.width(76.dp).aspectRatio(1f)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(Color.Black.copy(alpha = 0.035f))
-                                    )
-                                }
+                                AsyncImage(
+                                    model = asset.contentUri,
+                                    contentDescription = asset.displayName,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.width(76.dp).aspectRatio(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color.Black.copy(alpha = 0.035f))
+                                )
                                 Column(
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -159,11 +148,7 @@ internal fun SmartAnalysisScreen(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
-                                    Text(
-                                        if (asset.mediaType == 2) "视频" else "照片",
-                                        color = MutedText,
-                                        fontSize = 10.sp
-                                    )
+                                    Text("照片", color = MutedText, fontSize = 10.sp)
                                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                                         Text(
                                             "保留",
