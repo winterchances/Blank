@@ -125,10 +125,10 @@ internal fun SelfOrganizeScreen(
 
         if (!hasPhotoAccess) {
             EmptyState(
-                message = "请先允许留白访问照片和视频，才能开始整理",
+                message = "请先允许留白访问照片，才能开始整理",
                 modifier = Modifier.weight(1f)
             )
-            ActionSurface("授权照片和视频访问", onClick = onRequestAccess)
+            ActionSurface("授权照片访问", onClick = onRequestAccess)
         } else if (isScanning || isLoading) {
             EmptyState(
                 message = if (isScanning) "正在读取照片，请稍候" else "正在更新整理进度",
@@ -137,9 +137,9 @@ internal fun SelfOrganizeScreen(
         } else if (asset == null) {
             EmptyState(
                 message = if (summary.totalCount == 0) {
-                    "暂时没有可整理的媒体"
+                    "暂时没有可整理的照片"
                 } else {
-                    "这些媒体已经整理完了"
+                    "这些照片已经整理完了"
                 },
                 modifier = Modifier.weight(1f)
             )
@@ -226,26 +226,12 @@ internal fun SelfOrganizeScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (asset.mediaType == 2) {
-                    Text("视频", color = MutedText, fontSize = 14.sp)
-                } else {
-                    AsyncImage(
-                        model = asset.contentUri,
-                        contentDescription = asset.displayName,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                if (asset.mediaType == 2) {
-                    Text(
-                        "视频",
-                        modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
-                            .clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.55f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = Color.White,
-                        fontSize = 11.sp
-                    )
-                }
+                AsyncImage(
+                    model = asset.contentUri,
+                    contentDescription = asset.displayName,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             Text(
                 asset.displayName,
