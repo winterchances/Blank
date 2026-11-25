@@ -945,9 +945,12 @@ private fun Modifier.mainPageSwipe(
         var total = Offset.Zero
         val touchSlop = viewConfiguration.touchSlop
         while (true) {
-            val event = awaitPointerEvent(PointerEventPass.Initial)
+            val event = awaitPointerEvent(PointerEventPass.Final)
             val change = event.changes.firstOrNull { it.id == down.id } ?: break
             if (!change.pressed) break
+            // Child horizontal scrollables (such as the album month chips) get
+            // the gesture first. Only handle page swipes left unconsumed by them.
+            if (change.isConsumed) break
             total += change.positionChange()
             if (abs(total.x) > touchSlop && abs(total.x) > abs(total.y) * 1.2f) {
                 val pages = MainPage.values()
