@@ -122,7 +122,6 @@ class MediaLibraryRepository(context: Context) {
      */
     suspend fun scanVisibleMedia(
         includeImages: Boolean,
-        includeVideos: Boolean,
         permissionScope: String,
         forceFullScan: Boolean = false,
         onProgress: suspend (Int) -> Unit = {}
@@ -167,7 +166,7 @@ class MediaLibraryRepository(context: Context) {
         try {
             scanner.scanVisibleMedia(
                 includeImages = includeImages,
-                includeVideos = includeVideos,
+                includeVideos = false,
                 modifiedSinceSeconds = modifiedSinceSeconds
             ) { batch ->
                 dao.syncScanned(batch, scanToken)
@@ -357,7 +356,7 @@ class MediaLibraryRepository(context: Context) {
         const val KEY_LAST_FULL_SCAN_AT = "last_full_scan_at"
         const val KEY_LAST_SCAN_SCOPE = "last_scan_scope"
         const val KEY_MEDIA_INDEX_VERSION = "media_index_version"
-        const val MEDIA_INDEX_VERSION = 2
+        const val MEDIA_INDEX_VERSION = 3
         const val NO_ACCESS_SCOPE = "no-access"
         const val SCAN_OVERLAP_SECONDS = 2L
         const val FULL_SCAN_INTERVAL_MS = 24L * 60L * 60L * 1000L
