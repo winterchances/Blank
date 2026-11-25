@@ -116,24 +116,39 @@ internal fun AlbumFolderDrawer(
     onToggleFolderProtection: (String, Boolean) -> Unit,
     hazeState: HazeState
 ) {
+    val drawerShape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp)
     ModalDrawerSheet(
         modifier = Modifier
             .width(300.dp)
             .fillMaxHeight()
             .padding(vertical = 24.dp)
-            .blankGlassSurface(hazeState, RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp)),
-        drawerShape = RoundedCornerShape(topEnd = 30.dp, bottomEnd = 30.dp),
+            .blankGlassSurface(hazeState, drawerShape, glassAlpha = 0.76f),
+        drawerShape = drawerShape,
         drawerContainerColor = Color.Transparent,
         drawerTonalElevation = 0.dp
     ) {
-        Column(Modifier.fillMaxHeight().padding(horizontal = 20.dp)) {
-            Text("文件夹", modifier = Modifier.padding(top = 34.dp, bottom = 18.dp), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MainText)
-            LazyColumn {
+        Column(
+            Modifier.fillMaxHeight().padding(horizontal = 20.dp)
+        ) {
+            Text(
+                "文件夹",
+                modifier = Modifier.padding(top = 26.dp, bottom = 18.dp, start = 8.dp),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MainText
+            )
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 item(key = "all-folders") {
-                    FolderDrawerItem("全部文件夹", selectedFolderPath == null, " ", {}, null)
-                }
-                item(key = "folder-divider") {
-                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
+                    FolderDrawerItem(
+                        label = "全部文件夹",
+                        selected = selectedFolderPath == null,
+                        protectionLabel = "",
+                        onClick = { onFolderSelect(null) },
+                        onToggleProtected = null
+                    )
                 }
                 items(folders, key = { it.relativePath }) { folder ->
                     val normalizedFolderPath = folder.relativePath.trimEnd('/') + "/"
@@ -154,10 +169,9 @@ internal fun AlbumFolderDrawer(
                             { onToggleFolderProtection(folder.relativePath, !exactProtected) }
                         }
                     )
-                    Box(Modifier.fillMaxWidth().height(0.5.dp).background(Color.Black.copy(alpha = 0.08f)))
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(26.dp))
         }
     }
 }
@@ -170,37 +184,39 @@ private fun FolderDrawerItem(
     onClick: () -> Unit,
     onToggleProtected: (() -> Unit)?
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = if (selected) MainText.copy(alpha = 0.06f) else Color.Transparent,
-        shadowElevation = 0.dp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) Color.White.copy(alpha = 0.56f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                label,
-                modifier = Modifier.weight(1f).clickable(onClick = onClick),
-                fontSize = 14.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color = MainText,
-                maxLines = 2
-            )
+        Text(
+            label,
+            modifier = Modifier.weight(1f),
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            color = MainText,
+            maxLines = 1
+        )
+        if (protectionLabel.isNotEmpty()) {
             Text(
                 text = protectionLabel,
                 modifier = Modifier
                     .padding(start = 10.dp)
                     .then(if (onToggleProtected != null) Modifier.clickable(onClick = onToggleProtected) else Modifier),
                 fontSize = 11.sp,
-                color = if (protectionLabel == "不整理") MutedText else MainText
+                color = MutedText
             )
-            if (selected) Text("✓", modifier = Modifier.padding(start = 8.dp), fontSize = 14.sp, color = MainText)
+        }
+        if (selected) {
+            Text("✓", modifier = Modifier.padding(start = 8.dp), fontSize = 13.sp, color = MainText)
         }
     }
 }
-
 
 private val AlbumFolderVector: ImageVector = ImageVector.Builder(
     name = "AlbumFolder",
