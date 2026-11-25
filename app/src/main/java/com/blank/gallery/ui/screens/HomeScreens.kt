@@ -380,16 +380,6 @@ internal fun AlbumsContent(
     var previewStartId by remember { mutableStateOf<Long?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 15.dp, bottom = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(25.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AlbumMediaTypeTab("全部", mediaType == null) { onMediaTypeChange(null) }
-            AlbumMediaTypeTab("照片", mediaType == 1) { onMediaTypeChange(1) }
-            AlbumMediaTypeTab("视频", mediaType == 2) { onMediaTypeChange(2) }
-        }
-
         LazyRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 2.dp, bottom = 25.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -414,9 +404,9 @@ internal fun AlbumsContent(
             val message = when {
                 media.loadState.refresh is LoadState.Loading -> "正在加载相册内容"
                 media.loadState.refresh is LoadState.Error -> "相册暂时无法加载，请稍后重试"
-                searchQuery.isNotBlank() -> "没有找到匹配的照片或视频"
-                mediaType != null -> "当前分类还没有媒体内容"
-                else -> "还没有相册内容，先到首页开始扫描"
+                searchQuery.isNotBlank() -> "没有找到匹配的照片"
+                mediaType != null -> "当前分类还没有照片"
+                else -> "还没有照片，先到首页开始扫描"
             }
             EmptyState(
                 message = message,
