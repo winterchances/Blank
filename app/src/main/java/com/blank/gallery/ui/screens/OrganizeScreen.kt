@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,6 +43,8 @@ internal enum class OrganizeSubPage(val title: String) {
 
 @Composable
 internal fun OrganizeContent(
+    pendingDeleteCount: Int,
+    onOpenPendingDelete: () -> Unit,
     onOpenCategory: (OrganizeSubPage) -> Unit,
     onOpenSelfMode: (OrganizeSubPage) -> Unit
 ) {
@@ -59,6 +62,43 @@ internal fun OrganizeContent(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 0.dp)
     ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 2.dp, bottom = 18.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .clickable(onClick = onOpenPendingDelete),
+            shape = RoundedCornerShape(18.dp),
+            color = Color.White.copy(alpha = 0.58f),
+            shadowElevation = 0.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "待删除",
+                    modifier = Modifier.weight(1f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MainText
+                )
+                Text(
+                    "${pendingDeleteCount} 张",
+                    fontSize = 12.sp,
+                    color = MutedText
+                )
+                Text(
+                    "›",
+                    modifier = Modifier.padding(start = 10.dp),
+                    fontSize = 20.sp,
+                    color = MutedText
+                )
+            }
+        }
         Column {
             SectionHeading("智能整理")
             smartItems.chunked(2).forEachIndexed { index, rowItems ->
