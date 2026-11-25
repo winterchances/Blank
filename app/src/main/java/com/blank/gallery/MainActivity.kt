@@ -140,7 +140,7 @@ private fun BlankApp() {
     var currentPage by remember { mutableStateOf(MainPage.HOME) }
     var organizeSubPage by remember { mutableStateOf<OrganizeSubPage?>(null) }
     var hasMediaAccess by remember {
-        mutableStateOf(MediaPermission.hasAnyMediaAccess(context))
+        mutableStateOf(MediaPermission.canReadImages(context))
     }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
@@ -213,7 +213,7 @@ private fun BlankApp() {
                     }
                     pagedMedia.refresh()
                 } catch (error: SecurityException) {
-                    hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
+                    hasMediaAccess = MediaPermission.canReadImages(context)
                     selectedMedia = emptyMap()
                     scanMessage = "照片访问权限已变化，请重新授权后扫描"
                 } catch (error: Exception) {
@@ -312,7 +312,7 @@ private fun BlankApp() {
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
-        hasMediaAccess = MediaPermission.hasAnyMediaAccess(context)
+        hasMediaAccess = MediaPermission.canReadImages(context)
         if (hasMediaAccess) {
             permissionDenied = false
             runScan(true)
@@ -562,7 +562,7 @@ private fun BlankApp() {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                val accessNow = MediaPermission.hasAnyMediaAccess(context)
+                val accessNow = MediaPermission.canReadImages(context)
                 if (accessNow != currentHasMediaAccess) {
                     hasMediaAccess = accessNow
                     if (accessNow) {
