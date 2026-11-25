@@ -242,6 +242,7 @@ interface MediaAssetDao {
     @Query("""
         SELECT * FROM media_assets
         WHERE isVisible = 1
+          AND mediaType = 1
           AND (:mediaType IS NULL OR mediaType = :mediaType)
           AND (:query = '' OR displayName LIKE '%' || :query || '%')
           AND (:folderPath IS NULL OR relativePath = :folderPath)
