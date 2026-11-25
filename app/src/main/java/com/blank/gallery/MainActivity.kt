@@ -813,6 +813,8 @@ private fun BlankApp() {
                                 }
                             )
                             MainPage.ORGANIZE -> OrganizeContent(
+                                pendingDeleteCount = selfOrganizePendingDelete.size,
+                                onOpenPendingDelete = { isShowingSelfPendingDelete = true },
                                 onOpenCategory = { organizeSubPage = it },
                                 onOpenSelfMode = { organizeSubPage = it }
                             )
