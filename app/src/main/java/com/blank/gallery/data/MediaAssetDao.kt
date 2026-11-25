@@ -282,7 +282,7 @@ interface MediaAssetDao {
             'unixepoch', 'localtime'
         )) AS monthKey, COUNT(*) AS itemCount
         FROM media_assets
-        WHERE isVisible = 1
+        WHERE isVisible = 1 AND mediaType = 1
         GROUP BY monthKey
         ORDER BY monthKey DESC
     """)
