@@ -147,7 +147,6 @@ private fun BlankApp() {
     var scannedItems by remember { mutableStateOf(0) }
     var scanMessage by remember { mutableStateOf<String?>(null) }
     var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
-    var selfOrganizePreviewPhotos by remember { mutableStateOf<List<MediaAsset>>(emptyList()) }
     var isSelfOrganizeLoading by remember { mutableStateOf(false) }
     var selfOrganizeMessage by remember { mutableStateOf<String?>(null) }
     var isShowingSelfPendingDelete by remember { mutableStateOf(false) }
@@ -509,20 +508,14 @@ private fun BlankApp() {
             selfOrganizeMessage = null
             if (!hasPhotoAccess || isScanning) {
                 selfOrganizePhoto = null
-                selfOrganizePreviewPhotos = emptyList()
                 isSelfOrganizeLoading = false
             } else {
                 isSelfOrganizeLoading = true
-                val next = selfOrganizeManager.nextPhoto(activeSelfOrganizeMode)
-                selfOrganizePhoto = next
-                selfOrganizePreviewPhotos = next?.let {
-                    selfOrganizeManager.peekNextPhotos(activeSelfOrganizeMode, it.id)
-                }.orEmpty()
+                selfOrganizePhoto = selfOrganizeManager.nextPhoto(activeSelfOrganizeMode)
                 isSelfOrganizeLoading = false
             }
         } else {
             selfOrganizePhoto = null
-            selfOrganizePreviewPhotos = emptyList()
         }
     }
 
@@ -535,12 +528,7 @@ private fun BlankApp() {
         scope.launch {
             try {
                 selfOrganizeManager.applyDecision(current.id, decision)
-                val next = selfOrganizePreviewPhotos.firstOrNull()
-                    ?: selfOrganizeManager.nextPhoto(mode)
-                selfOrganizePhoto = next
-                selfOrganizePreviewPhotos = next?.let {
-                    selfOrganizeManager.peekNextPhotos(mode, it.id)
-                }.orEmpty()
+                selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
             } catch (_: Exception) {
                 selfOrganizeMessage = "整理状态保存失败，请重试"
             } finally {
@@ -559,9 +547,6 @@ private fun BlankApp() {
                 val restored = selfOrganizeManager.undo()
                 val next = restored ?: selfOrganizeManager.nextPhoto(mode)
                 selfOrganizePhoto = next
-                selfOrganizePreviewPhotos = next?.let {
-                    selfOrganizeManager.peekNextPhotos(mode, it.id)
-                }.orEmpty()
             } catch (_: Exception) {
                 selfOrganizeMessage = "撤销失败，请稍后重试"
             } finally {
@@ -722,7 +707,6 @@ private fun BlankApp() {
                         } else if (activeSelfOrganizeMode != null) {
                             SelfOrganizeScreen(
                                 asset = selfOrganizePhoto,
-                                previewAssets = selfOrganizePreviewPhotos,
                                 summary = selfOrganizeSummary,
                                 canUndo = canUndoSelfOrganize,
                                 isLoading = isSelfOrganizeLoading,
