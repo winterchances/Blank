@@ -64,7 +64,7 @@ internal fun SelfOrganizePendingDeleteScreen(
 
         if (assets.isEmpty()) {
             EmptyState(
-                message = "暂时没有待删除的媒体",
+                message = "暂时没有待删除的照片",
                 modifier = Modifier.weight(1f)
             )
         } else {
@@ -78,25 +78,16 @@ internal fun SelfOrganizePendingDeleteScreen(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (asset.mediaType == 2) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().aspectRatio(1f)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color.Black.copy(alpha = 0.045f)),
-                                contentAlignment = Alignment.Center
-                            ) { Text("视频", color = MutedText, fontSize = 11.sp) }
-                        } else {
-                            AsyncImage(
-                                model = asset.contentUri,
-                                contentDescription = asset.displayName,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .aspectRatio(1f)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color.Black.copy(alpha = 0.035f))
-                            )
-                        }
+                        AsyncImage(
+                            model = asset.contentUri,
+                            contentDescription = asset.displayName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.Black.copy(alpha = 0.035f))
+                        )
                         Text(
                             asset.displayName,
                             color = MainText,
