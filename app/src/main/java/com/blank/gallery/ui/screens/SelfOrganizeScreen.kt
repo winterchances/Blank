@@ -189,11 +189,18 @@ internal fun SelfOrganizeScreen(
                                         velocityY < 0f -> -1f
                                         else -> 1f
                                     }
+                                    val containerHeight = size.height.toFloat()
+                                    val exitVelocity = if (velocityY * direction > 0f) {
+                                        velocityY.coerceIn(-5000f, 5000f)
+                                    } else {
+                                        direction * abs(velocityY).coerceAtMost(5000f)
+                                    }
                                     lastSwipeDirection = direction
                                     dragScope.launch {
                                         photoOffset.animateTo(
-                                            targetValue = direction * size.height * 1.2f,
-                                            animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)
+                                            targetValue = direction * containerHeight * 1.2f,
+                                            animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f),
+                                            initialVelocity = exitVelocity
                                         )
                                         if (direction < 0f) onPendingDelete() else onKeep()
                                     }
@@ -201,7 +208,8 @@ internal fun SelfOrganizeScreen(
                                     dragScope.launch {
                                         photoOffset.animateTo(
                                             targetValue = 0f,
-                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
+                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f),
+                                            initialVelocity = velocityY.coerceIn(-5000f, 5000f)
                                         )
                                     }
                                 }
