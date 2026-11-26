@@ -621,7 +621,6 @@ private fun BlankApp() {
         androidx.compose.runtime.CompositionLocalProvider(LocalRippleConfiguration provides null) {
         androidx.compose.material3.ModalNavigationDrawer(
             drawerState = albumDrawerState,
-            onDismissRequest = { scope.launch { albumDrawerState.close() } },
             gesturesEnabled = false,
             drawerContent = {
                 AlbumFolderDrawer(
