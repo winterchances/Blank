@@ -175,7 +175,9 @@ internal fun SelfOrganizeScreen(
                             onDrag = { change, dragAmount ->
                                 velocityTracker.addPosition(change.uptimeMillis, change.position)
                                 change.consume()
-                                photoOffset.snapTo(photoOffset.value + dragAmount.y)
+                                dragScope.launch {
+                                    photoOffset.snapTo(photoOffset.value + dragAmount.y)
+                                }
                             },
                             onDragEnd = {
                                 val velocityY = velocityTracker.calculateVelocity().y
