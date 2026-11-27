@@ -1,7 +1,7 @@
 package com.blank.gallery.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableFloatStateOf
@@ -34,6 +35,9 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import kotlin.math.abs
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +45,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.blank.gallery.data.MediaAsset
 import com.blank.gallery.data.SelfOrganizeSummary
 import com.blank.gallery.ui.components.EmptyState
@@ -51,6 +57,7 @@ import com.blank.gallery.ui.theme.ThemeMint
 @Composable
 internal fun SelfOrganizeScreen(
     asset: MediaAsset?,
+    preloadAssets: List<MediaAsset> = emptyList(),
     summary: SelfOrganizeSummary,
     canUndo: Boolean,
     isLoading: Boolean,
@@ -65,6 +72,20 @@ internal fun SelfOrganizeScreen(
     onOpenPendingDelete: () -> Unit
 ) {
     var swipeDirection by remember { mutableStateOf(1) }
+    val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
+    LaunchedEffect(asset?.id, preloadAssets.map { it.id }) {
+        preloadAssets.take(2).forEach { preloadAsset ->
+            val request = ImageRequest.Builder(context)
+                .data(preloadAsset.contentUri)
+                .size(1440, 1440)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .allowHardware(true)
+                .build()
+            context.imageLoader.enqueue(request)
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -150,6 +171,7 @@ internal fun SelfOrganizeScreen(
             val photoOffset = remember(asset.id) { Animatable(0f) }
             var dragOffset by remember(asset.id) { mutableFloatStateOf(0f) }
             var lastDragDirection by remember(asset.id) { mutableFloatStateOf(0f) }
+            var thresholdHapticTriggered by remember(asset.id) { mutableStateOf(false) }
             var isAnimating by remember(asset.id) { mutableStateOf(false) }
             val dragScope = rememberCoroutineScope()
 
@@ -160,18 +182,23 @@ internal fun SelfOrganizeScreen(
                     .graphicsLayer { translationY = if (isAnimating) photoOffset.value else dragOffset }
                     .pointerInput(asset.id) {
                         val velocityTracker = VelocityTracker()
-                        detectDragGestures(
+                        detectVerticalDragGestures(
                             onDragStart = {
                                 if (!isAnimating) {
                                     velocityTracker.resetTracking()
                                     lastDragDirection = 0f
+                                    thresholdHapticTriggered = false
                                 }
                             },
-                            onDrag = { change, dragAmount ->
+                            onVerticalDrag = { change, dragAmount ->
                                 if (!isAnimating) {
                                     velocityTracker.addPosition(change.uptimeMillis, change.position)
-                                    dragOffset += dragAmount.y
-                                    if (dragAmount.y != 0f) lastDragDirection = if (dragAmount.y < 0f) -1f else 1f
+                                    dragOffset += dragAmount
+                                    if (dragAmount != 0f) lastDragDirection = if (dragAmount < 0f) -1f else 1f
+                                    if (!thresholdHapticTriggered && abs(dragOffset) >= size.height * 0.22f) {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                        thresholdHapticTriggered = true
+                                    }
                                     change.consume()
                                 }
                             },
@@ -190,10 +217,14 @@ internal fun SelfOrganizeScreen(
                                         photoOffset.snapTo(distanceY)
                                         isAnimating = true
                                         if (direction != 0f) {
+                                            if (!thresholdHapticTriggered) {
+                                                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                                thresholdHapticTriggered = true
+                                            }
                                             photoOffset.animateTo(
                                                 targetValue = direction * containerHeight * 1.2f,
                                                 animationSpec = tween(
-                                                    durationMillis = 110,
+                                                    durationMillis = 150,
                                                     easing = FastOutLinearInEasing
                                                 )
                                             )
