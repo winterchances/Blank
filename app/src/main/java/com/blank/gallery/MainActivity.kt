@@ -681,13 +681,13 @@ private fun BlankApp() {
                             else -> null
                         },
                         backLabel = if (selectionMode) "×" else "‹",
-                        compactCentered = organizeSubPage != null,
+                        compactCentered = organizeSubPage != null || isShowingSelfPendingDelete,
                         showAlbumActions = currentPage == MainPage.ALBUMS && !selectionMode,
                         onViewSortClick = { isAlbumOptionsDropdownVisible = !isAlbumOptionsDropdownVisible },
                         onViewSortAnchor = { albumOptionsAnchor = it },
                         hazeState = hazeState
                     )
-                    if (organizeSubPage != null) {
+                    if (isShowingSelfPendingDelete || organizeSubPage != null) {
                         if (isShowingSelfPendingDelete) {
                             SelfOrganizePendingDeleteScreen(
                                 assets = selfOrganizePendingDelete,
