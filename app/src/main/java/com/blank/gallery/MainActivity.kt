@@ -241,6 +241,12 @@ private fun BlankApp() {
                         total == 0 -> "相册已是最新"
                         else -> "扫描完成 · 更新 $total 项"
                     }
+                    if (total > 0) {
+                        repository.clearSmartAnalysisSnapshots()
+                        smartResults = emptyMap()
+                        smartAnalyzedPages = emptySet()
+                        smartErrors = emptyMap()
+                    }
                     pagedMedia.refresh()
                 } catch (error: SecurityException) {
                     hasMediaAccess = MediaPermission.canReadImages(context)
@@ -292,9 +298,29 @@ private fun BlankApp() {
         else -> null
     }
 
-    fun runSmartAnalysis(page: OrganizeSubPage) {
+    fun smartParameterKeyFor(page: OrganizeSubPage): String = when (page) {
+        OrganizeSubPage.DUPLICATES -> "sha256-v1"
+        OrganizeSubPage.SIMILAR -> "maxHammingDistance=6"
+        OrganizeSubPage.BURSTS -> "gap=1200;duration=6000;distance=8"
+        OrganizeSubPage.SCREENSHOTS -> "filename-folder-rules-v1"
+        OrganizeSubPage.LARGE_FILES -> "minimumSizeBytes=${100L * 1024L * 1024L}"
+        else -> "unsupported"
+    }
+
+    fun runSmartAnalysis(page: OrganizeSubPage, forceRefresh: Boolean = false) {
         scope.launch {
+            val type = smartTypeFor(page) ?: return@launch
+            val parameterKey = smartParameterKeyFor(page)
             try {
+                if (!forceRefresh) {
+                    val restoredGroups = repository.loadSmartAnalysisGroups(type, parameterKey)
+                    if (restoredGroups != null) {
+                        smartResults = smartResults + (page to restoredGroups)
+                        smartAnalyzedPages = smartAnalyzedPages + page
+                        smartErrors = smartErrors - page
+                        return@launch
+                    }
+                }
                 val groups = when (page) {
                     OrganizeSubPage.DUPLICATES -> repository.analyzeDuplicateMedia().groups.map { it.items }
                     OrganizeSubPage.SIMILAR -> repository.analyzeSimilarPhotos().groups.map { it.items }
@@ -303,6 +329,7 @@ private fun BlankApp() {
                     OrganizeSubPage.LARGE_FILES -> repository.analyzeLargeMedia().items.map { listOf(it) }
                     else -> emptyList()
                 }.map { group -> group.distinctBy { it.id } }.filter { it.isNotEmpty() }
+                repository.saveSmartAnalysisGroups(type, parameterKey, groups)
                 smartResults = smartResults + (page to groups)
                 smartAnalyzedPages = smartAnalyzedPages + page
                 smartErrors = smartErrors - page
@@ -316,16 +343,16 @@ private fun BlankApp() {
         scope.launch {
             try {
                 val applied = repository.applySmartSelfOrganizeDecision(asset, status)
-                smartResults = smartResults.mapValues { (_, groups) ->
-                    groups.mapNotNull { group ->
-                        group.filterNot { it.id == asset.id }.takeIf { it.isNotEmpty() }
+                if (applied) {
+                    smartResults = smartResults.mapValues { (_, groups) ->
+                        groups.mapNotNull { group ->
+                            group.filterNot { it.id == asset.id }.takeIf { it.isNotEmpty() }
+                        }
                     }
-                }
-                organizeSubPage?.let { page ->
-                    smartErrors = if (applied) {
-                        smartErrors - page
-                    } else {
-                        smartErrors + (page to "这张照片的状态已变化，已跳过该操作")
+                    organizeSubPage?.let { page -> smartErrors = smartErrors - page }
+                } else {
+                    organizeSubPage?.let { page ->
+                        smartErrors = smartErrors + (page to "这张照片的状态已变化，已跳过该操作")
                     }
                 }
             } catch (_: Exception) {
@@ -686,6 +713,7 @@ private fun BlankApp() {
                             SmartAnalysisType.values().forEach { type ->
                                 repository.cancelSmartAnalysis(type)
                             }
+                            repository.clearSmartAnalysisSnapshots()
                             smartResults = emptyMap()
                             smartAnalyzedPages = emptySet()
                             smartErrors = emptyMap()
@@ -790,7 +818,7 @@ private fun BlankApp() {
                                     else -> null
                                 },
                                 errorText = smartErrors[page] ?: (state as? SmartAnalysisTaskState.Failed)?.message,
-                                onStart = { runSmartAnalysis(page) },
+                                onStart = { runSmartAnalysis(page, forceRefresh = true) },
                                 onCancel = {
                                     type?.let { analysisType -> scope.launch { repository.cancelSmartAnalysis(analysisType) } }
                                 },
