@@ -86,6 +86,8 @@ internal fun HomeContent(
     videoBytes: Long,
     organizeSummary: HomeOrganizeSummary,
     analysisCounts: Map<OrganizeSubPage, Int?>,
+    pendingDeleteCount: Int,
+    onOpenPendingDelete: () -> Unit,
     lastScanAt: Long?,
     hasMediaAccess: Boolean,
     hasFullMediaAccess: Boolean,
@@ -126,7 +128,7 @@ internal fun HomeContent(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
             .padding(bottom = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         HomeGlassCard(hazeState) {
             Row(
@@ -159,22 +161,37 @@ internal fun HomeContent(
                 Text("已整理 ${organizeSummary.completedCount} 项", fontSize = 11.sp, color = MutedText)
                 Text("待整理 ${organizeSummary.remainingCount} 项", fontSize = 11.sp, color = MutedText)
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color.Black.copy(alpha = 0.035f)))
-            Text("智能整理", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MutedText)
-            analysisItems.chunked(2).forEach { rowItems ->
-                Row(
+        }
+
+        HomeGlassCard(hazeState) {
+            Text("智能整理", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MainText)
+            analysisItems.forEach { (page, title) ->
+                HomeAnalysisItem(
+                    title = title,
+                    count = analysisCounts[page],
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    rowItems.forEach { (page, title) ->
-                        HomeAnalysisItem(
-                            title = title,
-                            count = analysisCounts[page],
-                            modifier = Modifier.weight(1f),
-                            onClick = { onOpenAnalysis(page) }
-                        )
-                    }
-                    if (rowItems.size == 1) Spacer(Modifier.weight(1f))
+                    onClick = { onOpenAnalysis(page) }
+                )
+            }
+        }
+
+        HomeGlassCard(hazeState) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClick = onOpenPendingDelete)
+                    .padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("待删除", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MainText)
+                    Text("确认后才会真正删除", fontSize = 10.sp, color = MutedText)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("$pendingDeleteCount 项", fontSize = 12.sp, color = MutedText)
+                    Text("›", fontSize = 20.sp, color = MutedText)
                 }
             }
         }
@@ -215,24 +232,9 @@ internal fun HomeContent(
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                HomeStorageRow(
-                    color = ThemeMint,
-                    label = "照片",
-                    detail = "$photoCount 张",
-                    value = formatStorage(photoBytes)
-                )
-                HomeStorageRow(
-                    color = ThemeMint.copy(alpha = 0.58f),
-                    label = "视频",
-                    detail = "$videoCount 个",
-                    value = formatStorage(videoBytes)
-                )
-                HomeStorageRow(
-                    color = Color(0xFFD7CBAF),
-                    label = "其他及系统占用",
-                    detail = "估算",
-                    value = formatStorage(otherSegment)
-                )
+                HomeStorageRow(color = ThemeMint, label = "照片", detail = "$photoCount 张", value = formatStorage(photoBytes))
+                HomeStorageRow(color = ThemeMint.copy(alpha = 0.58f), label = "视频", detail = "$videoCount 个", value = formatStorage(videoBytes))
+                HomeStorageRow(color = Color(0xFFD7CBAF), label = "其他及系统占用", detail = "估算", value = formatStorage(otherSegment))
             }
             Text(
                 text = "媒体占用按当前已授权并扫描到的文件统计；其他为设备已用空间扣除照片和视频后的估算值。",
