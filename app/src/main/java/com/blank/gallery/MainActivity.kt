@@ -110,6 +110,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 private val PageBackArrow: ImageVector = ImageVector.Builder(
@@ -339,6 +340,8 @@ private fun BlankApp() {
                 smartResults = smartResults + (page to groups)
                 smartAnalyzedPages = smartAnalyzedPages + page
                 smartErrors = smartErrors - page
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (error: Exception) {
                 smartErrors = smartErrors + (page to (error.message ?: "分析失败，请稍后重试"))
             }
