@@ -26,6 +26,7 @@ data class SmartAnalysisGroupMember(
     val analysisType: String,
     val groupKey: String,
     val mediaAssetId: Long,
+    val groupOrder: Int,
     val position: Int,
     val sourceContentUri: String,
     val sourceSizeBytes: Long,
@@ -34,6 +35,7 @@ data class SmartAnalysisGroupMember(
 
 data class SmartAnalysisGroupAsset(
     val groupKey: String,
+    val groupOrder: Int,
     val position: Int,
     @Embedded val asset: MediaAsset
 )
