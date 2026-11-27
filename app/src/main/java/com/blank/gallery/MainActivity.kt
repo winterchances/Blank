@@ -176,6 +176,7 @@ private fun BlankApp() {
     var scannedItems by remember { mutableStateOf(0) }
     var scanMessage by remember { mutableStateOf<String?>(null) }
     var selfOrganizePhoto by remember { mutableStateOf<MediaAsset?>(null) }
+    var selfOrganizePreloadAssets by remember { mutableStateOf<List<MediaAsset>>(emptyList()) }
     var isSelfOrganizeLoading by remember { mutableStateOf(false) }
     var selfOrganizeMessage by remember { mutableStateOf<String?>(null) }
     var isShowingSelfPendingDelete by remember { mutableStateOf(false) }
@@ -548,9 +549,24 @@ private fun BlankApp() {
         }
     }
 
+    LaunchedEffect(activeSelfOrganizeMode, selfOrganizePhoto?.id, isScanning) {
+        val mode = activeSelfOrganizeMode
+        val current = selfOrganizePhoto
+        if (mode == null || current == null || isScanning) {
+            selfOrganizePreloadAssets = emptyList()
+        } else {
+            selfOrganizePreloadAssets = try {
+                selfOrganizeManager.peekNextPhotos(mode, current.id)
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+    }
+
     fun decideSelfOrganize(decision: SelfOrganizeDecision) {
         val current = selfOrganizePhoto ?: return
         val mode = activeSelfOrganizeMode ?: return
+        val preloadedNext = selfOrganizePreloadAssets.firstOrNull()
         if (isSelfOrganizeLoading) return
         selfOrganizeMessage = null
         isSelfOrganizeLoading = true
@@ -558,7 +574,7 @@ private fun BlankApp() {
         scope.launch {
             try {
                 selfOrganizeManager.applyDecision(current.id, decision)
-                selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
+                selfOrganizePhoto = preloadedNext ?: selfOrganizeManager.nextPhoto(mode)
             } catch (_: Exception) {
                 selfOrganizePhoto = current
                 selfOrganizeMessage = "整理状态保存失败，请重试"
@@ -744,6 +760,7 @@ private fun BlankApp() {
                         } else if (activeSelfOrganizeMode != null) {
                             SelfOrganizeScreen(
                                 asset = selfOrganizePhoto,
+                                preloadAssets = selfOrganizePreloadAssets,
                                 summary = selfOrganizeSummary,
                                 canUndo = canUndoSelfOrganize,
                                 isLoading = isSelfOrganizeLoading,
