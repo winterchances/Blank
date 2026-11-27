@@ -525,11 +525,13 @@ private fun BlankApp() {
         if (isSelfOrganizeLoading) return
         selfOrganizeMessage = null
         isSelfOrganizeLoading = true
+        selfOrganizePhoto = null
         scope.launch {
             try {
                 selfOrganizeManager.applyDecision(current.id, decision)
                 selfOrganizePhoto = selfOrganizeManager.nextPhoto(mode)
             } catch (_: Exception) {
+                selfOrganizePhoto = current
                 selfOrganizeMessage = "整理状态保存失败，请重试"
             } finally {
                 isSelfOrganizeLoading = false
