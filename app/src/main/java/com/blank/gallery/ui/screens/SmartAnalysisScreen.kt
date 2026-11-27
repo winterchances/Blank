@@ -54,7 +54,7 @@ internal fun SmartAnalysisScreen(
         OrganizeSubPage.SIMILAR -> "分析画面特征，整理内容相近的照片"
         OrganizeSubPage.BURSTS -> "结合拍摄时间与画面相似度识别连拍"
         OrganizeSubPage.SCREENSHOTS -> "根据文件名和所在文件夹识别截图"
-        OrganizeSubPage.LARGE_FILES -> "找出占用空间较大的照片"
+        OrganizeSubPage.LARGE_FILES -> "找出占用空间较大的照片和视频"
         else -> ""
     }
     val itemCount = groups.sumOf { it.size }
