@@ -294,6 +294,35 @@ class MediaLibraryRepository(context: Context) {
         smartAnalysisCoordinator.cancel(type)
     }
 
+    suspend fun loadSmartAnalysisGroups(
+        type: SmartAnalysisType,
+        parameterKey: String
+    ): List<List<MediaAsset>>? {
+        val rows = dao.loadSmartAnalysisSnapshot(type.name, parameterKey) ?: return null
+        return rows.groupBy { it.groupKey }.values.map { group ->
+            group.sortedBy { it.position }.map { it.asset }
+        }.filter { it.isNotEmpty() }
+    }
+
+    suspend fun saveSmartAnalysisGroups(
+        type: SmartAnalysisType,
+        parameterKey: String,
+        groups: List<List<MediaAsset>>
+    ) {
+        dao.saveSmartAnalysisSnapshot(
+            SmartAnalysisSnapshot(
+                analysisType = type.name,
+                parameterKey = parameterKey,
+                completedAtMillis = System.currentTimeMillis()
+            ),
+            groups
+        )
+    }
+
+    suspend fun clearSmartAnalysisSnapshots() {
+        dao.clearSmartAnalysisSnapshots()
+    }
+
     suspend fun setFavorite(id: Long, favorite: Boolean) {
         dao.setFavorite(id, favorite)
     }
