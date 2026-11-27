@@ -148,7 +148,7 @@ internal fun SmartAnalysisScreen(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
-                                    Text("照片", color = MutedText, fontSize = 10.sp)
+                                    Text(if (asset.mediaType == 2) "视频" else "照片", color = MutedText, fontSize = 10.sp)
                                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                                         Text(
                                             "保留",
