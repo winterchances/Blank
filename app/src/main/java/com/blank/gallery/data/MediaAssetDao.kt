@@ -258,6 +258,7 @@ interface MediaAssetDao {
 
     @Query("""
         SELECT smart_analysis_group_members.groupKey AS groupKey,
+               smart_analysis_group_members.groupOrder AS groupOrder,
                smart_analysis_group_members.position AS position,
                media_assets.*
         FROM smart_analysis_group_members
@@ -277,7 +278,7 @@ interface MediaAssetDao {
               WHERE media_assets.relativePath = pf.relativePath
                  OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath
           )
-        ORDER BY smart_analysis_group_members.groupKey,
+        ORDER BY smart_analysis_group_members.groupOrder,
                  smart_analysis_group_members.position
     """)
     suspend fun getActiveSmartAnalysisGroupAssets(analysisType: String): List<SmartAnalysisGroupAsset>
@@ -288,13 +289,14 @@ interface MediaAssetDao {
         groups: List<List<MediaAsset>>
     ) {
         deleteSmartAnalysisGroupMembers(snapshot.analysisType)
-        val members = groups.flatMap { group ->
+        val members = groups.flatMapIndexed { groupOrder, group ->
             val groupKey = group.firstOrNull()?.id?.toString() ?: return@flatMap emptyList()
             group.mapIndexed { index, asset ->
                 SmartAnalysisGroupMember(
                     analysisType = snapshot.analysisType,
                     groupKey = groupKey,
                     mediaAssetId = asset.id,
+                    groupOrder = groupOrder,
                     position = index,
                     sourceContentUri = asset.contentUri,
                     sourceSizeBytes = asset.sizeBytes,
