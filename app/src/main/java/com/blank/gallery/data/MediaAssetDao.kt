@@ -460,7 +460,7 @@ interface MediaAssetDao {
     suspend fun applySelfOrganizeDecision(id: Long, status: Int): Boolean {
         if (status !in 1..3) return false
         val current = findById(id) ?: return false
-        if (!current.isVisible || current.mediaType !in 1..2 ||
+        if (!current.isVisible || current.mediaType != 1 ||
             current.isProtected || current.isFavorite ||
             current.selfOrganizeStatus !in listOf(0, 3) ||
             isMediaInProtectedFolder(current.relativePath)
@@ -485,7 +485,7 @@ interface MediaAssetDao {
         if (current.contentUri != asset.contentUri ||
             current.sizeBytes != asset.sizeBytes ||
             current.dateModifiedSeconds != asset.dateModifiedSeconds ||
-            !current.isVisible || current.mediaType != 1 ||
+            !current.isVisible || current.mediaType !in 1..2 ||
             current.isProtected || current.isFavorite ||
             current.selfOrganizeStatus !in listOf(0, 3) ||
             isMediaInProtectedFolder(current.relativePath)
