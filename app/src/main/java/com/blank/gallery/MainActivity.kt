@@ -771,6 +771,8 @@ private fun BlankApp() {
                                 photoBytes = photoBytes,
                                 videoBytes = videoBytes,
                                 organizeSummary = homeOrganizeSummary,
+                                pendingDeleteCount = selfOrganizePendingDelete.size,
+                                onOpenPendingDelete = { isShowingSelfPendingDelete = true },
                                 analysisCounts = mapOf(
                                     OrganizeSubPage.DUPLICATES to if (OrganizeSubPage.DUPLICATES in smartAnalyzedPages) smartResults[OrganizeSubPage.DUPLICATES].orEmpty().sumOf { it.size } else null,
                                     OrganizeSubPage.SIMILAR to if (OrganizeSubPage.SIMILAR in smartAnalyzedPages) smartResults[OrganizeSubPage.SIMILAR].orEmpty().sumOf { it.size } else null,
