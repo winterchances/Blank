@@ -348,7 +348,7 @@ class MediaLibraryRepository(context: Context) {
         dao.cancelSelfOrganizePendingDelete(id)
     }
 
-    suspend fun currentPendingSelfOrganizePhotos(ids: List<Long>): List<MediaAsset> =
+    suspend fun currentPendingDeleteMedia(ids: List<Long>): List<MediaAsset> =
         if (ids.isEmpty()) emptyList() else dao.getVisibleUnprotectedPendingSelfOrganizePhotos(ids)
 
     private companion object {
