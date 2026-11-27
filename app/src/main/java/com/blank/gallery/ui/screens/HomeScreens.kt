@@ -40,6 +40,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -380,6 +382,17 @@ internal fun AlbumsContent(
         .filterIsInstance<AlbumGridItem.Media>()
         .map { it.asset }
     var previewStartId by remember { mutableStateOf<Long?>(null) }
+    val availableYears = remember(months) {
+        months.mapNotNull { it.monthKey.takeIf { key -> key.length >= 4 }?.take(4) }
+            .distinct()
+            .sortedDescending()
+    }
+    var selectedYear by remember { mutableStateOf<String?>(null) }
+    var isYearMenuExpanded by remember { mutableStateOf(false) }
+    val activeYear = selectedYear ?: availableYears.firstOrNull()
+    val visibleMonths = remember(months, activeYear) {
+        if (activeYear == null) months else months.filter { it.monthKey.startsWith(activeYear) }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         LazyRow(
@@ -390,10 +403,33 @@ internal fun AlbumsContent(
                 AlbumFilterChip("文件夹", selectedFolderPath != null, onClick = onOpenFolders)
             }
             if (months.isNotEmpty()) {
+                item(key = "year-filter") {
+                    Box {
+                        AlbumFilterChip(
+                            label = activeYear?.let { "${it}年" } ?: "选择年份",
+                            selected = true
+                        ) { isYearMenuExpanded = true }
+                        DropdownMenu(
+                            expanded = isYearMenuExpanded,
+                            onDismissRequest = { isYearMenuExpanded = false }
+                        ) {
+                            availableYears.forEach { year ->
+                                DropdownMenuItem(
+                                    text = { Text("${year}年") },
+                                    onClick = {
+                                        selectedYear = year
+                                        onMonthSelect(null)
+                                        isYearMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
                 item(key = "all-months") {
                     AlbumFilterChip("全部月份", selectedMonthKey == null) { onMonthSelect(null) }
                 }
-                lazyItems(items = months, key = { it.monthKey }) { month ->
+                lazyItems(items = visibleMonths, key = { it.monthKey }) { month ->
                     AlbumFilterChip(
                         label = month.monthKey.replace("-", "年") + "月",
                         selected = selectedMonthKey == month.monthKey
