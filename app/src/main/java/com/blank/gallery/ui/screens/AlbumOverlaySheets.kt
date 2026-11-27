@@ -123,6 +123,7 @@ internal fun AlbumFolderDrawer(
             .width(300.dp)
             .fillMaxHeight()
             .padding(vertical = 24.dp)
+            .clip(drawerShape)
             .blankGlassSurface(hazeState, drawerShape, glassAlpha = 0.76f),
         drawerShape = drawerShape,
         drawerContainerColor = Color.Transparent,
