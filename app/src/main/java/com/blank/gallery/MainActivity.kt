@@ -72,6 +72,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
@@ -88,6 +89,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -105,6 +111,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.compose.collectAsLazyPagingItems
 import kotlinx.coroutines.launch
+
+private val PageBackArrow: ImageVector = ImageVector.Builder(
+    name = "PageBackArrow",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f
+).apply {
+    path(
+        fill = null,
+        stroke = SolidColor(MainText),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ) {
+        moveTo(19f, 12f)
+        lineTo(5f, 12f)
+        moveTo(5f, 12f)
+        lineTo(11f, 6f)
+        moveTo(5f, 12f)
+        lineTo(11f, 18f)
+    }
+}.build()
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -624,7 +653,7 @@ private fun BlankApp() {
         androidx.compose.runtime.CompositionLocalProvider(LocalRippleConfiguration provides null) {
         androidx.compose.material3.ModalNavigationDrawer(
             drawerState = albumDrawerState,
-            gesturesEnabled = false,
+            gesturesEnabled = true,
             drawerContent = {
                 AlbumFolderDrawer(
                     folders = albumFolders,
@@ -1000,12 +1029,21 @@ private fun PageHeader(
                         .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = backLabel,
-                        fontSize = 25.sp,
-                        lineHeight = 25.sp,
-                        color = MainText
-                    )
+                    if (backLabel == "×") {
+                        Text(
+                            text = backLabel,
+                            fontSize = 22.sp,
+                            lineHeight = 22.sp,
+                            color = MainText
+                        )
+                    } else {
+                        Icon(
+                            imageVector = PageBackArrow,
+                            contentDescription = "返回",
+                            modifier = Modifier.size(18.dp),
+                            tint = MainText
+                        )
+                    }
                 }
             }
             Text(
