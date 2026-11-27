@@ -289,7 +289,7 @@ interface MediaAssetDao {
     ) {
         deleteSmartAnalysisGroupMembers(snapshot.analysisType)
         val members = groups.flatMapIndexed { groupOrder, group ->
-            val groupKey = group.firstOrNull()?.id?.toString() ?: return@flatMap emptyList()
+            val groupKey = group.firstOrNull()?.id?.toString() ?: return@flatMapIndexed emptyList()
             group.mapIndexed { index, asset ->
                 SmartAnalysisGroupMember(
                     analysisType = snapshot.analysisType,
