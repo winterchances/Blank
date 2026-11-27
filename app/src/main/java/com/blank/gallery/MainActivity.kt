@@ -392,7 +392,7 @@ private fun BlankApp() {
 
     fun startDeleteItems(items: List<MediaAsset>) {
         val eligible = items.filter {
-            it.isVisible && it.mediaType == 1 && !it.isProtected
+            it.isVisible && it.mediaType in 1..2 && !it.isProtected
         }
         if (eligible.isEmpty() || isDeletionInProgress) return
         isDeletionInProgress = true
@@ -446,14 +446,14 @@ private fun BlankApp() {
             try {
                 // The pending list may have changed while the confirmation
                 // sheet was open. Re-check visibility, protection and status.
-                val currentItems = repository.currentPendingSelfOrganizePhotos(requestedIds)
+                val currentItems = repository.currentPendingDeleteMedia(requestedIds)
                 if (currentItems.isEmpty()) {
-                    selfOrganizeMessage = "待删除照片已发生变化，请检查列表后重试"
+                    selfOrganizeMessage = "待删除项目已发生变化，请检查列表后重试"
                 } else {
                     startDeleteItems(currentItems)
                 }
             } catch (_: Exception) {
-                selfOrganizeMessage = "无法读取最新的待删除照片，请稍后重试"
+                selfOrganizeMessage = "无法读取最新的待删除项目，请稍后重试"
             } finally {
                 isSelfOrganizeLoading = false
             }
