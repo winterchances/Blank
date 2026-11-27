@@ -64,7 +64,7 @@ internal fun SelfOrganizePendingDeleteScreen(
 
         if (assets.isEmpty()) {
             EmptyState(
-                message = "暂时没有待删除的照片",
+                message = "暂时没有待删除的媒体",
                 modifier = Modifier.weight(1f)
             )
         } else {
@@ -78,16 +78,29 @@ internal fun SelfOrganizePendingDeleteScreen(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        AsyncImage(
-                            model = asset.contentUri,
-                            contentDescription = asset.displayName,
-                            contentScale = ContentScale.Crop,
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color.Black.copy(alpha = 0.035f))
-                        )
+                                .background(Color.Black.copy(alpha = 0.035f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (asset.mediaType == 1) {
+                                AsyncImage(
+                                    model = asset.contentUri,
+                                    contentDescription = asset.displayName,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Text(
+                                    "▶",
+                                    color = MainText,
+                                    fontSize = 20.sp
+                                )
+                            }
+                        }
                         Text(
                             asset.displayName,
                             color = MainText,
