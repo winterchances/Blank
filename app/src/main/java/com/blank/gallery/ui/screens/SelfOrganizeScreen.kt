@@ -149,6 +149,7 @@ internal fun SelfOrganizeScreen(
         } else {
             val photoOffset = remember(asset.id) { Animatable(0f) }
             var dragOffset by remember(asset.id) { mutableFloatStateOf(0f) }
+            var lastDragDirection by remember(asset.id) { mutableFloatStateOf(0f) }
             var isAnimating by remember(asset.id) { mutableStateOf(false) }
             val dragScope = rememberCoroutineScope()
 
@@ -161,12 +162,16 @@ internal fun SelfOrganizeScreen(
                         val velocityTracker = VelocityTracker()
                         detectDragGestures(
                             onDragStart = {
-                                if (!isAnimating) velocityTracker.resetTracking()
+                                if (!isAnimating) {
+                                    velocityTracker.resetTracking()
+                                    lastDragDirection = 0f
+                                }
                             },
                             onDrag = { change, dragAmount ->
                                 if (!isAnimating) {
                                     velocityTracker.addPosition(change.uptimeMillis, change.position)
                                     dragOffset += dragAmount.y
+                                    if (dragAmount.y != 0f) lastDragDirection = if (dragAmount.y < 0f) -1f else 1f
                                     change.consume()
                                 }
                             },
@@ -177,15 +182,16 @@ internal fun SelfOrganizeScreen(
                                     val distanceThreshold = size.height * 0.22f
                                     val direction = when {
                                         abs(distanceY) >= distanceThreshold -> if (distanceY < 0f) -1f else 1f
-                                        abs(velocityY) >= 1000f -> if (velocityY < 0f) -1f else 1f
+                                        abs(velocityY) >= 1000f -> lastDragDirection
                                         else -> 0f
                                     }
-                                    isAnimating = true
+                                    val containerHeight = size.height.toFloat()
                                     dragScope.launch {
                                         photoOffset.snapTo(distanceY)
+                                        isAnimating = true
                                         if (direction != 0f) {
                                             photoOffset.animateTo(
-                                                targetValue = direction * size.height.toFloat() * 1.2f,
+                                                targetValue = direction * containerHeight * 1.2f,
                                                 animationSpec = tween(
                                                     durationMillis = 110,
                                                     easing = FastOutLinearInEasing
@@ -206,9 +212,9 @@ internal fun SelfOrganizeScreen(
                             },
                             onDragCancel = {
                                 if (!isAnimating) {
-                                    isAnimating = true
                                     dragScope.launch {
                                         photoOffset.snapTo(dragOffset)
+                                        isAnimating = true
                                         photoOffset.animateTo(
                                             targetValue = 0f,
                                             animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
