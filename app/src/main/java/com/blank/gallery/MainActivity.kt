@@ -314,7 +314,10 @@ private fun BlankApp() {
             val type = smartTypeFor(page) ?: return@launch
             val parameterKey = smartParameterKeyFor(page)
             try {
-                if (!forceRefresh) {
+                val taskState = smartAnalysisStates[type]
+                val taskIsActive = taskState is SmartAnalysisTaskState.Running ||
+                    taskState is SmartAnalysisTaskState.Cancelling
+                if (!forceRefresh && !taskIsActive) {
                     val restoredGroups = repository.loadSmartAnalysisGroups(type, parameterKey)
                     if (restoredGroups != null) {
                         smartResults = smartResults + (page to restoredGroups)
@@ -366,7 +369,7 @@ private fun BlankApp() {
 
     LaunchedEffect(organizeSubPage, lastScanAt) {
         val page = organizeSubPage
-        if (lastScanAt != null && page != null && smartTypeFor(page) != null && page !in smartAnalyzedPages) runSmartAnalysis(page)
+        if (lastScanAt != null && page != null && smartTypeFor(page) != null) runSmartAnalysis(page)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
