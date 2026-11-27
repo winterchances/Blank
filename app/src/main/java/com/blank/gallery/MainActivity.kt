@@ -581,10 +581,6 @@ private fun BlankApp() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    BackHandler(enabled = albumDrawerState.isOpen) {
-        scope.launch { albumDrawerState.close() }
-    }
-
     BackHandler(enabled = selectedMedia.isNotEmpty()) {
         selectedMedia = emptyMap()
     }
@@ -607,6 +603,11 @@ private fun BlankApp() {
 
     BackHandler(enabled = isAlbumOptionsDropdownVisible) {
         isAlbumOptionsDropdownVisible = false
+    }
+
+    // Keep the drawer as the highest-priority back handler while it is open.
+    BackHandler(enabled = albumDrawerState.isOpen) {
+        scope.launch { albumDrawerState.close() }
     }
 
     MaterialTheme(
