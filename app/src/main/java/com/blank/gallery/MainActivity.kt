@@ -367,9 +367,11 @@ private fun BlankApp() {
         }
     }
 
-    LaunchedEffect(organizeSubPage, lastScanAt) {
+    LaunchedEffect(organizeSubPage, lastScanAt, isScanning) {
         val page = organizeSubPage
-        if (lastScanAt != null && page != null && smartTypeFor(page) != null) runSmartAnalysis(page)
+        if (!isScanning && lastScanAt != null && page != null && smartTypeFor(page) != null) {
+            runSmartAnalysis(page)
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
