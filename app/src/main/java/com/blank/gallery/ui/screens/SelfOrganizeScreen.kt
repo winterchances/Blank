@@ -26,10 +26,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.pointer.util.VelocityTracker
-import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.abs
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
@@ -145,23 +145,7 @@ internal fun SelfOrganizeScreen(
             )
         } else {
             val photoOffset = remember { Animatable(0f) }
-            var lastSwipeDirection by remember { mutableStateOf(1f) }
-            var previousAssetId by remember { mutableStateOf<Long?>(null) }
             val dragScope = rememberCoroutineScope()
-            val enterOffsetPx = with(LocalDensity.current) { 64.dp.toPx() }
-
-            LaunchedEffect(asset.id) {
-                if (previousAssetId != null) {
-                    photoOffset.snapTo(-lastSwipeDirection * enterOffsetPx)
-                    photoOffset.animateTo(
-                        targetValue = 0f,
-                        animationSpec = spring(dampingRatio = 0.78f, stiffness = 420f)
-                    )
-                } else {
-                    photoOffset.snapTo(0f)
-                }
-                previousAssetId = asset.id
-            }
 
             Box(
                 modifier = Modifier
@@ -192,17 +176,13 @@ internal fun SelfOrganizeScreen(
                                         else -> 1f
                                     }
                                     val containerHeight = size.height.toFloat()
-                                    val exitVelocity = if (velocityY * direction > 0f) {
-                                        velocityY.coerceIn(-5000f, 5000f)
-                                    } else {
-                                        direction * abs(velocityY).coerceAtMost(5000f)
-                                    }
-                                    lastSwipeDirection = direction
                                     dragScope.launch {
                                         photoOffset.animateTo(
                                             targetValue = direction * containerHeight * 1.2f,
-                                            animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f),
-                                            initialVelocity = exitVelocity
+                                            animationSpec = tween(
+                                                durationMillis = 110,
+                                                easing = FastOutLinearInEasing
+                                            )
                                         )
                                         if (direction < 0f) onPendingDelete() else onKeep()
                                     }
