@@ -661,9 +661,10 @@ private fun BlankApp() {
                         .hazeSource(hazeState)
                         .mainPageSwipe(
                             currentPage = currentPage,
-                            enabled = organizeSubPage == null && selectedMedia.isEmpty() &&
-                                !albumDrawerState.isOpen && !deleteConfirmationVisible &&
-                                !selfOrganizeDeleteConfirmationVisible && !isAlbumSearchVisible,
+                            enabled = organizeSubPage == null && !isShowingSelfPendingDelete &&
+                                selectedMedia.isEmpty() && !albumDrawerState.isOpen &&
+                                !deleteConfirmationVisible && !selfOrganizeDeleteConfirmationVisible &&
+                                !isAlbumSearchVisible,
                             onPageChange = { currentPage = it }
                         )
                 ) {
@@ -874,7 +875,7 @@ private fun BlankApp() {
                             hazeState = hazeState
                         )
                         }
-                    } else if (organizeSubPage == null) {
+                    } else if (organizeSubPage == null && !isShowingSelfPendingDelete) {
                         BottomNavigation(
                             currentPage = currentPage,
                             onSelect = { selectedMedia = emptyMap(); currentPage = it },
