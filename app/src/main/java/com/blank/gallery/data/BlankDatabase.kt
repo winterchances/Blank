@@ -146,6 +146,7 @@ abstract class BlankDatabase : RoomDatabase() {
                         analysisType TEXT NOT NULL,
                         groupKey TEXT NOT NULL,
                         mediaAssetId INTEGER NOT NULL,
+                        groupOrder INTEGER NOT NULL,
                         position INTEGER NOT NULL,
                         sourceContentUri TEXT NOT NULL,
                         sourceSizeBytes INTEGER NOT NULL,
