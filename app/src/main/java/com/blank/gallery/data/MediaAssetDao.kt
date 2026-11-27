@@ -430,7 +430,7 @@ interface MediaAssetDao {
     }
 
     @Query("SELECT * FROM media_assets WHERE id IN (:ids) AND isVisible = 1 AND isProtected = 0 AND mediaType IN (1, 2) AND selfOrganizeStatus = 2")
-    suspend fun getVisibleUnprotectedPendingSelfOrganizePhotos(ids: List<Long>): List<MediaAsset>
+    suspend fun getVisibleUnprotectedPendingDeleteMedia(ids: List<Long>): List<MediaAsset>
 
     @Query("SELECT * FROM media_assets WHERE id = :id LIMIT 1")
     suspend fun findById(id: Long): MediaAsset?
@@ -490,14 +490,18 @@ interface MediaAssetDao {
             current.selfOrganizeStatus !in listOf(0, 3) ||
             isMediaInProtectedFolder(current.relativePath)
         ) return false
-        insertSelfOrganizeAction(
-            SelfOrganizeActionRecord(
-                mediaAssetId = asset.id,
-                previousStatus = current.selfOrganizeStatus,
-                previousSkipOrder = current.selfOrganizeSkipOrder,
-                createdAtMillis = System.currentTimeMillis()
+        // Video decisions belong to the shared pending-delete queue, not the
+        // photo-only self-organize undo history.
+        if (current.mediaType == 1) {
+            insertSelfOrganizeAction(
+                SelfOrganizeActionRecord(
+                    mediaAssetId = asset.id,
+                    previousStatus = current.selfOrganizeStatus,
+                    previousSkipOrder = current.selfOrganizeSkipOrder,
+                    createdAtMillis = System.currentTimeMillis()
+                )
             )
-        )
+        }
         val skipOrder = if (status == 3) nextSelfOrganizeSkipOrder() else 0L
         updateSelfOrganizeState(asset.id, status, skipOrder)
         return true
