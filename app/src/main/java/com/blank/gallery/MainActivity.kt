@@ -309,6 +309,8 @@ private fun BlankApp() {
 
     fun runSmartAnalysis(page: OrganizeSubPage, forceRefresh: Boolean = false) {
         scope.launch {
+            if (isScanning) return@launch
+            val scanAtStart = lastScanAt
             val type = smartTypeFor(page) ?: return@launch
             val parameterKey = smartParameterKeyFor(page)
             try {
@@ -329,6 +331,7 @@ private fun BlankApp() {
                     OrganizeSubPage.LARGE_FILES -> repository.analyzeLargeMedia().items.map { listOf(it) }
                     else -> emptyList()
                 }.map { group -> group.distinctBy { it.id } }.filter { it.isNotEmpty() }
+                if (isScanning || scanAtStart != lastScanAt) return@launch
                 repository.saveSmartAnalysisGroups(type, parameterKey, groups)
                 smartResults = smartResults + (page to groups)
                 smartAnalyzedPages = smartAnalyzedPages + page
@@ -352,7 +355,7 @@ private fun BlankApp() {
                     organizeSubPage?.let { page -> smartErrors = smartErrors - page }
                 } else {
                     organizeSubPage?.let { page ->
-                        smartErrors = smartErrors + (page to "这张照片的状态已变化，已跳过该操作")
+                        smartErrors = smartErrors + (page to "该项目的状态已变化，已跳过该操作")
                     }
                 }
             } catch (_: Exception) {
@@ -810,7 +813,7 @@ private fun BlankApp() {
                                 page = page,
                                 groups = smartResults[page].orEmpty(),
                                 hasAnalyzed = page in smartAnalyzedPages,
-                                hasScanned = lastScanAt != null,
+                                hasScanned = lastScanAt != null && !isScanning,
                                 isRunning = state is SmartAnalysisTaskState.Running || state is SmartAnalysisTaskState.Cancelling,
                                 progressText = when (state) {
                                     is SmartAnalysisTaskState.Running -> "已分析 ${state.completed} / ${state.total}"
