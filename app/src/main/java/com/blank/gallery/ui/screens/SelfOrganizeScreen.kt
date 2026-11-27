@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -129,11 +130,13 @@ internal fun SelfOrganizeScreen(
                 modifier = Modifier.weight(1f)
             )
             ActionSurface("授权照片访问", onClick = onRequestAccess)
-        } else if (isScanning || isLoading) {
+        } else if (isScanning) {
             EmptyState(
-                message = if (isScanning) "正在读取照片，请稍候" else "正在更新整理进度",
+                message = "正在读取照片，请稍候",
                 modifier = Modifier.weight(1f)
             )
+        } else if (isLoading) {
+            Box(Modifier.weight(1f).fillMaxWidth())
         } else if (asset == null) {
             EmptyState(
                 message = if (summary.totalCount == 0) {
@@ -144,64 +147,75 @@ internal fun SelfOrganizeScreen(
                 modifier = Modifier.weight(1f)
             )
         } else {
-            val photoOffset = remember { Animatable(0f) }
+            val photoOffset = remember(asset.id) { Animatable(0f) }
+            var dragOffset by remember(asset.id) { mutableFloatStateOf(0f) }
+            var isAnimating by remember(asset.id) { mutableStateOf(false) }
             val dragScope = rememberCoroutineScope()
 
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .graphicsLayer { translationY = photoOffset.value }
+                    .graphicsLayer { translationY = if (isAnimating) photoOffset.value else dragOffset }
                     .pointerInput(asset.id) {
                         val velocityTracker = VelocityTracker()
                         detectDragGestures(
-                            onDragStart = { velocityTracker.resetTracking() },
+                            onDragStart = {
+                                if (!isAnimating) velocityTracker.resetTracking()
+                            },
                             onDrag = { change, dragAmount ->
-                                velocityTracker.addPosition(change.uptimeMillis, change.position)
-                                change.consume()
-                                dragScope.launch {
-                                    photoOffset.snapTo(photoOffset.value + dragAmount.y)
+                                if (!isAnimating) {
+                                    velocityTracker.addPosition(change.uptimeMillis, change.position)
+                                    dragOffset += dragAmount.y
+                                    change.consume()
                                 }
                             },
                             onDragEnd = {
-                                val velocityY = velocityTracker.calculateVelocity().y
-                                val distanceY = photoOffset.value
-                                val distanceThreshold = size.height * 0.22f
-                                val shouldSwipe = abs(distanceY) >= distanceThreshold || abs(velocityY) >= 1000f
-
-                                if (shouldSwipe) {
+                                if (!isAnimating) {
+                                    val velocityY = velocityTracker.calculateVelocity().y
+                                    val distanceY = dragOffset
+                                    val distanceThreshold = size.height * 0.22f
                                     val direction = when {
                                         abs(distanceY) >= distanceThreshold -> if (distanceY < 0f) -1f else 1f
-                                        velocityY < 0f -> -1f
-                                        else -> 1f
+                                        abs(velocityY) >= 1000f -> if (velocityY < 0f) -1f else 1f
+                                        else -> 0f
                                     }
-                                    val containerHeight = size.height.toFloat()
+                                    isAnimating = true
                                     dragScope.launch {
-                                        photoOffset.animateTo(
-                                            targetValue = direction * containerHeight * 1.2f,
-                                            animationSpec = tween(
-                                                durationMillis = 110,
-                                                easing = FastOutLinearInEasing
+                                        photoOffset.snapTo(distanceY)
+                                        if (direction != 0f) {
+                                            photoOffset.animateTo(
+                                                targetValue = direction * size.height.toFloat() * 1.2f,
+                                                animationSpec = tween(
+                                                    durationMillis = 110,
+                                                    easing = FastOutLinearInEasing
+                                                )
                                             )
-                                        )
-                                        if (direction < 0f) onPendingDelete() else onKeep()
-                                    }
-                                } else {
-                                    dragScope.launch {
-                                        photoOffset.animateTo(
-                                            targetValue = 0f,
-                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f),
-                                            initialVelocity = velocityY.coerceIn(-5000f, 5000f)
-                                        )
+                                            if (direction < 0f) onPendingDelete() else onKeep()
+                                        } else {
+                                            photoOffset.animateTo(
+                                                targetValue = 0f,
+                                                animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f),
+                                                initialVelocity = velocityY.coerceIn(-5000f, 5000f)
+                                            )
+                                            dragOffset = 0f
+                                            isAnimating = false
+                                        }
                                     }
                                 }
                             },
                             onDragCancel = {
-                                dragScope.launch {
-                                    photoOffset.animateTo(
-                                        targetValue = 0f,
-                                        animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
-                                    )
+                                if (!isAnimating) {
+                                    isAnimating = true
+                                    dragScope.launch {
+                                        photoOffset.snapTo(dragOffset)
+                                        photoOffset.animateTo(
+                                            targetValue = 0f,
+                                            animationSpec = spring(dampingRatio = 0.72f, stiffness = 360f)
+                                        )
+                                        dragOffset = 0f
+                                        isAnimating = false
+                                    }
                                 }
                             }
                         )
