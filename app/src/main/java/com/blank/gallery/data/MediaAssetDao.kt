@@ -2,6 +2,7 @@ package com.blank.gallery.data
 
 import androidx.paging.PagingSource
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -236,6 +237,91 @@ interface MediaAssetDao {
             )
         )
     }
+
+    @Query("SELECT * FROM smart_analysis_snapshots WHERE analysisType = :analysisType LIMIT 1")
+    suspend fun getSmartAnalysisSnapshot(analysisType: String): SmartAnalysisSnapshot?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertSmartAnalysisSnapshot(snapshot: SmartAnalysisSnapshot)
+
+    @Query("DELETE FROM smart_analysis_group_members WHERE analysisType = :analysisType")
+    suspend fun deleteSmartAnalysisGroupMembers(analysisType: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSmartAnalysisGroupMembers(members: List<SmartAnalysisGroupMember>)
+
+    @Query("""
+        SELECT smart_analysis_group_members.groupKey AS groupKey,
+               smart_analysis_group_members.position AS position,
+               media_assets.*
+        FROM smart_analysis_group_members
+        INNER JOIN media_assets
+            ON media_assets.id = smart_analysis_group_members.mediaAssetId
+        WHERE smart_analysis_group_members.analysisType = :analysisType
+          AND media_assets.contentUri = smart_analysis_group_members.sourceContentUri
+          AND media_assets.sizeBytes = smart_analysis_group_members.sourceSizeBytes
+          AND media_assets.dateModifiedSeconds = smart_analysis_group_members.sourceDateModifiedSeconds
+          AND media_assets.isVisible = 1
+          AND media_assets.isProtected = 0
+          AND media_assets.isFavorite = 0
+          AND media_assets.selfOrganizeStatus IN (0, 3)
+          AND media_assets.mediaType IN (1, 2)
+          AND NOT EXISTS (
+              SELECT 1 FROM protected_folders pf
+              WHERE media_assets.relativePath = pf.relativePath
+                 OR substr(media_assets.relativePath, 1, length(pf.relativePath)) = pf.relativePath
+          )
+        ORDER BY smart_analysis_group_members.groupKey,
+                 smart_analysis_group_members.position
+    """)
+    suspend fun getActiveSmartAnalysisGroupAssets(analysisType: String): List<SmartAnalysisGroupAsset>
+
+    @Transaction
+    suspend fun saveSmartAnalysisSnapshot(
+        snapshot: SmartAnalysisSnapshot,
+        groups: List<List<MediaAsset>>
+    ) {
+        deleteSmartAnalysisGroupMembers(snapshot.analysisType)
+        val members = groups.flatMap { group ->
+            val groupKey = group.firstOrNull()?.id?.toString() ?: return@flatMap emptyList()
+            group.mapIndexed { index, asset ->
+                SmartAnalysisGroupMember(
+                    analysisType = snapshot.analysisType,
+                    groupKey = groupKey,
+                    mediaAssetId = asset.id,
+                    position = index,
+                    sourceContentUri = asset.contentUri,
+                    sourceSizeBytes = asset.sizeBytes,
+                    sourceDateModifiedSeconds = asset.dateModifiedSeconds
+                )
+            }
+        }
+        if (members.isNotEmpty()) insertSmartAnalysisGroupMembers(members)
+        upsertSmartAnalysisSnapshot(snapshot)
+    }
+
+    @Transaction
+    suspend fun loadSmartAnalysisSnapshot(
+        analysisType: String,
+        parameterKey: String
+    ): List<SmartAnalysisGroupAsset>? {
+        val snapshot = getSmartAnalysisSnapshot(analysisType) ?: return null
+        if (snapshot.parameterKey != parameterKey) return null
+        return getActiveSmartAnalysisGroupAssets(analysisType)
+    }
+
+    @Transaction
+    suspend fun clearSmartAnalysisSnapshots() {
+        deleteAllSmartAnalysisGroupMembers()
+        deleteAllSmartAnalysisSnapshots()
+    }
+
+    @Query("DELETE FROM smart_analysis_group_members")
+    suspend fun deleteAllSmartAnalysisGroupMembers()
+
+    @Query("DELETE FROM smart_analysis_snapshots")
+    suspend fun deleteAllSmartAnalysisSnapshots()
+
     @Query("SELECT * FROM media_assets WHERE isVisible = 1 ORDER BY dateAddedSeconds DESC, id DESC")
     fun observeAll(): Flow<List<MediaAsset>>
 
